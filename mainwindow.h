@@ -3,11 +3,9 @@
 
 #include <QMainWindow>
 
-namespace Ui {
-class MainWindow;
-}
+#include "ui_mainwindow.h"
 
-class MainWindow : public QMainWindow
+class MainWindow : public QMainWindow, private Ui::MainWindow
 {
     Q_OBJECT
 
@@ -15,8 +13,10 @@ class MainWindow : public QMainWindow
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
-  private:
-    Ui::MainWindow *ui;
+  private slots:
+    void on_teEncryptIn_textChanged();
+    void on_teEncryptCrypt_textChanged();
+    void on_btnOne_clicked();
 };
 
 #endif // MAINWINDOW_H

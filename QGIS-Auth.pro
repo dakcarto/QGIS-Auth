@@ -21,16 +21,22 @@ INCLUDEPATH += /usr/local/include
 LIBS += /usr/local/lib/libcryptopp.a
 
 SOURCES += main.cpp\
-        mainwindow.cpp \
-    qgsauthenticationselectorbase.cpp \
-    qgsauthenticationmanager.cpp \
-    qgsapplication.cpp
+  mainwindow.cpp \
+  qgsauthenticationselectorbase.cpp \
+  qgsauthenticationmanager.cpp \
+  qgsapplication.cpp \
+  qgsauthenticationencrypt.cpp \
+    qgsauthenticationconfig.cpp \
+    qgscredentials.cpp
 
-HEADERS  += mainwindow.h \
-    qgsauthenticationselectorbase.h \
-    qgsauthenticationmanager.h \
-    qgsapplication.h
+HEADERS += mainwindow.h \
+  qgsauthenticationselectorbase.h \
+  qgsauthenticationmanager.h \
+  qgsapplication.h \
+  qgsauthenticationencrypt.h \
+    qgsauthenticationconfig.h \
+    qgscredentials.h
 
 #RESOURCES += qgis-auth.qrc
-FORMS    += mainwindow.ui \
-    qgsauthenticationselectorbase.ui
+FORMS += mainwindow.ui \
+  qgsauthenticationselectorbase.ui

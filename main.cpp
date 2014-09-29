@@ -4,10 +4,10 @@
 int main(int argc, char *argv[])
 {
   QApplication a(argc, argv);
-  MainWindow w;
-  w.show();
-  w.raise();
-  w.activateWindow();
+  QMainWindow * w = new MainWindow();
+  w->show();
+  w->raise();
+  w->activateWindow();
 
   return a.exec();
 }
