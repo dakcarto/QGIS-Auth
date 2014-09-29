@@ -43,5 +43,5 @@ void MainWindow::on_teEncryptCrypt_textChanged()
 void MainWindow::on_btnOne_clicked()
 {
 //  QgsAuthenticationManager::instance()->inputMasterPassword();
-  teOut->appendPlainText( QgsAuthenticationManager::instance()->generateConfigId() );
+  teOut->appendPlainText( QgsAuthenticationManager::instance()->uniqueConfigId() );
 }

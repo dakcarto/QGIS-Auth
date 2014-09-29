@@ -7,6 +7,9 @@
 #include <QSqlQuery>
 #include <QStringList>
 
+#include "qgsauthenticationconfig.h"
+
+
 class QgsAuthenticationManager : public QObject
 {
     Q_OBJECT
@@ -28,19 +31,22 @@ class QgsAuthenticationManager : public QObject
 
     const QString authDbTable() const { return smAuthConfigTable; }
 
-    const QString uniqueConfigId() const;
+
+    bool inputMasterPassword();
+
+    bool resetMasterPassword();
 
     bool configIdUnique(const QString &id) const;
 
-    void inputMasterPassword();
-    bool resetMasterPassword();
+    const QString uniqueConfigId() const;
 
-    const QString generateConfigId() const;
 
-//    const QString authDatabaseModel() const;
+    bool saveAuthenticationConfig( const QgsAuthenticationConfig& config ) const;
+
+    bool loadAuthenticationConfig(const QString& id, QgsAuthenticationConfig &config ) const;
 
   signals:
-    void messageOut( const QString &message, const QString &tag = QString(), MessageLevel level = INFO ) const;
+    void messageOut( const QString &message, const QString &tag = smAuthManTag, MessageLevel level = INFO ) const;
 
   public slots:
 
@@ -52,13 +58,22 @@ class QgsAuthenticationManager : public QObject
     ~QgsAuthenticationManager();
 
   private:
-    static QgsAuthenticationManager* smInstance;
-    static const QString smAuthConfigTable;
-    QString mMasterPass;
+    bool verifyMasterPassword();
+
+    bool checkMasterPasswordEncrypt() const;
+
+    bool sameMasterPassword( const QString& pass ) const;
 
     QStringList configIds() const;
 
     QSqlQuery queryAuthDb( const QString &query, bool * ok ) const;
+
+    static QgsAuthenticationManager* smInstance;
+    static const QString smAuthConfigTable;
+    static const QString smAuthCheckTable;
+    static const QString smAuthManTag;
+
+    QString mMasterPass;
 
 };
 

@@ -3,6 +3,9 @@
 
 #include <QString>
 
+/**
+ * @brief Abstract base class for configs
+ */
 class QgsAuthenticationConfig
 {
   public:
@@ -30,14 +33,17 @@ class QgsAuthenticationConfig
     int version() const { return mVersion; }
     void setVersion( int i ) { mVersion = i; }
 
-    virtual bool isValid();
+    virtual bool isValid() const;
 
-  private:
+    virtual const QString configString() const = 0;
+
+  protected:
     QString mId;
     QString mName;
     QString mUri;
     ConfigType mType;
     int mVersion;
+    static const QString mConfSep;
 };
 
 class QgsAuthenticationConfigBasic: public QgsAuthenticationConfig
@@ -45,46 +51,54 @@ class QgsAuthenticationConfigBasic: public QgsAuthenticationConfig
   public:
     QgsAuthenticationConfigBasic();
 
+    const QString realm() const { return mRealm; }
+    void setRealm( const QString& realm ) { mRealm = realm; }
+
     const QString username() const { return mUsername; }
     void setUsername( const QString& name ) { mUsername = name; }
 
     const QString password() const { return mPassword; }
     void setPassword( const QString& pass ) { mPassword = pass; }
 
-    bool isValid();
+    bool isValid() const;
+
+    const QString configString() const;
 
   private:
+    QString mRealm;
     QString mUsername;
     QString mPassword;
 };
 
-class QgsAuthenticationConfigPkiPaths: public QgsAuthenticationConfig
+class QgsAuthenticationConfigPki: public QgsAuthenticationConfig
 {
   public:
-    QgsAuthenticationConfigPkiPaths();
+    QgsAuthenticationConfigPki();
 
-    const QString certPath() const { return mCertPath; }
-    void setCertPath( const QString& path ) { mCertPath = path; }
+    const QString certId() const { return mCertId; }
+    void setCertId( const QString& id ) { mCertId = id; }
 
-    const QString keyPath() const { return mKeyPath; }
-    void setKeyPath( const QString& path ) { mKeyPath = path; }
+    const QString keyId() const { return mKeyId; }
+    void setKeyId( const QString& id ) { mKeyId = id; }
 
     const QString keyPassphrase() const { return mKeyPass; }
     void setKeyPassphrase( const QString& passphrase ) { mKeyPass = passphrase; }
 
-    const QString issuerPath() const { return mIssuerPath; }
-    void setIssuerPath( const QString& path ) { mIssuerPath = path; }
+    const QString issuerId() const { return mIssuerId; }
+    void setIssuerId( const QString& id ) { mIssuerId = id; }
 
     bool issuerSelfSigned() const { return mIssuerSelf; }
-    void setIssuerSelfSigned( bool seflsigned ) { mIssuerSelf = seflsigned; }
+    void setIssuerSelfSigned( bool selfsigned ) { mIssuerSelf = selfsigned; }
 
-    bool isValid();
+    bool isValid() const;
+
+    const QString configString() const;
 
   private:
-    QString mCertPath;
-    QString mKeyPath;
+    QString mCertId;
+    QString mKeyId;
     QString mKeyPass;
-    QString mIssuerPath;
+    QString mIssuerId;
     bool mIssuerSelf;
 };
 

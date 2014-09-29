@@ -7,12 +7,15 @@
 #include <QVariant>
 
 #include "qgsapplication.h"
+#include "qgsauthenticationencrypt.h"
 #include "qgscredentials.h"
 
 
 QgsAuthenticationManager *QgsAuthenticationManager::smInstance = 0;
 //QMap<QString, QgsAuthPkiGroup *> QgsAuthenticationManager::mAuthPkiGroupCache = QMap<QString, QgsAuthPkiGroup *>();
 const QString QgsAuthenticationManager::smAuthConfigTable = "auth_configs";
+const QString QgsAuthenticationManager::smAuthCheckTable = "auth_check";
+const QString QgsAuthenticationManager::smAuthManTag = tr( "Authentication Manager" );
 
 QgsAuthenticationManager *QgsAuthenticationManager::instance()
 {
@@ -47,7 +50,7 @@ bool QgsAuthenticationManager::initAuthDatabase() const
     if ( !dbinfo.permission( QFile::ReadOwner | QFile::WriteOwner ) )
     {
       emit messageOut( "Authentication database is not readable or writable by user",
-                       "", CRITICAL );
+                       smAuthManTag, CRITICAL );
       return false;
     }
     if ( dbinfo.size() > 0 )
@@ -85,18 +88,7 @@ bool QgsAuthenticationManager::initAuthDatabase() const
   return true;
 }
 
-const QString QgsAuthenticationManager::uniqueConfigId() const
-{
-  return QString();
-}
-
-bool QgsAuthenticationManager::configIdUnique( const QString& id ) const
-{
-  QStringList configids = configIds();
-  return configids.contains( id );
-}
-
-void QgsAuthenticationManager::inputMasterPassword()
+bool QgsAuthenticationManager::inputMasterPassword()
 {
   QString pass;
   QgsCredentials * creds = QgsCredentials::instance();
@@ -104,39 +96,71 @@ void QgsAuthenticationManager::inputMasterPassword()
   // TODO: validate in actual QgsCredentials input methods that password is not empty
   bool ok = creds->getMasterPassword( &pass );
   creds->unlock();
-  if ( !ok )
-  {
-    emit messageOut( "Master password input canceled by user" );
-    return;
-  }
-  if ( mMasterPass != pass && !pass.isEmpty() )
+
+  if ( ok && !pass.isEmpty() && !sameMasterPassword( pass ) )
   {
     mMasterPass = pass;
+    return true;
   }
+  return false;
 }
 
 bool QgsAuthenticationManager::resetMasterPassword()
 {
+  // TODO
   return true;
 }
 
-const QString QgsAuthenticationManager::generateConfigId() const
+
+bool QgsAuthenticationManager::configIdUnique( const QString& id ) const
 {
-  int len = 7;
-  QString id = "";
-  for( int i=0; i < len; i++ )
+  if ( id.isEmpty() )
   {
-    switch( qrand() % 2 )
+    emit messageOut( "Config ID is empty", smAuthManTag, WARNING );
+    return false;
+  }
+  QStringList configids = configIds();
+  return !configids.contains( id );
+}
+
+const QString QgsAuthenticationManager::uniqueConfigId() const
+{
+  QStringList configids = configIds();
+  QString id = "";
+  int len = 7;
+
+  while ( 0 )
+  {
+    id = "";
+    for( int i=0; i < len; i++ )
     {
-      case 0:
-          id += ( '0' + qrand() % 10 );
-          break;
-      case 1:
-          id += ( 'a' + qrand() % 26 );
-          break;
+      switch( qrand() % 2 )
+      {
+        case 0:
+            id += ( '0' + qrand() % 10 );
+            break;
+        case 1:
+            id += ( 'a' + qrand() % 26 );
+            break;
+      }
+    }
+    if ( !configids.contains( id ) )
+    {
+      break;
     }
   }
+  emit messageOut( QString( "Generated unique ID: %1").arg( id ) );
   return id;
+}
+
+bool QgsAuthenticationManager::saveAuthenticationConfig(const QgsAuthenticationConfig &config) const
+{
+
+}
+
+bool QgsAuthenticationManager::loadAuthenticationConfig(const QString &id, QgsAuthenticationConfig &config) const
+{
+
 }
 
 void QgsAuthenticationManager::writeDebug(const QString &message,
@@ -180,6 +204,34 @@ QgsAuthenticationManager::~QgsAuthenticationManager()
 
 }
 
+bool QgsAuthenticationManager::verifyMasterPassword()
+{
+  if ( mMasterPass.isEmpty() )
+  {
+    emit messageOut( "Master password not yet set by user" );
+    if ( !inputMasterPassword() )
+    {
+      emit messageOut( "Master password input canceled by user" );
+      return false;
+    }
+  }
+  if ( !checkMasterPasswordEncrypt() )
+  {
+    emit messageOut( "Master password encryption check failed" );
+    return false;
+  }
+}
+
+bool QgsAuthenticationManager::checkMasterPasswordEncrypt() const
+{
+
+}
+
+bool QgsAuthenticationManager::sameMasterPassword( const QString &pass ) const
+{
+  return mMasterPass == pass;
+}
+
 QStringList QgsAuthenticationManager::configIds() const
 {
   QStringList configids = QStringList();
@@ -209,7 +261,7 @@ QSqlQuery QgsAuthenticationManager::queryAuthDb( const QString& query, bool *ok 
                          .arg( QgsApplication::qgisAuthDbFilePath() )
                          .arg( authdb.lastError().driverText() )
                          .arg( authdb.lastError().databaseText() ),
-                         "", CRITICAL );
+                         smAuthManTag, CRITICAL );
         *ok = false;
     }
   }
@@ -220,7 +272,7 @@ QSqlQuery QgsAuthenticationManager::queryAuthDb( const QString& query, bool *ok 
 
   if ( q.lastError().isValid() )
   {
-    emit messageOut( tr( "Database query failed: %1").arg( q.lastError().text() ), "", CRITICAL );
+    emit messageOut( tr( "Database query failed: %1").arg( q.lastError().text() ), smAuthManTag, CRITICAL );
     *ok = false;
   }
   *ok = true;
