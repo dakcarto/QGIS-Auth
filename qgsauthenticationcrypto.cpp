@@ -16,14 +16,18 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 
-#include "qgsauthenticationencrypt.h"
+#include "qgsauthenticationcrypto.h"
+
+#include <string.h>
+#include "cryptopp/osrng.h"
+#include "cryptopp/pwdbased.h"
 
 #include <QObject>
 
 using namespace CryptoPP;
 using namespace std;
 
-const QString QgsAuthenticationEncrypt::encrypt( QString pass, QString text, string cipher )
+const QString QgsAuthenticationCrypto::encrypt( QString pass, QString text, string cipher )
 {
   string res( encryption( pass, text, cipher, true ) );
   if ( res == "Unknown Error" )
@@ -31,7 +35,7 @@ const QString QgsAuthenticationEncrypt::encrypt( QString pass, QString text, str
   return QString::fromStdString( res );
 }
 
-const QString QgsAuthenticationEncrypt::decrypt( QString pass, QString text, string cipher )
+const QString QgsAuthenticationCrypto::decrypt( QString pass, QString text, string cipher )
 {
   string res( encryption( pass, text, cipher, false ) );
   if ( res == "Unknown Error" )
@@ -39,7 +43,50 @@ const QString QgsAuthenticationEncrypt::decrypt( QString pass, QString text, str
   return QString::fromStdString( res );
 }
 
-string QgsAuthenticationEncrypt::encryption( QString Pass, QString Text, string cipher, bool encrypt)
+void QgsAuthenticationCrypto::passwordHash( const QString &pass, QString *salt, QString *hash )
+{
+  string password = pass.toStdString();
+  unsigned int iterations = 10000;
+
+  AutoSeededRandomPool rng;
+
+  SecByteBlock pwsalt( SHA256::DIGESTSIZE );
+  rng.GenerateBlock( pwsalt, pwsalt.size() );
+
+  SecByteBlock derivedkey( SHA256::DIGESTSIZE );
+
+  PKCS5_PBKDF2_HMAC<SHA256> pbkdf;
+
+  pbkdf.DeriveKey(
+     derivedkey, derivedkey.size(),
+     0x00,
+     ( byte * ) password.data(), password.size(),
+     pwsalt, pwsalt.size(),
+     iterations
+  );
+  string salthex;
+  StringSource( pwsalt, pwsalt.size(), true,
+    new HexEncoder(
+      new StringSink( salthex )
+    )
+   );
+  string derivedhex;
+  StringSource( derivedkey, derivedkey.size(), true,
+    new HexEncoder(
+      new StringSink( derivedhex )
+    )
+  );
+
+  *salt = QString::fromStdString( salthex );
+  *hash = QString::fromStdString( derivedhex );
+}
+
+bool QgsAuthenticationCrypto::verifyPasswordHash( const QString &salt, const QString &pass )
+{
+ return ( salt.isEmpty() && pass.isEmpty() );
+}
+
+string QgsAuthenticationCrypto::encryption( QString Pass, QString Text, string cipher, bool encrypt)
 {
     string text = Text.toStdString();
     string pass = Pass.toStdString();

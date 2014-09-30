@@ -16,26 +16,29 @@ mac {
 
 DEPENDPATH += . src
 INCLUDEPATH += . src
-INCLUDEPATH += /usr/local/include
-#LIBS += -L/usr/local/lib -lcryptopp
-LIBS += /usr/local/lib/libcryptopp.a
+INCLUDEPATH += $(HOMEBREW_PREFIX)/include
+
+QMAKE_CXXFLAGS += -isystem $(HOMEBREW_PREFIX)/include
+
+#LIBS += -L$(HOMEBREW_PREFIX)/lib -lcryptopp
+LIBS += $(HOMEBREW_PREFIX)/lib/libcryptopp.a
 
 SOURCES += main.cpp\
   mainwindow.cpp \
   qgsauthenticationselectorbase.cpp \
   qgsauthenticationmanager.cpp \
   qgsapplication.cpp \
-  qgsauthenticationencrypt.cpp \
     qgsauthenticationconfig.cpp \
-    qgscredentials.cpp
+    qgscredentials.cpp \
+    qgsauthenticationcrypto.cpp
 
 HEADERS += mainwindow.h \
   qgsauthenticationselectorbase.h \
   qgsauthenticationmanager.h \
   qgsapplication.h \
-  qgsauthenticationencrypt.h \
     qgsauthenticationconfig.h \
-    qgscredentials.h
+    qgscredentials.h \
+    qgsauthenticationcrypto.h
 
 #RESOURCES += qgis-auth.qrc
 FORMS += mainwindow.ui \

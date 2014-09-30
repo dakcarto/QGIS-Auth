@@ -2,7 +2,7 @@
 #include "ui_mainwindow.h"
 
 #include "qgsauthenticationconfig.h"
-#include "qgsauthenticationencrypt.h"
+#include "qgsauthenticationcrypto.h"
 #include "qgsauthenticationmanager.h"
 
 MainWindow::MainWindow( QWidget *parent )
@@ -25,7 +25,7 @@ void MainWindow::on_teEncryptIn_textChanged()
   if ( !pass.isEmpty() && !in.isEmpty()  )
   {
     teEncryptCrypt->setPlainText(
-          QgsAuthenticationEncrypt::encrypt( pass, in, "AES" ) );
+          QgsAuthenticationCrypto::encrypt( pass, in, "AES" ) );
   }
 }
 
@@ -36,7 +36,7 @@ void MainWindow::on_teEncryptCrypt_textChanged()
   if ( !pass.isEmpty() && !crypt.isEmpty() )
   {
     teEncryptOut->setPlainText(
-          QgsAuthenticationEncrypt::decrypt( pass, crypt, "AES" ) );
+          QgsAuthenticationCrypto::decrypt( pass, crypt, "AES" ) );
   }
 }
 
@@ -44,4 +44,12 @@ void MainWindow::on_btnOne_clicked()
 {
 //  QgsAuthenticationManager::instance()->inputMasterPassword();
   teOut->appendPlainText( QgsAuthenticationManager::instance()->uniqueConfigId() );
+}
+
+void MainWindow::on_btnTwo_clicked()
+{
+  QString salt;
+  QString hash;
+  QgsAuthenticationCrypto::passwordHash( lePassword->text(), &salt, &hash );
+  teOut->appendPlainText( QString( "Salt: %1\nHash: %2" ).arg( salt ).arg( hash ) );
 }

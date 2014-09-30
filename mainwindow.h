@@ -17,6 +17,7 @@ class MainWindow : public QMainWindow, private Ui::MainWindow
     void on_teEncryptIn_textChanged();
     void on_teEncryptCrypt_textChanged();
     void on_btnOne_clicked();
+    void on_btnTwo_clicked();
 };
 
 #endif // MAINWINDOW_H

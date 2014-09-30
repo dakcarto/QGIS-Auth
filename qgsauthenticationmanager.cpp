@@ -7,7 +7,7 @@
 #include <QVariant>
 
 #include "qgsapplication.h"
-#include "qgsauthenticationencrypt.h"
+#include "qgsauthenticationcrypto.h"
 #include "qgscredentials.h"
 
 
@@ -126,10 +126,10 @@ bool QgsAuthenticationManager::configIdUnique( const QString& id ) const
 const QString QgsAuthenticationManager::uniqueConfigId() const
 {
   QStringList configids = configIds();
-  QString id = "";
+  QString id;
   int len = 7;
 
-  while ( 0 )
+  while ( true )
   {
     id = "";
     for( int i=0; i < len; i++ )

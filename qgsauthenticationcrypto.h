@@ -16,8 +16,8 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 
-#ifndef HEADER_ENCRYPTIONS
-#define HEADER_ENCRYPTIONS
+#ifndef QGSAUTHENTICATIONCRYPTO_H
+#define QGSAUTHENTICATIONCRYPTO_H
 
 #include "cryptopp/aes.h"
 #include "cryptopp/blowfish.h"
@@ -55,7 +55,7 @@
 
 using namespace std;
 
-class QgsAuthenticationEncrypt
+class QgsAuthenticationCrypto
 {
 
   public:
@@ -63,8 +63,12 @@ class QgsAuthenticationEncrypt
 
     static const QString decrypt( QString pass, QString text, string cipher );
 
+    static void passwordHash(const QString &pass , QString *salt, QString *hash);
+
+    static bool verifyPasswordHash( const QString& salt, const QString& pass );
+
   private:
     static string encryption(QString Pass, QString Text, string cipher, bool encrypt );
 };
 
-#endif
+#endif  // QGSAUTHENTICATIONCRYPTO_H
