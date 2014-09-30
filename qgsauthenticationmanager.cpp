@@ -1,6 +1,7 @@
 #include "qgsauthenticationmanager.h"
 
 #include <QFileInfo>
+#include <QObject>
 #include <QSqlDatabase>
 #include <QSqlError>
 #include <QSqlQuery>
@@ -14,8 +15,8 @@
 QgsAuthenticationManager *QgsAuthenticationManager::smInstance = 0;
 //QMap<QString, QgsAuthPkiGroup *> QgsAuthenticationManager::mAuthPkiGroupCache = QMap<QString, QgsAuthPkiGroup *>();
 const QString QgsAuthenticationManager::smAuthConfigTable = "auth_configs";
-const QString QgsAuthenticationManager::smAuthCheckTable = "auth_check";
-const QString QgsAuthenticationManager::smAuthManTag = tr( "Authentication Manager" );
+const QString QgsAuthenticationManager::smAuthPassTable = "auth_pass";
+const QString QgsAuthenticationManager::smAuthManTag = QObject::tr( "Authentication Manager" );
 
 QgsAuthenticationManager *QgsAuthenticationManager::instance()
 {
@@ -39,6 +40,9 @@ QSqlDatabase QgsAuthenticationManager::authDbConnection() const
   {
     authdb = QSqlDatabase::database( connectionname );
   }
+  if ( !authdb.isOpen()  )
+    authdb.open();
+
   return authdb;
 }
 
@@ -49,60 +53,151 @@ bool QgsAuthenticationManager::initAuthDatabase() const
   {
     if ( !dbinfo.permission( QFile::ReadOwner | QFile::WriteOwner ) )
     {
-      emit messageOut( "Authentication database is not readable or writable by user",
-                       smAuthManTag, CRITICAL );
+      emit messageOut( tr( "Auth db is not readable or writable by user" ),
+                       authManTag(), CRITICAL );
       return false;
     }
     if ( dbinfo.size() > 0 )
     {
-      emit messageOut( "Authentication database exists and has data" );
+      emit messageOut( "Auth db exists and has data" );
       return true;
     }
   }
 
-  // create the database
-  bool qok = false;
-  QString query;
-  query += QString( "CREATE TABLE %1 (\n" ).arg( authDbTable() );
-  query += "    'id' TEXT NOT NULL,\n";
-  query += "    'name' TEXT NOT NULL,\n";
-  query += "    'uri' TEXT,\n";
-  query += "    'type' INTEGER NOT NULL,\n";
-  query += "    'version' INTEGER NOT NULL\n";
-  query += ", 'config' TEXT  NOT NULL);";
+  // create and open the db
+  if ( !authDbOpen() )
+  {
+    emit messageOut( tr( "Auth db could not be created and opened" ),
+                     authManTag(), CRITICAL );
+    return false;
+  }
 
-  queryAuthDb( query, &qok );
-  if ( !qok )
-    return false;
-  query = QString( "CREATE UNIQUE INDEX 'id_index' on %1 (id ASC);" ).arg( authDbTable() );
-  queryAuthDb( query, &qok );
-  if ( !qok )
-    return false;
-  query = QString( "CREATE INDEX 'uri_index' on %1 (uri ASC);" ).arg( authDbTable() );
-  queryAuthDb( query, &qok );
-  if ( !qok )
-    return false;
+  QSqlQuery query( authDbConnection() );
 
-  authDbConnection().close();
+  // create the tables
+  QString qstr;
+
+  qstr = QString( "CREATE TABLE %1 (\n"
+                  "    'salt' TEXT NOT NULL\n"
+                  ", 'hash' TEXT  NOT NULL);" ).arg( authDbPassTable() );
+  query.prepare( qstr );
+  if ( !authDbQuery( &query ) )
+    return false;
+  query.clear();
+
+  qstr = QString( "CREATE TABLE %1 (\n"
+                  "    'id' TEXT NOT NULL,\n"
+                  "    'name' TEXT NOT NULL,\n"
+                  "    'uri' TEXT,\n"
+                  "    'type' INTEGER NOT NULL,\n"
+                  "    'version' INTEGER NOT NULL\n"
+                  ", 'config' TEXT  NOT NULL);" ).arg( authDbConfigTable() );
+  query.prepare( qstr );
+  if ( !authDbQuery( &query ) )
+    return false;
+  query.clear();
+
+  qstr = QString( "CREATE UNIQUE INDEX 'id_index' on %1 (id ASC);" ).arg( authDbConfigTable() );
+  query.prepare( qstr );
+  if ( !authDbQuery( &query ) )
+    return false;
+  query.clear();
+
+  qstr = QString( "CREATE INDEX 'uri_index' on %1 (uri ASC);" ).arg( authDbConfigTable() );
+  query.prepare( qstr );
+  if ( !authDbQuery( &query ) )
+    return false;
+  query.clear();
 
   return true;
 }
 
-bool QgsAuthenticationManager::inputMasterPassword()
+bool QgsAuthenticationManager::setMasterPassword()
 {
-  QString pass;
-  QgsCredentials * creds = QgsCredentials::instance();
-  creds->lock();
-  // TODO: validate in actual QgsCredentials input methods that password is not empty
-  bool ok = creds->getMasterPassword( &pass );
-  creds->unlock();
-
-  if ( ok && !pass.isEmpty() && !sameMasterPassword( pass ) )
+  if ( mMasterPass.isEmpty() )
   {
-    mMasterPass = pass;
-    return true;
+    emit messageOut( "Master password: not yet set by user" );
+    if ( !masterPasswordInput() )
+    {
+      emit messageOut( "Master password: input canceled by user" );
+      return false;
+    }
   }
-  return false;
+  else
+  {
+    emit messageOut( "Master password: is set" );
+  }
+
+  int rows = 0;
+  if ( !masterPasswordRowsInDb( &rows ) )
+  {
+    emit messageOut( tr( "Master password: FAILED to access auth db" ),
+                     authManTag(), CRITICAL );
+    masterPasswordClear();
+    return false;
+  }
+
+  emit messageOut( QString( "Master password: %1 rows in auth db" ).arg( rows ) );
+
+  if ( rows > 1 )
+  {
+    emit messageOut( tr( "Master password: FAILED to find just one master password record in auth db" ),
+                     authManTag(), CRITICAL );
+    masterPasswordClear();
+    return false;
+  }
+  else if ( rows == 1 )
+  {
+    if ( !masterPasswordCheckAgainstDb() )
+    {
+      emit messageOut( tr( "Master password: FAILED to verify against hash in auth db" ),
+                       authManTag(), CRITICAL );
+      masterPasswordClear();
+      emit masterPasswordVerified( false );
+      return false;
+    }
+    else
+    {
+      emit messageOut( "Master password: verified against hash in auth db" );
+      emit masterPasswordVerified( true );
+    }
+  }
+  else
+  {
+    if ( !masterPasswordStoreInDb() )
+    {
+      emit messageOut( tr( "Master password: hash FAILED to be stored in auth db" ),
+                       authManTag(), CRITICAL );
+      masterPasswordClear();
+      return false;
+    }
+    else
+    {
+      emit messageOut( "Master password: hash stored in auth db" );
+    }
+    // double-check storing
+    if ( !masterPasswordCheckAgainstDb() )
+    {
+      emit messageOut( tr( "Master password: FAILED to verify against hash in auth db" ),
+                       authManTag(), CRITICAL );
+      masterPasswordClear();
+      emit masterPasswordVerified( false );
+      return false;
+    }
+    else
+    {
+      emit messageOut( "Master password: verified against hash in auth db" );
+      emit masterPasswordVerified( true );
+    }
+  }
+
+  emit messageOut( "Master password: SUCCESS, verified and ready" );
+  return true;
+}
+
+bool QgsAuthenticationManager::masterPasswordSet() const
+{
+  return !mMasterPass.isEmpty();
 }
 
 bool QgsAuthenticationManager::resetMasterPassword()
@@ -116,16 +211,16 @@ bool QgsAuthenticationManager::configIdUnique( const QString& id ) const
 {
   if ( id.isEmpty() )
   {
-    emit messageOut( "Config ID is empty", smAuthManTag, WARNING );
+    emit messageOut( "Config ID is empty", authManTag(), WARNING );
     return false;
   }
-  QStringList configids = configIds();
+  QStringList configids = authDbConfigIds();
   return !configids.contains( id );
 }
 
 const QString QgsAuthenticationManager::uniqueConfigId() const
 {
-  QStringList configids = configIds();
+  QStringList configids = authDbConfigIds();
   QString id;
   int len = 7;
 
@@ -167,6 +262,8 @@ void QgsAuthenticationManager::writeDebug(const QString &message,
                                           const QString &tag,
                                           MessageLevel level)
 {
+  Q_UNUSED( tag );
+
   QString msg;
   switch ( level )
   {
@@ -182,10 +279,10 @@ void QgsAuthenticationManager::writeDebug(const QString &message,
       break;
   }
 
-  if ( !tag.isEmpty() )
-  {
-    msg += QString( "( %1 ) " ).arg( tag );
-  }
+//  if ( !tag.isEmpty() )
+//  {
+//    msg += QString( "( %1 ) " ).arg( tag );
+//  }
 
   msg += message;
   qDebug( "%s", msg.toLatin1().constData() );
@@ -204,54 +301,116 @@ QgsAuthenticationManager::~QgsAuthenticationManager()
 
 }
 
-bool QgsAuthenticationManager::verifyMasterPassword()
+bool QgsAuthenticationManager::masterPasswordInput()
 {
-  if ( mMasterPass.isEmpty() )
+  QString pass;
+  QgsCredentials * creds = QgsCredentials::instance();
+  creds->lock();
+  // TODO: validate in actual QgsCredentials input methods that password is not empty
+  bool ok = creds->getMasterPassword( &pass );
+  creds->unlock();
+
+  if ( ok && !pass.isEmpty() && !masterPasswordSame( pass ) )
   {
-    emit messageOut( "Master password not yet set by user" );
-    if ( !inputMasterPassword() )
-    {
-      emit messageOut( "Master password input canceled by user" );
-      return false;
-    }
+    mMasterPass = pass;
+    return true;
   }
-  if ( !checkMasterPasswordEncrypt() )
+  return false;
+}
+
+bool QgsAuthenticationManager::masterPasswordRowsInDb( int *rows ) const
+{
+  QSqlQuery query( authDbConnection() );
+  query.prepare( QString( "SELECT Count(*) FROM %1" ).arg( authDbPassTable() ) );
+
+  bool ok = authDbQuery( &query );
+  if ( query.first() )
   {
-    emit messageOut( "Master password encryption check failed" );
+    *rows = query.value(0).toInt();
+  }
+
+  query.clear();
+  return ok;
+}
+
+bool QgsAuthenticationManager::masterPasswordCheckAgainstDb() const
+{
+  // first verify there is only one row in auth db (uses first found)
+
+  QSqlQuery query( authDbConnection() );
+  query.prepare( QString( "SELECT salt, hash FROM %1" ).arg( authDbPassTable() ) );
+  if ( !authDbQuery( &query ) )
     return false;
-  }
+
+  if ( !query.first() )
+    return false;
+
+  QString salt = query.value(0).toString();
+  QString hash = query.value(1).toString();
+
+  query.clear();
+
+  return QgsAuthenticationCrypto::verifyPasswordHash( mMasterPass, salt, hash );
 }
 
-bool QgsAuthenticationManager::checkMasterPasswordEncrypt() const
+bool QgsAuthenticationManager::masterPasswordStoreInDb() const
 {
+  QString salt, hash;
+  QgsAuthenticationCrypto::passwordHash( mMasterPass, &salt, &hash );
 
+  QSqlQuery query( authDbConnection() );
+  query.prepare( QString( "INSERT INTO %1 (salt, hash) VALUES (:salt, :hash)" ).arg( authDbPassTable() ) );
+
+  query.bindValue( ":salt", salt );
+  query.bindValue( ":hash", hash );
+
+  if ( !authDbStartTransaction() )
+    return false;
+
+  if ( !authDbQuery( &query ) )
+    return false;
+
+  if ( !authDbCommit() )
+    return false;
+
+  return true;
 }
 
-bool QgsAuthenticationManager::sameMasterPassword( const QString &pass ) const
+bool QgsAuthenticationManager::masterPasswordClearDb() const
+{
+  QSqlQuery query( authDbConnection() );
+  query.prepare( QString( "DELETE FROM %1" ).arg( authDbPassTable() ) );
+  return authDbTransactionQuery( &query );
+}
+
+bool QgsAuthenticationManager::masterPasswordSame( const QString &pass ) const
 {
   return mMasterPass == pass;
 }
 
-QStringList QgsAuthenticationManager::configIds() const
+QStringList QgsAuthenticationManager::authDbConfigIds() const
 {
   QStringList configids = QStringList();
 
-  bool qok = false;
-  QString query = QString( "SELECT id FROM %1" ).arg( authDbTable() );
-  QSqlQuery qres = queryAuthDb( query, &qok );
-  if ( !qok )
-    return configids;
-  if ( qres.isActive() )
+  QSqlQuery query( authDbConnection() );
+  query.prepare( QString( "SELECT id FROM %1" ).arg( authDbConfigTable() ) );
+
+  if ( !authDbQuery( &query ) )
   {
-    while ( qres.next() )
+    return configids;
+  }
+
+  if ( query.isActive() )
+  {
+    while ( query.next() )
     {
-       configids << qres.value(0).toString();
+       configids << query.value(0).toString();
     }
   }
   return configids;
 }
 
-QSqlQuery QgsAuthenticationManager::queryAuthDb( const QString& query, bool *ok ) const
+bool QgsAuthenticationManager::authDbOpen() const
 {
   QSqlDatabase authdb = authDbConnection();
   if ( !authdb.isOpen() )
@@ -261,21 +420,69 @@ QSqlQuery QgsAuthenticationManager::queryAuthDb( const QString& query, bool *ok 
                          .arg( QgsApplication::qgisAuthDbFilePath() )
                          .arg( authdb.lastError().driverText() )
                          .arg( authdb.lastError().databaseText() ),
-                         smAuthManTag, CRITICAL );
-        *ok = false;
+                         authManTag(), CRITICAL );
+        return false;
     }
   }
+  return true;
+}
 
-  QSqlQuery q = QSqlQuery( authdb );
-  q.setForwardOnly( true );
-  q.exec( query );
+bool QgsAuthenticationManager::authDbQuery( QSqlQuery *query ) const
+{
 
-  if ( q.lastError().isValid() )
+  query->setForwardOnly( true );
+  query->exec();
+
+  if ( query->lastError().isValid() )
   {
-    emit messageOut( tr( "Database query failed: %1").arg( q.lastError().text() ), smAuthManTag, CRITICAL );
-    *ok = false;
+    emit messageOut( tr( "Auth db query FAILED: %1").arg( query->executedQuery() ), authManTag(), CRITICAL );
+    emit messageOut( tr( "Error: %1").arg( query->lastError().text() ), authManTag(), CRITICAL );
+    return false;
   }
-  *ok = true;
-  return q;
+
+  return true;
+}
+
+bool QgsAuthenticationManager::authDbStartTransaction() const
+{
+  if ( !authDbConnection().transaction() )
+  {
+    emit messageOut( tr( "Auth db FAILED to start transaction"), authManTag(), CRITICAL );
+    return false;
+  }
+
+  return true;
+}
+
+bool QgsAuthenticationManager::authDbCommit() const
+{
+  if ( !authDbConnection().commit() )
+  {
+    emit messageOut( tr( "Auth db FAILED to rollback changes"), authManTag(), CRITICAL );
+    authDbConnection().rollback();
+    return false;
+  }
+
+  return true;
+}
+
+bool QgsAuthenticationManager::authDbTransactionQuery( QSqlQuery *query ) const
+{
+  if ( !authDbConnection().transaction() )
+  {
+    emit messageOut( tr( "Auth db FAILED to start transaction"), authManTag(), CRITICAL );
+    return false;
+  }
+
+  bool ok = authDbQuery( query );
+
+  if ( ok && !authDbConnection().commit() )
+  {
+    emit messageOut( tr( "Auth db FAILED to rollback changes"), authManTag(), CRITICAL );
+    authDbConnection().rollback();
+    return false;
+  }
+
+  return ok;
 }
 

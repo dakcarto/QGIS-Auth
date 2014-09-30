@@ -65,25 +65,71 @@ void QgsAuthenticationCrypto::passwordHash( const QString &pass, QString *salt, 
      iterations
   );
   string salthex;
-  StringSource( pwsalt, pwsalt.size(), true,
+  StringSource ps( pwsalt, pwsalt.size(), true,
     new HexEncoder(
       new StringSink( salthex )
     )
    );
   string derivedhex;
-  StringSource( derivedkey, derivedkey.size(), true,
+  StringSource dh( derivedkey, derivedkey.size(), true,
     new HexEncoder(
       new StringSink( derivedhex )
     )
   );
 
-  *salt = QString::fromStdString( salthex );
+  // LEAVE THIS DEBUG OUTPUT COMMENTED OUT, except during testing of source edits
+  //qDebug( "salt hex: %s", salthex.c_str() );
+  *salt = encrypt( pass, QString::fromStdString( salthex ), "AES" );
+  //qDebug( "salt hex encrypted (out): %s", salt->toStdString().c_str() );
   *hash = QString::fromStdString( derivedhex );
 }
 
-bool QgsAuthenticationCrypto::verifyPasswordHash( const QString &salt, const QString &pass )
+bool QgsAuthenticationCrypto::verifyPasswordHash( const QString &pass,
+                                                  const QString &salt,
+                                                  const QString& hash,
+                                                  QString *hashderived )
 {
- return ( salt.isEmpty() && pass.isEmpty() );
+  string password = pass.toStdString();
+  // debug output to see if res was "Unknown Error"
+  //qDebug( "salt hex encrypted (in): %s", salt.toStdString().c_str() );
+  string salthex = decrypt( pass, salt, "AES" ).toStdString();
+  // LEAVE THIS DEBUG OUTPUT COMMENTED OUT, except during testing of source edits
+  //qDebug( "salt hex decrypted: %s", salthex.c_str() );
+  string hashhex = hash.toStdString();
+  unsigned int iterations = 10000;
+
+  SecByteBlock pwsalt( SHA256::DIGESTSIZE );
+
+  HexDecoder decoder;
+  decoder.Put( ( byte * ) salthex.data(), salthex.size() );
+  decoder.MessageEnd();
+  decoder.Get( pwsalt.BytePtr(), pwsalt.size() );
+
+  SecByteBlock derivedkey( SHA256::DIGESTSIZE );
+
+  PKCS5_PBKDF2_HMAC<SHA256> pbkdf;
+
+  pbkdf.DeriveKey(
+     derivedkey, derivedkey.size(),
+     0x00,
+     ( byte * ) password.data(), password.size(),
+     pwsalt, pwsalt.size(),
+     iterations
+  );
+
+  string derivedhex;
+  StringSource dh( derivedkey, derivedkey.size(), true,
+    new HexEncoder(
+      new StringSink( derivedhex )
+    )
+  );
+
+  if ( hashderived )
+  {
+    *hashderived = QString::fromStdString( derivedhex );
+  }
+
+  return derivedhex == hashhex;
 }
 
 string QgsAuthenticationCrypto::encryption( QString Pass, QString Text, string cipher, bool encrypt)

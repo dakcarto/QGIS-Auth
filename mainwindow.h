@@ -18,6 +18,11 @@ class MainWindow : public QMainWindow, private Ui::MainWindow
     void on_teEncryptCrypt_textChanged();
     void on_btnOne_clicked();
     void on_btnTwo_clicked();
+    void on_btnThree_clicked();
+
+  private:
+    QString mSalt;
+    QString mHash;
 };
 
 #endif // MAINWINDOW_H

@@ -29,10 +29,9 @@ class QgsAuthenticationManager : public QObject
 
     bool initAuthDatabase() const;
 
-    const QString authDbTable() const { return smAuthConfigTable; }
+    bool setMasterPassword();
 
-
-    bool inputMasterPassword();
+    bool masterPasswordSet() const;
 
     bool resetMasterPassword();
 
@@ -48,6 +47,8 @@ class QgsAuthenticationManager : public QObject
   signals:
     void messageOut( const QString &message, const QString &tag = smAuthManTag, MessageLevel level = INFO ) const;
 
+    void masterPasswordVerified( bool verified ) const;
+
   public slots:
 
   private slots:
@@ -58,19 +59,39 @@ class QgsAuthenticationManager : public QObject
     ~QgsAuthenticationManager();
 
   private:
-    bool verifyMasterPassword();
+    void masterPasswordClear() { mMasterPass = QString(); }
 
-    bool checkMasterPasswordEncrypt() const;
+    bool masterPasswordInput();
 
-    bool sameMasterPassword( const QString& pass ) const;
+    bool masterPasswordRowsInDb( int *rows ) const;
 
-    QStringList configIds() const;
+    bool masterPasswordCheckAgainstDb() const;
 
-    QSqlQuery queryAuthDb( const QString &query, bool * ok ) const;
+    bool masterPasswordStoreInDb() const;
+
+    bool masterPasswordClearDb() const;
+
+    bool masterPasswordSame( const QString& pass ) const;
+
+    QStringList authDbConfigIds() const;
+
+    bool authDbOpen() const;
+
+    bool authDbQuery( QSqlQuery *query ) const;
+
+    bool authDbStartTransaction() const;
+
+    bool authDbCommit() const;
+
+    bool authDbTransactionQuery( QSqlQuery *query ) const;
+
+    const QString authDbPassTable() const { return smAuthPassTable; }
+    const QString authDbConfigTable() const { return smAuthConfigTable; }
+    const QString authManTag() const { return smAuthManTag; }
 
     static QgsAuthenticationManager* smInstance;
     static const QString smAuthConfigTable;
-    static const QString smAuthCheckTable;
+    static const QString smAuthPassTable;
     static const QString smAuthManTag;
 
     QString mMasterPass;
