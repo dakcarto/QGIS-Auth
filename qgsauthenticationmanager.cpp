@@ -20,11 +20,11 @@ const QString QgsAuthenticationManager::smAuthManTag = QObject::tr( "Authenticat
 
 QgsAuthenticationManager *QgsAuthenticationManager::instance()
 {
-    if ( !smInstance )
-    {
-      smInstance = new QgsAuthenticationManager();
-    }
-    return smInstance;
+  if ( !smInstance )
+  {
+    smInstance = new QgsAuthenticationManager();
+  }
+  return smInstance;
 }
 
 QSqlDatabase QgsAuthenticationManager::authDbConnection() const
@@ -40,7 +40,7 @@ QSqlDatabase QgsAuthenticationManager::authDbConnection() const
   {
     authdb = QSqlDatabase::database( connectionname );
   }
-  if ( !authdb.isOpen()  )
+  if ( !authdb.isOpen() )
     authdb.open();
 
   return authdb;
@@ -227,16 +227,16 @@ const QString QgsAuthenticationManager::uniqueConfigId() const
   while ( true )
   {
     id = "";
-    for( int i=0; i < len; i++ )
+    for ( int i = 0; i < len; i++ )
     {
-      switch( qrand() % 2 )
+      switch ( qrand() % 2 )
       {
         case 0:
-            id += ( '0' + qrand() % 10 );
-            break;
+          id += ( '0' + qrand() % 10 );
+          break;
         case 1:
-            id += ( 'a' + qrand() % 26 );
-            break;
+          id += ( 'a' + qrand() % 26 );
+          break;
       }
     }
     if ( !configids.contains( id ) )
@@ -244,23 +244,23 @@ const QString QgsAuthenticationManager::uniqueConfigId() const
       break;
     }
   }
-  emit messageOut( QString( "Generated unique ID: %1").arg( id ) );
+  emit messageOut( QString( "Generated unique ID: %1" ).arg( id ) );
   return id;
 }
 
-bool QgsAuthenticationManager::saveAuthenticationConfig(const QgsAuthenticationConfig &config) const
+bool QgsAuthenticationManager::saveAuthenticationConfig( const QgsAuthenticationConfig &config ) const
 {
 
 }
 
-bool QgsAuthenticationManager::loadAuthenticationConfig(const QString &id, QgsAuthenticationConfig &config) const
+bool QgsAuthenticationManager::loadAuthenticationConfig( const QString &id, QgsAuthenticationConfig &config ) const
 {
 
 }
 
-void QgsAuthenticationManager::writeDebug(const QString &message,
-                                          const QString &tag,
-                                          MessageLevel level)
+void QgsAuthenticationManager::writeDebug( const QString &message,
+    const QString &tag,
+    MessageLevel level )
 {
   Q_UNUSED( tag );
 
@@ -289,8 +289,8 @@ void QgsAuthenticationManager::writeDebug(const QString &message,
 }
 
 QgsAuthenticationManager::QgsAuthenticationManager( QObject *parent )
-  : QObject( parent )
-  , mMasterPass( "" )
+    : QObject( parent )
+    , mMasterPass( "" )
 {
   connect( this, SIGNAL( messageOut( const QString&, const QString&, MessageLevel ) ),
            this, SLOT( writeDebug( const QString&, const QString&, MessageLevel ) ) );
@@ -326,7 +326,7 @@ bool QgsAuthenticationManager::masterPasswordRowsInDb( int *rows ) const
   bool ok = authDbQuery( &query );
   if ( query.first() )
   {
-    *rows = query.value(0).toInt();
+    *rows = query.value( 0 ).toInt();
   }
 
   query.clear();
@@ -345,8 +345,8 @@ bool QgsAuthenticationManager::masterPasswordCheckAgainstDb() const
   if ( !query.first() )
     return false;
 
-  QString salt = query.value(0).toString();
-  QString hash = query.value(1).toString();
+  QString salt = query.value( 0 ).toString();
+  QString hash = query.value( 1 ).toString();
 
   query.clear();
 
@@ -404,7 +404,7 @@ QStringList QgsAuthenticationManager::authDbConfigIds() const
   {
     while ( query.next() )
     {
-       configids << query.value(0).toString();
+      configids << query.value( 0 ).toString();
     }
   }
   return configids;
@@ -415,13 +415,14 @@ bool QgsAuthenticationManager::authDbOpen() const
   QSqlDatabase authdb = authDbConnection();
   if ( !authdb.isOpen() )
   {
-    if ( !authdb.open() ) {
-        emit messageOut( tr( "Unable to establish database connection\nDatabase: %1\nDriver error: %2\nDatabase error: %3" )
-                         .arg( QgsApplication::qgisAuthDbFilePath() )
-                         .arg( authdb.lastError().driverText() )
-                         .arg( authdb.lastError().databaseText() ),
-                         authManTag(), CRITICAL );
-        return false;
+    if ( !authdb.open() )
+    {
+      emit messageOut( tr( "Unable to establish database connection\nDatabase: %1\nDriver error: %2\nDatabase error: %3" )
+                       .arg( QgsApplication::qgisAuthDbFilePath() )
+                       .arg( authdb.lastError().driverText() )
+                       .arg( authdb.lastError().databaseText() ),
+                       authManTag(), CRITICAL );
+      return false;
     }
   }
   return true;
@@ -435,8 +436,8 @@ bool QgsAuthenticationManager::authDbQuery( QSqlQuery *query ) const
 
   if ( query->lastError().isValid() )
   {
-    emit messageOut( tr( "Auth db query FAILED: %1").arg( query->executedQuery() ), authManTag(), CRITICAL );
-    emit messageOut( tr( "Error: %1").arg( query->lastError().text() ), authManTag(), CRITICAL );
+    emit messageOut( tr( "Auth db query FAILED: %1" ).arg( query->executedQuery() ), authManTag(), CRITICAL );
+    emit messageOut( tr( "Error: %1" ).arg( query->lastError().text() ), authManTag(), CRITICAL );
     return false;
   }
 
@@ -447,7 +448,7 @@ bool QgsAuthenticationManager::authDbStartTransaction() const
 {
   if ( !authDbConnection().transaction() )
   {
-    emit messageOut( tr( "Auth db FAILED to start transaction"), authManTag(), CRITICAL );
+    emit messageOut( tr( "Auth db FAILED to start transaction" ), authManTag(), CRITICAL );
     return false;
   }
 
@@ -458,7 +459,7 @@ bool QgsAuthenticationManager::authDbCommit() const
 {
   if ( !authDbConnection().commit() )
   {
-    emit messageOut( tr( "Auth db FAILED to rollback changes"), authManTag(), CRITICAL );
+    emit messageOut( tr( "Auth db FAILED to rollback changes" ), authManTag(), CRITICAL );
     authDbConnection().rollback();
     return false;
   }
@@ -470,7 +471,7 @@ bool QgsAuthenticationManager::authDbTransactionQuery( QSqlQuery *query ) const
 {
   if ( !authDbConnection().transaction() )
   {
-    emit messageOut( tr( "Auth db FAILED to start transaction"), authManTag(), CRITICAL );
+    emit messageOut( tr( "Auth db FAILED to start transaction" ), authManTag(), CRITICAL );
     return false;
   }
 
@@ -478,7 +479,7 @@ bool QgsAuthenticationManager::authDbTransactionQuery( QSqlQuery *query ) const
 
   if ( ok && !authDbConnection().commit() )
   {
-    emit messageOut( tr( "Auth db FAILED to rollback changes"), authManTag(), CRITICAL );
+    emit messageOut( tr( "Auth db FAILED to rollback changes" ), authManTag(), CRITICAL );
     authDbConnection().rollback();
     return false;
   }

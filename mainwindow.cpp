@@ -9,9 +9,9 @@
 #include "qgsauthenticationmanager.h"
 
 MainWindow::MainWindow( QWidget *parent )
-  : QMainWindow( parent )
-  , mSalt( QString() )
-  , mHash( QString() )
+    : QMainWindow( parent )
+    , mSalt( QString() )
+    , mHash( QString() )
 {
   setupUi( this );
 
@@ -34,10 +34,10 @@ void MainWindow::on_teEncryptIn_textChanged()
 {
   QString pass( lePassword->text() );
   QString in( teEncryptIn->toPlainText() );
-  if ( !pass.isEmpty() && !in.isEmpty()  )
+  if ( !pass.isEmpty() && !in.isEmpty() )
   {
     teEncryptCrypt->setPlainText(
-          QgsAuthenticationCrypto::encrypt( pass, in, "AES" ) );
+      QgsAuthenticationCrypto::encrypt( pass, in, "AES" ) );
   }
 }
 
@@ -48,7 +48,7 @@ void MainWindow::on_teEncryptCrypt_textChanged()
   if ( !pass.isEmpty() && !crypt.isEmpty() )
   {
     teEncryptOut->setPlainText(
-          QgsAuthenticationCrypto::decrypt( pass, crypt, "AES" ) );
+      QgsAuthenticationCrypto::decrypt( pass, crypt, "AES" ) );
   }
 }
 

@@ -5,31 +5,31 @@
 const QString QgsAuthenticationConfig::mConfSep = "|||";
 
 QgsAuthenticationConfig::QgsAuthenticationConfig( ConfigType type, int version )
-  : mId( QgsAuthenticationManager::instance()->uniqueConfigId() )
-  , mName( QString() )
-  , mUri( QString() )
-  , mType( type )
-  , mVersion( version )
+    : mId( QgsAuthenticationManager::instance()->uniqueConfigId() )
+    , mName( QString() )
+    , mUri( QString() )
+    , mType( type )
+    , mVersion( version )
 {
 }
 
 bool QgsAuthenticationConfig::isValid() const
 {
   return (
-    !mId.isEmpty()
-    && QgsAuthenticationManager::instance()->configIdUnique( mId )
-    && !mName.isEmpty()
-    && !mUri.isEmpty()
-    && mType != Unknown
-    && mVersion != 0
-      );
+           !mId.isEmpty()
+           && QgsAuthenticationManager::instance()->configIdUnique( mId )
+           && !mName.isEmpty()
+           && !mUri.isEmpty()
+           && mType != Unknown
+           && mVersion != 0
+         );
 }
 
 QgsAuthenticationConfigBasic::QgsAuthenticationConfigBasic()
-  : QgsAuthenticationConfig( Basic, 1 )
-  , mRealm( QString() )
-  , mUsername( QString() )
-  , mPassword( QString() )
+    : QgsAuthenticationConfig( Basic, 1 )
+    , mRealm( QString() )
+    , mUsername( QString() )
+    , mPassword( QString() )
 {
 }
 
@@ -37,10 +37,10 @@ bool QgsAuthenticationConfigBasic::isValid() const
 {
   // password can be empty
   return (
-    QgsAuthenticationConfig::isValid()
-    && !mRealm.isEmpty()
-    && !mUsername.isEmpty()
-  );
+           QgsAuthenticationConfig::isValid()
+           && !mRealm.isEmpty()
+           && !mUsername.isEmpty()
+         );
 }
 
 const QString QgsAuthenticationConfigBasic::configString() const
@@ -50,22 +50,22 @@ const QString QgsAuthenticationConfigBasic::configString() const
 }
 
 QgsAuthenticationConfigPki::QgsAuthenticationConfigPki()
-  : QgsAuthenticationConfig( PkiPaths, 1 )
-  , mCertId( QString() )
-  , mKeyId( QString() )
-  , mKeyPass( QString() )
-  , mIssuerId( QString() )
-  , mIssuerSelf( false )
+    : QgsAuthenticationConfig( PkiPaths, 1 )
+    , mCertId( QString() )
+    , mKeyId( QString() )
+    , mKeyPass( QString() )
+    , mIssuerId( QString() )
+    , mIssuerSelf( false )
 {
 }
 
 bool QgsAuthenticationConfigPki::isValid() const
 {
   return (
-    QgsAuthenticationConfig::isValid()
-    && !mCertId.isEmpty()
-    && !mKeyId.isEmpty()
-  );
+           QgsAuthenticationConfig::isValid()
+           && !mCertId.isEmpty()
+           && !mKeyId.isEmpty()
+         );
 }
 
 const QString QgsAuthenticationConfigPki::configString() const

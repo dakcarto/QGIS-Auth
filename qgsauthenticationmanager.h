@@ -35,14 +35,14 @@ class QgsAuthenticationManager : public QObject
 
     bool resetMasterPassword();
 
-    bool configIdUnique(const QString &id) const;
+    bool configIdUnique( const QString &id ) const;
 
     const QString uniqueConfigId() const;
 
 
     bool saveAuthenticationConfig( const QgsAuthenticationConfig& config ) const;
 
-    bool loadAuthenticationConfig(const QString& id, QgsAuthenticationConfig &config ) const;
+    bool loadAuthenticationConfig( const QString& id, QgsAuthenticationConfig &config ) const;
 
   signals:
     void messageOut( const QString &message, const QString &tag = smAuthManTag, MessageLevel level = INFO ) const;

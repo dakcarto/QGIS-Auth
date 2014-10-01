@@ -63,15 +63,15 @@ class QgsAuthenticationCrypto
 
     static const QString decrypt( QString pass, QString text, string cipher );
 
-    static void passwordHash(const QString &pass , QString *salt, QString *hash);
+    static void passwordHash( const QString &pass , QString *salt, QString *hash );
 
-    static bool verifyPasswordHash(const QString& pass,
-                                   const QString& salt,
-                                   const QString& hash,
-                                   QString *hashderived = 0 );
+    static bool verifyPasswordHash( const QString& pass,
+                                    const QString& salt,
+                                    const QString& hash,
+                                    QString *hashderived = 0 );
 
   private:
-    static string encryption(QString Pass, QString Text, string cipher, bool encrypt );
+    static string encryption( QString Pass, QString Text, string cipher, bool encrypt );
 };
 
 #endif  // QGSAUTHENTICATIONCRYPTO_H
