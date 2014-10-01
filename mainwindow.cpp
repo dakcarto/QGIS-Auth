@@ -23,11 +23,19 @@ MainWindow::MainWindow( QWidget *parent )
 
   QgsAuthenticationManager::instance()->initAuthDatabase();
 
+  connect( QgsAuthenticationManager::instance(), SIGNAL( masterPasswordVerified( bool ) ),
+           this, SLOT( masterPasswordVerificationChanged( bool ) ) );
+
   lePassword->setText( "mypassword" );
 }
 
 MainWindow::~MainWindow()
 {
+}
+
+void MainWindow::masterPasswordVerificationChanged(bool verified)
+{
+  teOut->appendPlainText( QString( "Master password is %1" ).arg( verified ? "verified" : "not verified" ) );
 }
 
 void MainWindow::on_teEncryptIn_textChanged()
@@ -65,20 +73,24 @@ void MainWindow::on_btnOne_clicked()
 
 void MainWindow::on_btnTwo_clicked()
 {
-  QString derived;
-  bool ok = QgsAuthenticationCrypto::verifyPasswordHash( lePassword->text(), mSalt, mHash, &derived );
-  teOut->appendPlainText( QString( "Hash verified: %1" ).arg( ok ? "yes" : "no" ) );
-  teOut->appendPlainText( QString( "Derived hash: %1" ).arg( derived ) );
+//  QString derived;
+//  bool ok = QgsAuthenticationCrypto::verifyPasswordHash( lePassword->text(), mSalt, mHash, &derived );
+//  teOut->appendPlainText( QString( "Hash verified: %1" ).arg( ok ? "yes" : "no" ) );
+//  teOut->appendPlainText( QString( "Derived hash: %1" ).arg( derived ) );
+
+  QgsAuthenticationManager::instance()->setMasterPassword( true );
 }
 
 void MainWindow::on_btnThree_clicked()
 {
-  QString derived;
-  bool ok = QgsAuthenticationCrypto::verifyPasswordHash( lePassword->text(), "OH58VEVT", mHash, &derived );
-  teOut->appendPlainText( QString( "Hash verified (bad salt): %1" ).arg( ok ? "yes" : "no" ) );
-  teOut->appendPlainText( QString( "Derived hash (bad salt): %1" ).arg( derived ) );
+//  QString derived;
+//  bool ok = QgsAuthenticationCrypto::verifyPasswordHash( lePassword->text(), "OH58VEVT", mHash, &derived );
+//  teOut->appendPlainText( QString( "Hash verified (bad salt): %1" ).arg( ok ? "yes" : "no" ) );
+//  teOut->appendPlainText( QString( "Derived hash (bad salt): %1" ).arg( derived ) );
 
-  ok = QgsAuthenticationCrypto::verifyPasswordHash( "nonsene", mSalt, mHash, &derived );
-  teOut->appendPlainText( QString( "Hash verified (bad pass): %1" ).arg( ok ? "yes" : "no" ) );
-  teOut->appendPlainText( QString( "Derived hash (bad pass): %1" ).arg( derived ) );
+//  ok = QgsAuthenticationCrypto::verifyPasswordHash( "nonsene", mSalt, mHash, &derived );
+//  teOut->appendPlainText( QString( "Hash verified (bad pass): %1" ).arg( ok ? "yes" : "no" ) );
+//  teOut->appendPlainText( QString( "Derived hash (bad pass): %1" ).arg( derived ) );
+
+  QgsAuthenticationManager::instance()->resetMasterPassword();
 }

@@ -29,9 +29,11 @@ class QgsAuthenticationManager : public QObject
 
     bool initAuthDatabase() const;
 
-    bool setMasterPassword();
+    bool setMasterPassword( bool verify = false );
 
-    bool masterPasswordSet() const;
+    bool masterPasswordIsSet() const;
+
+    bool masterPasswordSame( const QString& pass ) const;
 
     bool resetMasterPassword();
 
@@ -63,6 +65,8 @@ class QgsAuthenticationManager : public QObject
 
     bool masterPasswordInput();
 
+    bool masterPasswordResetInput();
+
     bool masterPasswordRowsInDb( int *rows ) const;
 
     bool masterPasswordCheckAgainstDb() const;
@@ -70,8 +74,6 @@ class QgsAuthenticationManager : public QObject
     bool masterPasswordStoreInDb() const;
 
     bool masterPasswordClearDb() const;
-
-    bool masterPasswordSame( const QString& pass ) const;
 
     QStringList authDbConfigIds() const;
 
@@ -95,7 +97,7 @@ class QgsAuthenticationManager : public QObject
     static const QString smAuthManTag;
 
     QString mMasterPass;
-
+    QString mMasterPassReset;
 };
 
 #endif // QGSAUTHENTICATIONMANAGER_H

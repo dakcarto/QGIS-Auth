@@ -14,6 +14,8 @@ class MainWindow : public QMainWindow, private Ui::MainWindow
     ~MainWindow();
 
   private slots:
+    void masterPasswordVerificationChanged( bool verified );
+
     void on_teEncryptIn_textChanged();
     void on_teEncryptCrypt_textChanged();
     void on_btnOne_clicked();

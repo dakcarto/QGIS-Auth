@@ -14,6 +14,8 @@ class QgsCredentials : public QObject
 
     bool getMasterPassword( QString *password );
 
+    bool getMasterResetPassword(QString *newpass );
+
     void lock();
     void unlock();
 

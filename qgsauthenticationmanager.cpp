@@ -112,7 +112,7 @@ bool QgsAuthenticationManager::initAuthDatabase() const
   return true;
 }
 
-bool QgsAuthenticationManager::setMasterPassword()
+bool QgsAuthenticationManager::setMasterPassword( bool verify )
 {
   if ( mMasterPass.isEmpty() )
   {
@@ -126,6 +126,8 @@ bool QgsAuthenticationManager::setMasterPassword()
   else
   {
     emit messageOut( "Master password: is set" );
+    if ( !verify )
+      return true;
   }
 
   int rows = 0;
@@ -195,14 +197,54 @@ bool QgsAuthenticationManager::setMasterPassword()
   return true;
 }
 
-bool QgsAuthenticationManager::masterPasswordSet() const
+bool QgsAuthenticationManager::masterPasswordIsSet() const
 {
   return !mMasterPass.isEmpty();
+}
+
+bool QgsAuthenticationManager::masterPasswordSame( const QString &pass ) const
+{
+  return mMasterPass == pass;
 }
 
 bool QgsAuthenticationManager::resetMasterPassword()
 {
   // TODO
+
+  // check that a master password is even set in auth db, if not offer to set one
+
+  // get new password
+  masterPasswordResetInput();
+
+  // duplicate current db file to 'new'
+
+  // create new connection
+
+  // loop through available configs and decrypt, then re-encrypt with new password
+
+  //   get encrypted config and decrypt
+
+  //   re-encrypt with new password
+
+  //   update db record
+
+  // dump old password
+
+  // insert new password
+
+
+  // --- on success at this point ---
+
+  // close current connection to old db
+
+  // back up current db to .bkup
+
+  // rename new to current name
+
+  // reopen connection and verify new name
+
+  // read and decrypt a config, to test?
+
   return true;
 }
 
@@ -290,7 +332,8 @@ void QgsAuthenticationManager::writeDebug( const QString &message,
 
 QgsAuthenticationManager::QgsAuthenticationManager( QObject *parent )
     : QObject( parent )
-    , mMasterPass( "" )
+    , mMasterPass( QString() )
+    , mMasterPassReset( QString() )
 {
   connect( this, SIGNAL( messageOut( const QString&, const QString&, MessageLevel ) ),
            this, SLOT( writeDebug( const QString&, const QString&, MessageLevel ) ) );
@@ -313,6 +356,23 @@ bool QgsAuthenticationManager::masterPasswordInput()
   if ( ok && !pass.isEmpty() && !masterPasswordSame( pass ) )
   {
     mMasterPass = pass;
+    return true;
+  }
+  return false;
+}
+
+bool QgsAuthenticationManager::masterPasswordResetInput()
+{
+  QString pass;
+  QgsCredentials * creds = QgsCredentials::instance();
+  creds->lock();
+  // TODO: validate in actual QgsCredentials input methods that password is not empty
+  bool ok = creds->getMasterResetPassword( &pass );
+  creds->unlock();
+
+  if ( ok && !pass.isEmpty() && !masterPasswordSame( pass ) )
+  {
+    mMasterPassReset = pass;
     return true;
   }
   return false;
@@ -381,11 +441,6 @@ bool QgsAuthenticationManager::masterPasswordClearDb() const
   QSqlQuery query( authDbConnection() );
   query.prepare( QString( "DELETE FROM %1" ).arg( authDbPassTable() ) );
   return authDbTransactionQuery( &query );
-}
-
-bool QgsAuthenticationManager::masterPasswordSame( const QString &pass ) const
-{
-  return mMasterPass == pass;
 }
 
 QStringList QgsAuthenticationManager::authDbConfigIds() const
