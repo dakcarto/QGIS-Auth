@@ -27,6 +27,8 @@ MainWindow::MainWindow( QWidget *parent )
            this, SLOT( masterPasswordVerificationChanged( bool ) ) );
 
   lePassword->setText( "mypassword" );
+
+  setButtonTexts();
 }
 
 MainWindow::~MainWindow()
@@ -59,6 +61,16 @@ void MainWindow::on_teEncryptCrypt_textChanged()
       QgsAuthenticationCrypto::decrypt( pass, crypt, "AES" ) );
   }
 }
+
+void MainWindow::setButtonTexts()
+{
+  btnOne->setText( "Set master" );
+  btnTwo->setText( "Reset master" );
+  btnThree->setText( "Reset master" );
+  btnFour->setText( "Clear master" );
+}
+
+
 
 void MainWindow::on_btnOne_clicked()
 {
@@ -93,4 +105,9 @@ void MainWindow::on_btnThree_clicked()
 //  teOut->appendPlainText( QString( "Derived hash (bad pass): %1" ).arg( derived ) );
 
   QgsAuthenticationManager::instance()->resetMasterPassword();
+}
+
+void MainWindow::on_btnFour_clicked()
+{
+  QgsAuthenticationManager::instance()->clearMasterPassword();
 }

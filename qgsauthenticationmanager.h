@@ -33,6 +33,8 @@ class QgsAuthenticationManager : public QObject
 
     bool masterPasswordIsSet() const;
 
+    void clearMasterPassword() { mMasterPass = QString(); }
+
     bool masterPasswordSame( const QString& pass ) const;
 
     bool resetMasterPassword();
@@ -61,7 +63,6 @@ class QgsAuthenticationManager : public QObject
     ~QgsAuthenticationManager();
 
   private:
-    void masterPasswordClear() { mMasterPass = QString(); }
 
     bool masterPasswordInput();
 

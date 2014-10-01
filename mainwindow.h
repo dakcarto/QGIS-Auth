@@ -18,9 +18,13 @@ class MainWindow : public QMainWindow, private Ui::MainWindow
 
     void on_teEncryptIn_textChanged();
     void on_teEncryptCrypt_textChanged();
+
+    void setButtonTexts();
+
     void on_btnOne_clicked();
     void on_btnTwo_clicked();
     void on_btnThree_clicked();
+    void on_btnFour_clicked();
 
   private:
     QString mSalt;

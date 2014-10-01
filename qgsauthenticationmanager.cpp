@@ -135,7 +135,7 @@ bool QgsAuthenticationManager::setMasterPassword( bool verify )
   {
     emit messageOut( tr( "Master password: FAILED to access auth db" ),
                      authManTag(), CRITICAL );
-    masterPasswordClear();
+    clearMasterPassword();
     return false;
   }
 
@@ -145,7 +145,7 @@ bool QgsAuthenticationManager::setMasterPassword( bool verify )
   {
     emit messageOut( tr( "Master password: FAILED to find just one master password record in auth db" ),
                      authManTag(), CRITICAL );
-    masterPasswordClear();
+    clearMasterPassword();
     return false;
   }
   else if ( rows == 1 )
@@ -154,7 +154,7 @@ bool QgsAuthenticationManager::setMasterPassword( bool verify )
     {
       emit messageOut( tr( "Master password: FAILED to verify against hash in auth db" ),
                        authManTag(), CRITICAL );
-      masterPasswordClear();
+      clearMasterPassword();
       emit masterPasswordVerified( false );
       return false;
     }
@@ -170,7 +170,7 @@ bool QgsAuthenticationManager::setMasterPassword( bool verify )
     {
       emit messageOut( tr( "Master password: hash FAILED to be stored in auth db" ),
                        authManTag(), CRITICAL );
-      masterPasswordClear();
+      clearMasterPassword();
       return false;
     }
     else
@@ -182,7 +182,7 @@ bool QgsAuthenticationManager::setMasterPassword( bool verify )
     {
       emit messageOut( tr( "Master password: FAILED to verify against hash in auth db" ),
                        authManTag(), CRITICAL );
-      masterPasswordClear();
+      clearMasterPassword();
       emit masterPasswordVerified( false );
       return false;
     }

@@ -19,6 +19,9 @@
 #ifndef QGSAUTHENTICATIONCRYPTO_H
 #define QGSAUTHENTICATIONCRYPTO_H
 
+// for Mac, define CRYPTOPP_DISABLE_ASM for build, if
+// libcryptopp.dylib was built that way as well, e.g. Homebrew's
+
 #include "cryptopp/aes.h"
 #include "cryptopp/blowfish.h"
 #include "cryptopp/camellia.h"
@@ -45,6 +48,9 @@
 #include "cryptopp/panama.h"
 #include "cryptopp/seal.h"
 #include "cryptopp/sosemanuk.h"
+
+#include "cryptopp/osrng.h"
+#include "cryptopp/pwdbased.h"
 
 #include "cryptopp/modes.h" // xxx_Mode< >
 #include "cryptopp/filters.h" // StringSource and StreamTransformation

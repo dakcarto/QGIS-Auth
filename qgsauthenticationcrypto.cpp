@@ -19,8 +19,6 @@
 #include "qgsauthenticationcrypto.h"
 
 #include <string.h>
-#include "cryptopp/osrng.h"
-#include "cryptopp/pwdbased.h"
 
 #include <QObject>
 
