@@ -6,17 +6,18 @@
 /**
  * @brief Abstract base class for configs
  */
-class QgsAuthenticationConfig
+class QgsAuthenticationConfigBase
 {
   public:
     enum ConfigType
     {
+      None,
       Basic,
       PkiPaths,
       Unknown
     };
 
-    QgsAuthenticationConfig( ConfigType type = Unknown, int version = 0 );
+    QgsAuthenticationConfigBase( ConfigType type = Unknown, int version = 0 );
 
     const QString id() const { return mId; }
     void setId( const QString& id ) { mId = id; }
@@ -33,9 +34,14 @@ class QgsAuthenticationConfig
     int version() const { return mVersion; }
     void setVersion( int i ) { mVersion = i; }
 
+    const QString typeAsString() const;
+
+    const QgsAuthenticationConfigBase& asBaseConfig();
+
     virtual bool isValid() const;
 
     virtual const QString configString() const = 0;
+    virtual void loadConfigString( const QString& config ) = 0;
 
   protected:
     QString mId;
@@ -46,7 +52,13 @@ class QgsAuthenticationConfig
     static const QString mConfSep;
 };
 
-class QgsAuthenticationConfigBasic: public QgsAuthenticationConfig
+class QgsAuthenticationConfig: public QgsAuthenticationConfigBase
+{
+  public:
+    QgsAuthenticationConfig( ConfigType type = None, int version = 0 );
+};
+
+class QgsAuthenticationConfigBasic: public QgsAuthenticationConfigBase
 {
   public:
     QgsAuthenticationConfigBasic();
@@ -63,6 +75,7 @@ class QgsAuthenticationConfigBasic: public QgsAuthenticationConfig
     bool isValid() const;
 
     const QString configString() const;
+    void loadConfigString( const QString& config );
 
   private:
     QString mRealm;
@@ -70,7 +83,7 @@ class QgsAuthenticationConfigBasic: public QgsAuthenticationConfig
     QString mPassword;
 };
 
-class QgsAuthenticationConfigPki: public QgsAuthenticationConfig
+class QgsAuthenticationConfigPki: public QgsAuthenticationConfigBase
 {
   public:
     QgsAuthenticationConfigPki();
@@ -93,6 +106,7 @@ class QgsAuthenticationConfigPki: public QgsAuthenticationConfig
     bool isValid() const;
 
     const QString configString() const;
+    void loadConfigString( const QString& config );
 
   private:
     QString mCertId;

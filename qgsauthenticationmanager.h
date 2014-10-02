@@ -44,9 +44,9 @@ class QgsAuthenticationManager : public QObject
     const QString uniqueConfigId() const;
 
 
-    bool saveAuthenticationConfig( const QgsAuthenticationConfig& config ) const;
+    bool saveAuthenticationConfig( const QgsAuthenticationConfigBase& config ) const;
 
-    bool loadAuthenticationConfig( const QString& id, QgsAuthenticationConfig &config ) const;
+    bool loadAuthenticationConfig( const QString& id, QgsAuthenticationConfigBase &config ) const;
 
   signals:
     void messageOut( const QString &message, const QString &tag = smAuthManTag, MessageLevel level = INFO ) const;

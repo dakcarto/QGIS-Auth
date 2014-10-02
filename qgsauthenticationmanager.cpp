@@ -290,12 +290,12 @@ const QString QgsAuthenticationManager::uniqueConfigId() const
   return id;
 }
 
-bool QgsAuthenticationManager::saveAuthenticationConfig( const QgsAuthenticationConfig &config ) const
+bool QgsAuthenticationManager::saveAuthenticationConfig( const QgsAuthenticationConfigBase &config ) const
 {
 
 }
 
-bool QgsAuthenticationManager::loadAuthenticationConfig( const QString &id, QgsAuthenticationConfig &config ) const
+bool QgsAuthenticationManager::loadAuthenticationConfig( const QString &id, QgsAuthenticationConfigBase &config ) const
 {
 
 }
