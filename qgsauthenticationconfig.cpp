@@ -6,8 +6,9 @@
 
 const QString QgsAuthenticationConfigBase::mConfSep = "|||";
 
-QgsAuthenticationConfigBase::QgsAuthenticationConfigBase( ConfigType type, int version )
-    : mId( QgsAuthenticationManager::instance()->uniqueConfigId() )
+// get uniqueConfigId only on save
+QgsAuthenticationConfigBase::QgsAuthenticationConfigBase( QgsAuthenticationProvider::ProviderType type, int version )
+    : mId( QString() )
     , mName( QString() )
     , mUri( QString() )
     , mType( type )
@@ -18,7 +19,8 @@ QgsAuthenticationConfigBase::QgsAuthenticationConfigBase( ConfigType type, int v
 const QString QgsAuthenticationConfigBase::typeAsString() const
 {
   QString s = QObject::tr( "Null authentication" );
-  switch ( mType ) {
+  switch ( mType )
+  {
     case None:
       break;
     case Basic:
@@ -43,8 +45,8 @@ bool QgsAuthenticationConfigBase::isValid() const
          );
 }
 
-QgsAuthenticationConfig::QgsAuthenticationConfig( ConfigType type, int version )
-  : QgsAuthenticationConfigBase( type, version )
+QgsAuthenticationConfig::QgsAuthenticationConfig( QgsAuthenticationProvider::ProviderType type, int version )
+    : QgsAuthenticationConfigBase( type, version )
 {
 
 }

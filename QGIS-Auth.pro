@@ -34,7 +34,8 @@ SOURCES += main.cpp\
   qgsapplication.cpp \
   qgsauthenticationconfig.cpp \
   qgscredentials.cpp \
-  qgsauthenticationcrypto.cpp
+  qgsauthenticationcrypto.cpp \
+  qgsauthenticationprovider.cpp
 
 HEADERS += mainwindow.h \
   qgsauthenticationselectorbase.h \
@@ -42,7 +43,8 @@ HEADERS += mainwindow.h \
   qgsapplication.h \
   qgsauthenticationconfig.h \
   qgscredentials.h \
-  qgsauthenticationcrypto.h
+  qgsauthenticationcrypto.h \
+  qgsauthenticationprovider.h
 
 #RESOURCES += qgis-auth.qrc
 FORMS += mainwindow.ui \

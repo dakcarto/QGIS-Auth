@@ -3,21 +3,16 @@
 
 #include <QString>
 
+#include "qgsauthenticationprovider.h"
+
 /**
  * @brief Abstract base class for configs
  */
 class QgsAuthenticationConfigBase
 {
   public:
-    enum ConfigType
-    {
-      None,
-      Basic,
-      PkiPaths,
-      Unknown
-    };
 
-    QgsAuthenticationConfigBase( ConfigType type = Unknown, int version = 0 );
+    QgsAuthenticationConfigBase( QgsAuthenticationProvider::ProviderType type = Unknown, int version = 0 );
 
     const QString id() const { return mId; }
     void setId( const QString& id ) { mId = id; }
@@ -28,8 +23,8 @@ class QgsAuthenticationConfigBase
     const QString uri() const { return mUri; }
     void setUri( const QString& uri ) { mUri = uri; }
 
-    ConfigType type() const { return mType; }
-    void setType( ConfigType i ) { mType = i; }
+    QgsAuthenticationProvider::ProviderType type() const { return mType; }
+    void setType( QgsAuthenticationProvider::ProviderType i ) { mType = i; }
 
     int version() const { return mVersion; }
     void setVersion( int i ) { mVersion = i; }
@@ -47,7 +42,7 @@ class QgsAuthenticationConfigBase
     QString mId;
     QString mName;
     QString mUri;
-    ConfigType mType;
+    QgsAuthenticationProvider::ProviderType mType;
     int mVersion;
     static const QString mConfSep;
 };
@@ -55,7 +50,7 @@ class QgsAuthenticationConfigBase
 class QgsAuthenticationConfig: public QgsAuthenticationConfigBase
 {
   public:
-    QgsAuthenticationConfig( ConfigType type = None, int version = 0 );
+    QgsAuthenticationConfig( QgsAuthenticationProvider::ProviderType type = None, int version = 0 );
 };
 
 class QgsAuthenticationConfigBasic: public QgsAuthenticationConfigBase
