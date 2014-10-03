@@ -21,7 +21,7 @@ MainWindow::MainWindow( QWidget *parent )
 //    f.remove();
 //  }
 
-  QgsAuthenticationManager::instance()->initAuthDatabase();
+  QgsAuthenticationManager::instance()->init();
 
   connect( QgsAuthenticationManager::instance(), SIGNAL( masterPasswordVerified( bool ) ),
            this, SLOT( masterPasswordVerificationChanged( bool ) ) );

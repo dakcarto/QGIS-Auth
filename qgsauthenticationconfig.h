@@ -6,13 +6,16 @@
 #include "qgsauthenticationprovider.h"
 
 /**
- * @brief Abstract base class for configs
+ * @brief Base class for configs
  */
 class QgsAuthenticationConfigBase
 {
   public:
 
-    QgsAuthenticationConfigBase( QgsAuthenticationProvider::ProviderType type = Unknown, int version = 0 );
+    QgsAuthenticationConfigBase( QgsAuthenticationProvider::ProviderType type = QgsAuthenticationProvider::Unknown,
+                                 int version = 0 );
+
+    QgsAuthenticationConfigBase( const QgsAuthenticationConfigBase& config );
 
     const QString id() const { return mId; }
     void setId( const QString& id ) { mId = id; }
@@ -27,7 +30,7 @@ class QgsAuthenticationConfigBase
     void setType( QgsAuthenticationProvider::ProviderType i ) { mType = i; }
 
     int version() const { return mVersion; }
-    void setVersion( int i ) { mVersion = i; }
+    void setVersion( int version ) { mVersion = version; }
 
     const QString typeAsString() const;
 
@@ -35,8 +38,10 @@ class QgsAuthenticationConfigBase
 
     virtual bool isValid() const;
 
-    virtual const QString configString() const = 0;
-    virtual void loadConfigString( const QString& config ) = 0;
+    virtual const QString configString() const { return QString(); }
+    virtual void loadConfigString( const QString& config ) { Q_UNUSED( config ); }
+
+    const QgsAuthenticationConfigBase toBaseConfig();
 
   protected:
     QString mId;
@@ -44,19 +49,18 @@ class QgsAuthenticationConfigBase
     QString mUri;
     QgsAuthenticationProvider::ProviderType mType;
     int mVersion;
+
     static const QString mConfSep;
 };
 
-class QgsAuthenticationConfig: public QgsAuthenticationConfigBase
-{
-  public:
-    QgsAuthenticationConfig( QgsAuthenticationProvider::ProviderType type = None, int version = 0 );
-};
 
 class QgsAuthenticationConfigBasic: public QgsAuthenticationConfigBase
 {
   public:
     QgsAuthenticationConfigBasic();
+
+    QgsAuthenticationConfigBasic( const QgsAuthenticationConfigBase& config )
+        : QgsAuthenticationConfigBase( config ) {}
 
     const QString realm() const { return mRealm; }
     void setRealm( const QString& realm ) { mRealm = realm; }
@@ -70,7 +74,7 @@ class QgsAuthenticationConfigBasic: public QgsAuthenticationConfigBase
     bool isValid() const;
 
     const QString configString() const;
-    void loadConfigString( const QString& config );
+    void loadConfigString( const QString& config = QString() );
 
   private:
     QString mRealm;
@@ -82,6 +86,9 @@ class QgsAuthenticationConfigPki: public QgsAuthenticationConfigBase
 {
   public:
     QgsAuthenticationConfigPki();
+
+    QgsAuthenticationConfigPki( const QgsAuthenticationConfigBase& config )
+        : QgsAuthenticationConfigBase( config ) {}
 
     const QString certId() const { return mCertId; }
     void setCertId( const QString& id ) { mCertId = id; }
@@ -101,7 +108,7 @@ class QgsAuthenticationConfigPki: public QgsAuthenticationConfigBase
     bool isValid() const;
 
     const QString configString() const;
-    void loadConfigString( const QString& config );
+    void loadConfigString( const QString& config = QString() );
 
   private:
     QString mCertId;

@@ -46,7 +46,7 @@ QSqlDatabase QgsAuthenticationManager::authDbConnection() const
   return authdb;
 }
 
-bool QgsAuthenticationManager::initAuthDatabase() const
+bool QgsAuthenticationManager::init()
 {
   QFileInfo dbinfo( QgsApplication::qgisAuthDbFilePath() );
   if ( dbinfo.exists() )
@@ -290,12 +290,88 @@ const QString QgsAuthenticationManager::uniqueConfigId() const
   return id;
 }
 
-bool QgsAuthenticationManager::saveAuthenticationConfig( const QgsAuthenticationConfigBase &config ) const
+bool QgsAuthenticationManager::storeAuthenticationConfig( QgsAuthenticationConfigBase &config, const QString& configstring )
+{
+  if ( !setMasterPassword( true ) )
+    return false;
+
+  if ( !config.isValid() )
+  {
+    emit messageOut( tr( "Store config: FAILED because config is invalid" ),
+                     authManTag(), CRITICAL );
+    return false;
+  }
+
+  if ( configstring.isEmpty() )
+  {
+    emit messageOut( tr( "Store config: FAILED because config is empty" ),
+                     authManTag(), CRITICAL );
+    return false;
+  }
+
+  QSqlQuery query( authDbConnection() );
+  query.prepare( QString( "INSERT INTO %1 (id, name, uri, type, version, config) "
+                          "VALUES (:id, :name, :uri, :type, :version, :config)" ).arg( authDbConfigTable() ) );
+
+  QString uid = uniqueConfigId();
+
+  query.bindValue( ":id", uid );
+  query.bindValue( ":name", config.name() );
+  query.bindValue( ":uri", config.uri() );
+  query.bindValue( ":type", ( int ) config.type() );
+  query.bindValue( ":version", config.version() );
+  query.bindValue( ":config", QgsAuthenticationCrypto::encrypt( mMasterPass, configstring, "AES" ) );
+
+  if ( !authDbStartTransaction() )
+    return false;
+
+  if ( !authDbQuery( &query ) )
+    return false;
+
+  if ( !authDbCommit() )
+    return false;
+
+  // passed-in config should now be like as if it was just loaded from db
+  config.setId( uid );
+
+  return true;
+}
+
+bool QgsAuthenticationManager::loadAuthenticationConfig( const QString &id, QgsAuthenticationConfigBase &config ) const
+{
+  QSqlQuery query( authDbConnection() );
+  query.prepare( QString( "SELECT id, name, uri, type, version FROM %1 "
+                          "WHERE id = ':someid'" ).arg( authDbConfigTable() ) );
+
+  query.bindValue( ":someid", id );
+
+  if ( !authDbQuery( &query ) )
+  {
+    return false;
+  }
+
+  if ( query.isActive() && query.isSelect() )
+  {
+    if ( query.first() )
+    {
+      config.setId( query.value( 0 ).toString() );
+      config.setName( query.value( 1 ).toString() );
+      config.setUri( query.value( 2 ).toString() );
+      config.setType( QgsAuthenticationProvider::providerTypeFromInt( query.value( 3 ).toInt() ) );
+      config.setVersion( query.value( 4 ).toInt() );
+
+      return true;
+    }
+  }
+  return false;
+}
+
+void QgsAuthenticationManager::updateNetworkRequest( QNetworkRequest &request, const QString &authid )
 {
 
 }
 
-bool QgsAuthenticationManager::loadAuthenticationConfig( const QString &id, QgsAuthenticationConfigBase &config ) const
+void QgsAuthenticationManager::updateNetworkReply( QNetworkReply *reply, const QString &authid )
 {
 
 }

@@ -1,6 +1,7 @@
 #include "qgsauthenticationconfig.h"
 
 #include "qgsauthenticationmanager.h"
+#include "qgsauthenticationprovider.h"
 
 #include <QObject>
 
@@ -16,21 +17,18 @@ QgsAuthenticationConfigBase::QgsAuthenticationConfigBase( QgsAuthenticationProvi
 {
 }
 
+QgsAuthenticationConfigBase::QgsAuthenticationConfigBase( const QgsAuthenticationConfigBase &config )
+    : mId( config.id() )
+    , mName( config.name() )
+    , mUri( config.uri() )
+    , mType( config.type() )
+    , mVersion( config.version() )
+{
+}
+
 const QString QgsAuthenticationConfigBase::typeAsString() const
 {
-  QString s = QObject::tr( "Null authentication" );
-  switch ( mType )
-  {
-    case None:
-      break;
-    case Basic:
-      s = QObject::tr( "Basic authentication" );
-    case PkiPaths:
-      s = QObject::tr( "PKI paths authentication" );
-    default:
-      break;
-  }
-  return s;
+  return QgsAuthenticationProvider::typeAsString( mType );
 }
 
 bool QgsAuthenticationConfigBase::isValid() const
@@ -40,19 +38,23 @@ bool QgsAuthenticationConfigBase::isValid() const
            && QgsAuthenticationManager::instance()->configIdUnique( mId )
            && !mName.isEmpty()
            && !mUri.isEmpty()
-           && mType != Unknown
+           && mType != QgsAuthenticationProvider::Unknown
            && mVersion != 0
          );
 }
 
-QgsAuthenticationConfig::QgsAuthenticationConfig( QgsAuthenticationProvider::ProviderType type, int version )
-    : QgsAuthenticationConfigBase( type, version )
+const QgsAuthenticationConfigBase QgsAuthenticationConfigBase::toBaseConfig()
 {
-
+  return QgsAuthenticationConfigBase( *this );
 }
 
+
+//////////////////////////////////////////////////////////////////////////////
+/// QgsAuthenticationConfigBasic
+//////////////////////////////////////////////////////////////////////////////
+
 QgsAuthenticationConfigBasic::QgsAuthenticationConfigBasic()
-    : QgsAuthenticationConfigBase( Basic, 1 )
+    : QgsAuthenticationConfigBase( QgsAuthenticationProvider::Basic, 1 )
     , mRealm( QString() )
     , mUsername( QString() )
     , mPassword( QString() )
@@ -77,14 +79,22 @@ const QString QgsAuthenticationConfigBasic::configString() const
 
 void QgsAuthenticationConfigBasic::loadConfigString( const QString& config )
 {
+  if ( config.isEmpty() )
+  {
+    return;
+  }
   QStringList configlist = config.split( mConfSep );
   mRealm = configlist.at( 0 );
   mUsername = configlist.at( 1 );
   mPassword = configlist.at( 2 );
 }
 
+//////////////////////////////////////////////////////////////////////////////
+/// QgsAuthenticationConfigPki
+//////////////////////////////////////////////////////////////////////////////
+
 QgsAuthenticationConfigPki::QgsAuthenticationConfigPki()
-    : QgsAuthenticationConfigBase( PkiPaths, 1 )
+    : QgsAuthenticationConfigBase( QgsAuthenticationProvider::PkiPaths, 1 )
     , mCertId( QString() )
     , mKeyId( QString() )
     , mKeyPass( QString() )
@@ -111,6 +121,10 @@ const QString QgsAuthenticationConfigPki::configString() const
 
 void QgsAuthenticationConfigPki::loadConfigString( const QString& config )
 {
+  if ( config.isEmpty() )
+  {
+    return;
+  }
   QStringList configlist = config.split( mConfSep );
   mCertId = configlist.at( 0 );
   mKeyId = configlist.at( 1 );

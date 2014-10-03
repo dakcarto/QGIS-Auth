@@ -13,19 +13,21 @@ class QgsAuthenticationProvider : public QObject
     {
       None = 0,
       Basic = 1,
-      Unknown = 20, // padding for more standard auth types
 #ifndef QT_NO_OPENSSL
-      PkiPaths = 21,
+      PkiPaths = 2,
 #endif
+      Unknown = 20 // padding for more standard auth types
     };
 
     explicit QgsAuthenticationProvider( QObject *parent = 0 , ProviderType providertype = None );
 
-    ProviderType providerType() { return mType; }
+    ProviderType providerType() const { return mType; }
+
+    static ProviderType providerTypeFromInt(int itype );
+
+    static const QString typeAsString( QgsAuthenticationProvider::ProviderType providertype = None );
 
     static bool urlToResource( const QString& accessurl, QString *resource, bool withpath = false );
-
-    const QString typeAsString( QgsAuthenticationProvider::ProviderType providertype = None ) const;
 
     virtual void updateNetworkRequest( QNetworkRequest &request, const QString& authid ) = 0;
 

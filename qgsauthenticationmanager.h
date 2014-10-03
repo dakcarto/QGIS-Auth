@@ -2,12 +2,16 @@
 #define QGSAUTHENTICATIONMANAGER_H
 
 #include <QObject>
+#include <QNetworkReply>
+#include <QNetworkRequest>
 #include <QSqlDatabase>
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QStringList>
 
 #include "qgsauthenticationconfig.h"
+#include "qgsauthenticationprovider.h"
+#include "qgsauthenticationcrypto.h"
 
 
 class QgsAuthenticationManager : public QObject
@@ -27,7 +31,8 @@ class QgsAuthenticationManager : public QObject
 
     QSqlDatabase authDbConnection() const;
 
-    bool initAuthDatabase() const;
+    bool init();
+
 
     bool setMasterPassword( bool verify = false );
 
@@ -39,14 +44,20 @@ class QgsAuthenticationManager : public QObject
 
     bool resetMasterPassword();
 
+
     bool configIdUnique( const QString &id ) const;
 
     const QString uniqueConfigId() const;
 
 
-    bool saveAuthenticationConfig( const QgsAuthenticationConfigBase& config ) const;
+    bool storeAuthenticationConfig( QgsAuthenticationConfigBase &config , const QString& configstring );
 
     bool loadAuthenticationConfig( const QString& id, QgsAuthenticationConfigBase &config ) const;
+
+
+    void updateNetworkRequest( QNetworkRequest &request, const QString& authid );
+
+    void updateNetworkReply( QNetworkReply *reply, const QString& authid );
 
   signals:
     void messageOut( const QString &message, const QString &tag = smAuthManTag, MessageLevel level = INFO ) const;
