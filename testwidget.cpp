@@ -1,5 +1,5 @@
-#include "mainwindow.h"
-#include "ui_mainwindow.h"
+#include "testwidget.h"
+#include "ui_testwidget.h"
 
 #include <QFileInfo>
 
@@ -8,8 +8,8 @@
 #include "qgsauthenticationcrypto.h"
 #include "qgsauthenticationmanager.h"
 
-MainWindow::MainWindow( QWidget *parent )
-    : QMainWindow( parent )
+TestWidget::TestWidget( QWidget *parent )
+    : QWidget( parent )
     , mSalt( QString() )
     , mHash( QString() )
 {
@@ -31,16 +31,16 @@ MainWindow::MainWindow( QWidget *parent )
   setButtonTexts();
 }
 
-MainWindow::~MainWindow()
+TestWidget::~TestWidget()
 {
 }
 
-void MainWindow::masterPasswordVerificationChanged( bool verified )
+void TestWidget::masterPasswordVerificationChanged( bool verified )
 {
   teOut->appendPlainText( QString( "Master password is %1" ).arg( verified ? "verified" : "not verified" ) );
 }
 
-void MainWindow::on_teEncryptIn_textChanged()
+void TestWidget::on_teEncryptIn_textChanged()
 {
   QString pass( lePassword->text() );
   QString in( teEncryptIn->toPlainText() );
@@ -51,7 +51,7 @@ void MainWindow::on_teEncryptIn_textChanged()
   }
 }
 
-void MainWindow::on_teEncryptCrypt_textChanged()
+void TestWidget::on_teEncryptCrypt_textChanged()
 {
   QString pass = lePassword->text();
   QString crypt( teEncryptCrypt->toPlainText() );
@@ -62,7 +62,7 @@ void MainWindow::on_teEncryptCrypt_textChanged()
   }
 }
 
-void MainWindow::setButtonTexts()
+void TestWidget::setButtonTexts()
 {
   btnOne->setText( "Set master" );
   btnTwo->setText( "Reset master" );
@@ -72,7 +72,7 @@ void MainWindow::setButtonTexts()
 
 
 
-void MainWindow::on_btnOne_clicked()
+void TestWidget::on_btnOne_clicked()
 {
 //  QgsAuthManager::instance()->inputMasterPassword();
 //  teOut->appendPlainText( QgsAuthManager::instance()->uniqueConfigId() );
@@ -83,7 +83,7 @@ void MainWindow::on_btnOne_clicked()
   QgsAuthManager::instance()->setMasterPassword();
 }
 
-void MainWindow::on_btnTwo_clicked()
+void TestWidget::on_btnTwo_clicked()
 {
 //  QString derived;
 //  bool ok = QgsAuthCrypto::verifyPasswordHash( lePassword->text(), mSalt, mHash, &derived );
@@ -93,7 +93,7 @@ void MainWindow::on_btnTwo_clicked()
   QgsAuthManager::instance()->setMasterPassword( true );
 }
 
-void MainWindow::on_btnThree_clicked()
+void TestWidget::on_btnThree_clicked()
 {
 //  QString derived;
 //  bool ok = QgsAuthCrypto::verifyPasswordHash( lePassword->text(), "OH58VEVT", mHash, &derived );
@@ -107,7 +107,7 @@ void MainWindow::on_btnThree_clicked()
   QgsAuthManager::instance()->resetMasterPassword();
 }
 
-void MainWindow::on_btnFour_clicked()
+void TestWidget::on_btnFour_clicked()
 {
   QgsAuthManager::instance()->clearMasterPassword();
 }

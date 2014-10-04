@@ -1,17 +1,15 @@
-#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
+#ifndef TESTWIDGET_H
+#define TESTWIDGET_H
 
-#include <QMainWindow>
+#include "ui_testwidget.h"
 
-#include "ui_mainwindow.h"
-
-class MainWindow : public QMainWindow, private Ui::MainWindow
+class TestWidget : public QWidget, private Ui::TestWidget
 {
     Q_OBJECT
 
   public:
-    explicit MainWindow( QWidget *parent = 0 );
-    ~MainWindow();
+    explicit TestWidget( QWidget *parent = 0 );
+    ~TestWidget();
 
   private slots:
     void masterPasswordVerificationChanged( bool verified );
@@ -31,4 +29,4 @@ class MainWindow : public QMainWindow, private Ui::MainWindow
     QString mHash;
 };
 
-#endif // MAINWINDOW_H
+#endif // TESTWIDGET_H

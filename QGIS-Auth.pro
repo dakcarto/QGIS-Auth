@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT += core gui network sql
+QT += core gui network webkit sql
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -27,8 +27,10 @@ LIBS += -L$(HOMEBREW_PREFIX)/lib -lcryptopp
 # build here has to define the same, or linking errors about missing vtables
 DEFINES += CRYPTOPP_DISABLE_ASM
 
-SOURCES += main.cpp\
-  mainwindow.cpp \
+SOURCES += \
+  main.cpp \
+  webpage.cpp \
+  testwidget.cpp \
   qgsauthenticationselectorbase.cpp \
   qgsauthenticationmanager.cpp \
   qgsapplication.cpp \
@@ -38,7 +40,9 @@ SOURCES += main.cpp\
   qgsauthenticationprovider.cpp \
   qgsauthenticationwidgetbase.cpp
 
-HEADERS += mainwindow.h \
+HEADERS += \
+  webpage.h \
+  testwidget.h \
   qgsauthenticationselectorbase.h \
   qgsauthenticationmanager.h \
   qgsapplication.h \
@@ -49,6 +53,8 @@ HEADERS += mainwindow.h \
   qgsauthenticationwidgetbase.h
 
 #RESOURCES += qgis-auth.qrc
-FORMS += mainwindow.ui \
+FORMS += \
+  webpage.ui \
+  testwidget.ui \
   qgsauthenticationselectorbase.ui \
   qgsauthenticationwidgetbase.ui

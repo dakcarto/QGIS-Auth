@@ -1,14 +1,12 @@
 #include "qgsauthenticationselectorbase.h"
 #include "ui_qgsauthenticationselectorbase.h"
 
-QgsAuthSelectorBase::QgsAuthSelectorBase( QWidget *parent ) :
-    QWidget( parent ),
-    ui( new Ui::QgsAuthSelectorBase )
+QgsAuthSelectorBase::QgsAuthSelectorBase( QWidget *parent )
+    : QWidget( parent )
 {
-  ui->setupUi( this );
+  setupUi( this );
 }
 
 QgsAuthSelectorBase::~QgsAuthSelectorBase()
 {
-  delete ui;
 }

@@ -3,12 +3,9 @@
 
 #include <QWidget>
 
-namespace Ui
-{
-  class QgsAuthSelectorBase;
-}
+#include "ui_qgsauthenticationselectorbase.h"
 
-class QgsAuthSelectorBase : public QWidget
+class QgsAuthSelectorBase : public QWidget, private Ui::QgsAuthSelectorBase
 {
     Q_OBJECT
 

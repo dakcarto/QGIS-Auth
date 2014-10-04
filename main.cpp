@@ -1,13 +1,16 @@
-#include "mainwindow.h"
 #include <QApplication>
+
+#include "webpage.h"
 
 int main( int argc, char *argv[] )
 {
   QApplication a( argc, argv );
-  QMainWindow * w = new MainWindow();
-  w->show();
-  w->raise();
-  w->activateWindow();
+
+  // load default widget
+  WebPage * mWebPage = new WebPage();
+  mWebPage->show();
+  mWebPage->raise();
+  mWebPage->activateWindow();
 
   return a.exec();
 }
