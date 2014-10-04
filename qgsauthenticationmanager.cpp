@@ -290,11 +290,12 @@ const QString QgsAuthenticationManager::uniqueConfigId() const
   return id;
 }
 
-bool QgsAuthenticationManager::storeAuthenticationConfig( QgsAuthenticationConfigBase &config, const QString& configstring )
+bool QgsAuthenticationManager::storeAuthenticationConfig( QgsAuthenticationConfigBase &config )
 {
   if ( !setMasterPassword( true ) )
     return false;
 
+  // don't need to validate id, since it has not be defined yet
   if ( !config.isValid() )
   {
     emit messageOut( tr( "Store config: FAILED because config is invalid" ),
@@ -302,6 +303,7 @@ bool QgsAuthenticationManager::storeAuthenticationConfig( QgsAuthenticationConfi
     return false;
   }
 
+  QString configstring = config.configString();
   if ( configstring.isEmpty() )
   {
     emit messageOut( tr( "Store config: FAILED because config is empty" ),
@@ -334,14 +336,76 @@ bool QgsAuthenticationManager::storeAuthenticationConfig( QgsAuthenticationConfi
   // passed-in config should now be like as if it was just loaded from db
   config.setId( uid );
 
+  // TODO: update cache
+
   return true;
 }
 
-bool QgsAuthenticationManager::loadAuthenticationConfig( const QString &id, QgsAuthenticationConfigBase &config ) const
+bool QgsAuthenticationManager::updateAuthenticationConfig( const QgsAuthenticationConfigBase& config )
 {
+  if ( !setMasterPassword( true ) )
+    return false;
+
+  // validate id
+  if ( !config.isValid( true ) )
+  {
+    emit messageOut( tr( "Update config: FAILED because config is invalid" ),
+                     authManTag(), CRITICAL );
+    return false;
+  }
+
+  QString configstring = config.configString();
+  if ( configstring.isEmpty() )
+  {
+    emit messageOut( tr( "Update config: FAILED because config is empty" ),
+                     authManTag(), CRITICAL );
+    return false;
+  }
+
   QSqlQuery query( authDbConnection() );
-  query.prepare( QString( "SELECT id, name, uri, type, version FROM %1 "
-                          "WHERE id = ':someid'" ).arg( authDbConfigTable() ) );
+  query.prepare( QString( "UPDATE %1 "
+                          "SET name = ':name', uri = ':uri', type = :type, version = :version, config = ':config') "
+                          "WHERE id = ':id'" ).arg( authDbConfigTable() ) );
+
+  query.bindValue( ":id", config.id() );
+  query.bindValue( ":name", config.name() );
+  query.bindValue( ":uri", config.uri() );
+  query.bindValue( ":type", ( int ) config.type() );
+  query.bindValue( ":version", config.version() );
+  query.bindValue( ":config", QgsAuthenticationCrypto::encrypt( mMasterPass, configstring, "AES" ) );
+
+  if ( !authDbStartTransaction() )
+    return false;
+
+  if ( !authDbQuery( &query ) )
+    return false;
+
+  if ( !authDbCommit() )
+    return false;
+
+  // TODO: update cache
+
+  return true;
+}
+
+bool QgsAuthenticationManager::loadAuthenticationConfig( const QString& id, QgsAuthenticationConfigBase &config, bool full ) const
+{
+  if ( full && !setMasterPassword( true ) )
+    return false;
+
+  QSqlQuery query( authDbConnection() );
+  full = full && config.type() != QgsAuthenticationProvider::None; // negates 'full' if loading into base class
+  if ( full )
+  {
+    query.prepare( QString( "SELECT id, name, uri, type, version, config FROM %1 "
+                            "WHERE id = ':someid'" ).arg( authDbConfigTable() ) );
+  }
+  else
+  {
+    query.prepare( QString( "SELECT id, name, uri, type, version FROM %1 "
+                            "WHERE id = ':someid'" ).arg( authDbConfigTable() ) );
+  }
+
 
   query.bindValue( ":someid", id );
 
@@ -359,6 +423,11 @@ bool QgsAuthenticationManager::loadAuthenticationConfig( const QString &id, QgsA
       config.setUri( query.value( 2 ).toString() );
       config.setType( QgsAuthenticationProvider::providerTypeFromInt( query.value( 3 ).toInt() ) );
       config.setVersion( query.value( 4 ).toInt() );
+
+      if ( full )
+      {
+        config.loadConfigString( QgsAuthenticationCrypto::decrypt( mMasterPass, query.value( 5 ).toString(), "AES" ) );
+      }
 
       return true;
     }

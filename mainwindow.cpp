@@ -35,7 +35,7 @@ MainWindow::~MainWindow()
 {
 }
 
-void MainWindow::masterPasswordVerificationChanged(bool verified)
+void MainWindow::masterPasswordVerificationChanged( bool verified )
 {
   teOut->appendPlainText( QString( "Master password is %1" ).arg( verified ? "verified" : "not verified" ) );
 }

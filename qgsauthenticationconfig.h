@@ -12,7 +12,7 @@ class QgsAuthenticationConfigBase
 {
   public:
 
-    QgsAuthenticationConfigBase( QgsAuthenticationProvider::ProviderType type = QgsAuthenticationProvider::Unknown,
+    QgsAuthenticationConfigBase( QgsAuthenticationProvider::ProviderType type = QgsAuthenticationProvider::None,
                                  int version = 0 );
 
     QgsAuthenticationConfigBase( const QgsAuthenticationConfigBase& config );
@@ -36,7 +36,7 @@ class QgsAuthenticationConfigBase
 
     const QgsAuthenticationConfigBase& asBaseConfig();
 
-    virtual bool isValid() const;
+    virtual bool isValid( bool validateid = false ) const;
 
     virtual const QString configString() const { return QString(); }
     virtual void loadConfigString( const QString& config ) { Q_UNUSED( config ); }
@@ -71,7 +71,7 @@ class QgsAuthenticationConfigBasic: public QgsAuthenticationConfigBase
     const QString password() const { return mPassword; }
     void setPassword( const QString& pass ) { mPassword = pass; }
 
-    bool isValid() const;
+    bool isValid( bool validateid = false ) const;
 
     const QString configString() const;
     void loadConfigString( const QString& config = QString() );
@@ -105,7 +105,7 @@ class QgsAuthenticationConfigPki: public QgsAuthenticationConfigBase
     bool issuerSelfSigned() const { return mIssuerSelf; }
     void setIssuerSelfSigned( bool selfsigned ) { mIssuerSelf = selfsigned; }
 
-    bool isValid() const;
+    bool isValid( bool validateid = false ) const;
 
     const QString configString() const;
     void loadConfigString( const QString& config = QString() );

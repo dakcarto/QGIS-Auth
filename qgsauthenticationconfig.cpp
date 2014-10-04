@@ -31,11 +31,15 @@ const QString QgsAuthenticationConfigBase::typeAsString() const
   return QgsAuthenticationProvider::typeAsString( mType );
 }
 
-bool QgsAuthenticationConfigBase::isValid() const
+bool QgsAuthenticationConfigBase::isValid( bool validateid ) const
 {
+  bool idvalid = true;
+  if ( validateid )
+  {
+    idvalid = !mId.isEmpty() && QgsAuthenticationManager::instance()->configIdUnique( mId );
+  }
   return (
-           !mId.isEmpty()
-           && QgsAuthenticationManager::instance()->configIdUnique( mId )
+           idvalid
            && !mName.isEmpty()
            && !mUri.isEmpty()
            && mType != QgsAuthenticationProvider::Unknown
@@ -61,11 +65,11 @@ QgsAuthenticationConfigBasic::QgsAuthenticationConfigBasic()
 {
 }
 
-bool QgsAuthenticationConfigBasic::isValid() const
+bool QgsAuthenticationConfigBasic::isValid( bool validateid ) const
 {
   // password can be empty
   return (
-           QgsAuthenticationConfigBase::isValid()
+           QgsAuthenticationConfigBase::isValid( validateid )
            && !mRealm.isEmpty()
            && !mUsername.isEmpty()
          );
@@ -103,10 +107,10 @@ QgsAuthenticationConfigPki::QgsAuthenticationConfigPki()
 {
 }
 
-bool QgsAuthenticationConfigPki::isValid() const
+bool QgsAuthenticationConfigPki::isValid( bool validateid ) const
 {
   return (
-           QgsAuthenticationConfigBase::isValid()
+           QgsAuthenticationConfigBase::isValid( validateid )
            && !mCertId.isEmpty()
            && !mKeyId.isEmpty()
          );

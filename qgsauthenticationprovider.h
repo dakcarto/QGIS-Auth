@@ -23,7 +23,7 @@ class QgsAuthenticationProvider : public QObject
 
     ProviderType providerType() const { return mType; }
 
-    static ProviderType providerTypeFromInt(int itype );
+    static ProviderType providerTypeFromInt( int itype );
 
     static const QString typeAsString( QgsAuthenticationProvider::ProviderType providertype = None );
 

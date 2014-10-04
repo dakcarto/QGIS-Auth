@@ -50,9 +50,11 @@ class QgsAuthenticationManager : public QObject
     const QString uniqueConfigId() const;
 
 
-    bool storeAuthenticationConfig( QgsAuthenticationConfigBase &config , const QString& configstring );
+    bool storeAuthenticationConfig( QgsAuthenticationConfigBase &config );
 
-    bool loadAuthenticationConfig( const QString& id, QgsAuthenticationConfigBase &config ) const;
+    bool updateAuthenticationConfig( const QgsAuthenticationConfigBase& config );
+
+    bool loadAuthenticationConfig( const QString& id, QgsAuthenticationConfigBase &config, bool full = false ) const;
 
 
     void updateNetworkRequest( QNetworkRequest &request, const QString& authid );
@@ -60,7 +62,7 @@ class QgsAuthenticationManager : public QObject
     void updateNetworkReply( QNetworkReply *reply, const QString& authid );
 
   signals:
-    void messageOut( const QString &message, const QString &tag = smAuthManTag, MessageLevel level = INFO ) const;
+    void messageOut( const QString& message, const QString& tag = smAuthManTag, MessageLevel level = INFO ) const;
 
     void masterPasswordVerified( bool verified ) const;
 

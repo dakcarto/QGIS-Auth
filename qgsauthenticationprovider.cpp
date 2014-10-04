@@ -9,7 +9,7 @@ QgsAuthenticationProvider::QgsAuthenticationProvider( QObject *parent, ProviderT
 {
 }
 
-QgsAuthenticationProvider::ProviderType QgsAuthenticationProvider::providerTypeFromInt(int itype )
+QgsAuthenticationProvider::ProviderType QgsAuthenticationProvider::providerTypeFromInt( int itype )
 {
   ProviderType ptype = Unknown;
   switch ( itype )
@@ -90,6 +90,7 @@ void QgsAuthenticationProviderBasic::updateNetworkReply( QNetworkReply *reply, c
 #ifndef QT_NO_OPENSSL
 
 QgsAuthenticationProviderPkiPaths::QgsAuthenticationProviderPkiPaths( QObject *parent )
+    : QgsAuthenticationProvider( parent, PkiPaths )
 {
 
 }
