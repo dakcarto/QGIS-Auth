@@ -5,10 +5,67 @@
 
 #include <QObject>
 
+
+QgsAuthType::ProviderType QgsAuthType::providerTypeFromInt( int itype )
+{
+  ProviderType ptype = Unknown;
+  switch ( itype )
+  {
+    case 0:
+      ptype = None;
+      break;
+    case 1:
+      ptype = None;
+      break;
+#ifndef QT_NO_OPENSSL
+    case 2:
+      ptype = PkiPaths;
+      break;
+#endif
+    case 20:
+      // Unknown
+      break;
+    default:
+      break;
+  }
+
+  return ptype;
+
+}
+
+const QString QgsAuthType::typeAsString( QgsAuthType::ProviderType providertype )
+{
+  QString s = QObject::tr( "No authentication configuration set" );
+  switch ( providertype )
+  {
+    case None:
+      break;
+    case Basic:
+      s = QObject::tr( "Basic authentication configuration" );
+      break;
+#ifndef QT_NO_OPENSSL
+    case PkiPaths:
+      s = QObject::tr( "PKI paths authentication configuration" );
+      break;
+#endif
+    case Unknown:
+      s = QObject::tr( "Unsupported authentication configuration" );
+      break;
+    default:
+      break;
+  }
+  return s;
+}
+
+
+//////////////////////////////////////////////
+// QgsAuthConfigBase
+//////////////////////////////////////////////
+
 const QString QgsAuthConfigBase::mConfSep = "|||";
 
 // get uniqueConfigId only on save
-QgsAuthConfigBase::QgsAuthConfigBase( ProviderType type, int version )
+QgsAuthConfigBase::QgsAuthConfigBase( QgsAuthType::ProviderType type, int version )
     : mId( QString() )
     , mName( QString() )
     , mUri( QString() )
@@ -28,7 +85,7 @@ QgsAuthConfigBase::QgsAuthConfigBase( const QgsAuthConfigBase &config )
 
 const QString QgsAuthConfigBase::typeAsString() const
 {
-  return QgsAuthProvider::typeAsString( mType );
+  return QgsAuthType::typeAsString( mType );
 }
 
 bool QgsAuthConfigBase::isValid( bool validateid ) const
@@ -42,7 +99,7 @@ bool QgsAuthConfigBase::isValid( bool validateid ) const
            idvalid
            && !mName.isEmpty()
            && !mUri.isEmpty()
-           && mType != QgsAuthConfigBase::Unknown
+           && mType != QgsAuthType::Unknown
            && mVersion != 0
          );
 }
@@ -53,12 +110,12 @@ const QgsAuthConfigBase QgsAuthConfigBase::toBaseConfig()
 }
 
 
-//////////////////////////////////////////////////////////////////////////////
-/// QgsAuthConfigBasic
-//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////
+// QgsAuthConfigBasic
+//////////////////////////////////////////////
 
 QgsAuthConfigBasic::QgsAuthConfigBasic()
-    : QgsAuthConfigBase( QgsAuthConfigBase::Basic, 1 )
+    : QgsAuthConfigBase( QgsAuthType::Basic, 1 )
     , mRealm( QString() )
     , mUsername( QString() )
     , mPassword( QString() )
@@ -93,12 +150,12 @@ void QgsAuthConfigBasic::loadConfigString( const QString& config )
   mPassword = configlist.at( 2 );
 }
 
-//////////////////////////////////////////////////////////////////////////////
-/// QgsAuthConfigPki
-//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////
+// QgsAuthConfigPki
+//////////////////////////////////////////////
 
 QgsAuthConfigPkiPaths::QgsAuthConfigPkiPaths()
-    : QgsAuthConfigBase( QgsAuthConfigBase::PkiPaths, 1 )
+    : QgsAuthConfigBase( QgsAuthType::PkiPaths, 1 )
     , mCertId( QString() )
     , mKeyId( QString() )
     , mKeyPass( QString() )

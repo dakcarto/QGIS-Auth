@@ -9,7 +9,7 @@
 #include "qgsauthenticationconfig.h"
 #include "qgsauthenticationmanager.h"
 
-QgsAuthProvider::QgsAuthProvider( QObject *parent, QgsAuthConfigBase::ProviderType providertype )
+QgsAuthProvider::QgsAuthProvider( QObject *parent, QgsAuthType::ProviderType providertype )
     : QObject( parent )
     , mType( providertype )
 {
@@ -19,56 +19,6 @@ QgsAuthProvider::QgsAuthProvider( QObject *parent, QgsAuthConfigBase::ProviderTy
 
 QgsAuthProvider::~QgsAuthProvider()
 {
-}
-
-QgsAuthConfigBase::ProviderType QgsAuthProvider::providerTypeFromInt( int itype )
-{
-  QgsAuthConfigBase::ProviderType ptype = QgsAuthConfigBase::Unknown;
-  switch ( itype )
-  {
-    case 0:
-      ptype = QgsAuthConfigBase::None;
-      break;
-    case 1:
-      ptype = QgsAuthConfigBase::None;
-      break;
-#ifndef QT_NO_OPENSSL
-    case 2:
-      ptype = QgsAuthConfigBase::PkiPaths;
-      break;
-#endif
-    case 20:
-      // Unknown
-      break;
-    default:
-      break;
-  }
-
-  return ptype;
-}
-
-const QString QgsAuthProvider::typeAsString( QgsAuthConfigBase::ProviderType providertype )
-{
-  QString s = tr( "No authentication configuration set" );
-  switch ( providertype )
-  {
-    case QgsAuthConfigBase::None:
-      break;
-    case QgsAuthConfigBase::Basic:
-      s = tr( "Basic authentication configuration" );
-      break;
-#ifndef QT_NO_OPENSSL
-    case QgsAuthConfigBase::PkiPaths:
-      s = tr( "PKI paths authentication configuration" );
-      break;
-#endif
-    case QgsAuthConfigBase::Unknown:
-      s = tr( "Unsupported authentication configuration" );
-      break;
-    default:
-      break;
-  }
-  return s;
 }
 
 bool QgsAuthProvider::urlToResource( const QString &accessurl, QString *resource, bool withpath )
@@ -86,7 +36,7 @@ bool QgsAuthProvider::urlToResource( const QString &accessurl, QString *resource
   return ( !res.isEmpty() );
 }
 
-void QgsAuthProvider::writeDebug(const QString &message, const QString &tag, MessageLevel level)
+void QgsAuthProvider::writeDebug( const QString &message, const QString &tag, MessageLevel level )
 {
   Q_UNUSED( tag );
 
@@ -109,12 +59,13 @@ void QgsAuthProvider::writeDebug(const QString &message, const QString &tag, Mes
   qDebug( "%s", msg.toLatin1().constData() );
 }
 
+
 //////////////////////////////////////////////////////
 // QgsAuthProviderBasic
 //////////////////////////////////////////////////////
 
 QgsAuthProviderBasic::QgsAuthProviderBasic( QObject *parent )
-    : QgsAuthProvider( parent, QgsAuthConfigBase::Basic )
+    : QgsAuthProvider( parent, QgsAuthType::Basic )
 {
 }
 
@@ -124,11 +75,16 @@ QgsAuthProviderBasic::~QgsAuthProviderBasic()
 
 void QgsAuthProviderBasic::updateNetworkRequest( QNetworkRequest &request, const QString &authid )
 {
+  Q_UNUSED( request );
+  Q_UNUSED( authid );
 }
 
 void QgsAuthProviderBasic::updateNetworkReply( QNetworkReply *reply, const QString &authid )
 {
+  Q_UNUSED( reply );
+  Q_UNUSED( authid );
 }
+
 
 #ifndef QT_NO_OPENSSL
 
@@ -163,7 +119,7 @@ bool QgsPkiPathsBundle::isValid()
 QMap<QString, QgsPkiPathsBundle *> QgsAuthProviderPkiPaths::mPkiPathsBundleCache = QMap<QString, QgsPkiPathsBundle *>();
 
 QgsAuthProviderPkiPaths::QgsAuthProviderPkiPaths( QObject *parent )
-    : QgsAuthProvider( parent, QgsAuthConfigBase::PkiPaths )
+    : QgsAuthProvider( parent, QgsAuthType::PkiPaths )
 {
 
 }
@@ -367,7 +323,7 @@ QgsPkiPathsBundle *QgsAuthProviderPkiPaths::getPkiPathsBundle( const QString& au
   return pkibundle;
 }
 
-void QgsAuthProviderPkiPaths::putPkiPathsBundle(const QString &authid, QgsPkiPathsBundle *pkibundle)
+void QgsAuthProviderPkiPaths::putPkiPathsBundle( const QString &authid, QgsPkiPathsBundle *pkibundle )
 {
   emit messageOut( QString( "Putting PKI bundle for authid %1" ).arg( authid ) );
   mPkiPathsBundleCache.insert( authid, pkibundle );

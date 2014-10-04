@@ -3,10 +3,8 @@
 
 #include <QString>
 
-/**
- * @brief Base class for configs
- */
-class QgsAuthConfigBase
+
+class QgsAuthType
 {
   public:
     enum ProviderType
@@ -19,8 +17,19 @@ class QgsAuthConfigBase
       Unknown = 20 // padding for more standard auth types
     };
 
-    QgsAuthConfigBase( ProviderType type = None,
-                                 int version = 0 );
+    static ProviderType providerTypeFromInt( int itype );
+
+    static const QString typeAsString( ProviderType providertype = None );
+};
+
+/**
+ * @brief Base class for configs
+ */
+class QgsAuthConfigBase
+{
+  public:
+
+    QgsAuthConfigBase( QgsAuthType::ProviderType type = QgsAuthType::None, int version = 0 );
 
     QgsAuthConfigBase( const QgsAuthConfigBase& config );
 
@@ -33,8 +42,8 @@ class QgsAuthConfigBase
     const QString uri() const { return mUri; }
     void setUri( const QString& uri ) { mUri = uri; }
 
-    ProviderType type() const { return mType; }
-    void setType( ProviderType i ) { mType = i; }
+    QgsAuthType::ProviderType type() const { return mType; }
+    void setType( QgsAuthType::ProviderType ptype ) { mType = ptype; }
 
     int version() const { return mVersion; }
     void setVersion( int version ) { mVersion = version; }
@@ -54,7 +63,7 @@ class QgsAuthConfigBase
     QString mId;
     QString mName;
     QString mUri;
-    ProviderType mType;
+    QgsAuthType::ProviderType mType;
     int mVersion;
 
     static const QString mConfSep;

@@ -49,7 +49,7 @@ class QgsAuthManager : public QObject
 
     void updateConfigProviders();
 
-    QgsAuthProvider* configProvider(const QString& authid );
+    QgsAuthProvider* configProvider( const QString& authid );
 
     bool configIdUnique( const QString &id ) const;
 
@@ -118,8 +118,8 @@ class QgsAuthManager : public QObject
     static const QString smAuthPassTable;
     static const QString smAuthManTag;
 
-    QHash<QString, QgsAuthConfigBase::ProviderType> mConfigProviders;
-    QHash<QgsAuthConfigBase::ProviderType, QgsAuthProvider*> mProviders;
+    QHash<QString, QgsAuthType::ProviderType> mConfigProviders;
+    QHash<QgsAuthType::ProviderType, QgsAuthProvider*> mProviders;
 
     QString mMasterPass;
     QString mMasterPassReset;

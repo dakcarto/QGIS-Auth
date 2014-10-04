@@ -26,15 +26,11 @@ class QgsAuthProvider : public QObject
     };
 
     explicit QgsAuthProvider( QObject *parent = 0 ,
-                                        QgsAuthConfigBase::ProviderType providertype = QgsAuthConfigBase::None );
+                              QgsAuthType::ProviderType providertype = QgsAuthType::None );
 
     virtual ~QgsAuthProvider();
 
-    QgsAuthConfigBase::ProviderType providerType() const { return mType; }
-
-    static QgsAuthConfigBase::ProviderType providerTypeFromInt( int itype );
-
-    static const QString typeAsString( QgsAuthConfigBase::ProviderType providertype = QgsAuthConfigBase::None );
+    QgsAuthType::ProviderType providerType() const { return mType; }
 
     static bool urlToResource( const QString& accessurl, QString *resource, bool withpath = false );
 
@@ -54,7 +50,7 @@ class QgsAuthProvider : public QObject
   private:
     Q_DISABLE_COPY( QgsAuthProvider )
 
-    QgsAuthConfigBase::ProviderType mType;
+    QgsAuthType::ProviderType mType;
 };
 
 class QgsAuthProviderBasic : public QgsAuthProvider

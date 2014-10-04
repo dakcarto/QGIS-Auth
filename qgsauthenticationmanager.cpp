@@ -251,9 +251,9 @@ bool QgsAuthManager::resetMasterPassword()
 
 void QgsAuthManager::registerProviders()
 {
-  mProviders.insert( QgsAuthConfigBase::Basic, new QgsAuthProviderBasic() );
+  mProviders.insert( QgsAuthType::Basic, new QgsAuthProviderBasic() );
 #ifndef QT_NO_OPENSSL
-  mProviders.insert( QgsAuthConfigBase::PkiPaths, new QgsAuthProviderPkiPaths() );
+  mProviders.insert( QgsAuthType::PkiPaths, new QgsAuthProviderPkiPaths() );
 #endif
 }
 
@@ -286,7 +286,7 @@ void QgsAuthManager::updateConfigProviders()
     while ( query.next() )
     {
       mConfigProviders.insert( query.value( 0 ).toString(),
-                               QgsAuthProvider::providerTypeFromInt( query.value( 1 ).toInt() ) );
+                               QgsAuthType::providerTypeFromInt( query.value( 1 ).toInt() ) );
     }
   }
 }
@@ -296,9 +296,9 @@ QgsAuthProvider* QgsAuthManager::configProvider( const QString& authid )
   if ( !mConfigProviders.contains( authid ) )
     return 0;
 
-  QgsAuthConfigBase::ProviderType ptype = mConfigProviders.value( authid );
+  QgsAuthType::ProviderType ptype = mConfigProviders.value( authid );
 
-  if ( ptype == QgsAuthConfigBase::None || ptype == QgsAuthConfigBase::Unknown )
+  if ( ptype == QgsAuthType::None || ptype == QgsAuthType::Unknown )
     return 0;
 
   return mProviders.value( ptype );
@@ -408,7 +408,7 @@ bool QgsAuthManager::loadAuthenticationConfig( const QString& id, QgsAuthConfigB
     return false;
 
   QSqlQuery query( authDbConnection() );
-  full = full && config.type() != QgsAuthConfigBase::None; // negates 'full' if loading into base class
+  full = full && config.type() != QgsAuthType::None; // negates 'full' if loading into base class
   if ( full )
   {
     query.prepare( QString( "SELECT id, name, uri, type, version, config FROM %1 "
@@ -435,7 +435,7 @@ bool QgsAuthManager::loadAuthenticationConfig( const QString& id, QgsAuthConfigB
       config.setId( query.value( 0 ).toString() );
       config.setName( query.value( 1 ).toString() );
       config.setUri( query.value( 2 ).toString() );
-      config.setType( QgsAuthProvider::providerTypeFromInt( query.value( 3 ).toInt() ) );
+      config.setType( QgsAuthType::providerTypeFromInt( query.value( 3 ).toInt() ) );
       config.setVersion( query.value( 4 ).toInt() );
 
       if ( full )
@@ -468,8 +468,8 @@ void QgsAuthManager::updateNetworkReply( QNetworkReply *reply, const QString& au
 }
 
 void QgsAuthManager::writeDebug( const QString &message,
-    const QString &tag,
-    MessageLevel level )
+                                 const QString &tag,
+                                 MessageLevel level )
 {
   Q_UNUSED( tag );
 
