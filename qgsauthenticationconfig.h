@@ -3,7 +3,7 @@
 
 #include <QString>
 
-#include "qgsauthenticationprovider.h"
+class QgsAuthenticationProvider;
 
 /**
  * @brief Base class for configs
@@ -11,8 +11,17 @@
 class QgsAuthenticationConfigBase
 {
   public:
+    enum ProviderType
+    {
+      None = 0,
+      Basic = 1,
+#ifndef QT_NO_OPENSSL
+      PkiPaths = 2,
+#endif
+      Unknown = 20 // padding for more standard auth types
+    };
 
-    QgsAuthenticationConfigBase( QgsAuthenticationProvider::ProviderType type = QgsAuthenticationProvider::None,
+    QgsAuthenticationConfigBase( ProviderType type = None,
                                  int version = 0 );
 
     QgsAuthenticationConfigBase( const QgsAuthenticationConfigBase& config );
@@ -26,8 +35,8 @@ class QgsAuthenticationConfigBase
     const QString uri() const { return mUri; }
     void setUri( const QString& uri ) { mUri = uri; }
 
-    QgsAuthenticationProvider::ProviderType type() const { return mType; }
-    void setType( QgsAuthenticationProvider::ProviderType i ) { mType = i; }
+    ProviderType type() const { return mType; }
+    void setType( ProviderType i ) { mType = i; }
 
     int version() const { return mVersion; }
     void setVersion( int version ) { mVersion = version; }
@@ -47,7 +56,7 @@ class QgsAuthenticationConfigBase
     QString mId;
     QString mName;
     QString mUri;
-    QgsAuthenticationProvider::ProviderType mType;
+    ProviderType mType;
     int mVersion;
 
     static const QString mConfSep;
@@ -82,12 +91,12 @@ class QgsAuthenticationConfigBasic: public QgsAuthenticationConfigBase
     QString mPassword;
 };
 
-class QgsAuthenticationConfigPki: public QgsAuthenticationConfigBase
+class QgsAuthenticationConfigPkiPaths: public QgsAuthenticationConfigBase
 {
   public:
-    QgsAuthenticationConfigPki();
+    QgsAuthenticationConfigPkiPaths();
 
-    QgsAuthenticationConfigPki( const QgsAuthenticationConfigBase& config )
+    QgsAuthenticationConfigPkiPaths( const QgsAuthenticationConfigBase& config )
         : QgsAuthenticationConfigBase( config ) {}
 
     const QString certId() const { return mCertId; }

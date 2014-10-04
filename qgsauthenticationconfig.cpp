@@ -8,7 +8,7 @@
 const QString QgsAuthenticationConfigBase::mConfSep = "|||";
 
 // get uniqueConfigId only on save
-QgsAuthenticationConfigBase::QgsAuthenticationConfigBase( QgsAuthenticationProvider::ProviderType type, int version )
+QgsAuthenticationConfigBase::QgsAuthenticationConfigBase( ProviderType type, int version )
     : mId( QString() )
     , mName( QString() )
     , mUri( QString() )
@@ -42,7 +42,7 @@ bool QgsAuthenticationConfigBase::isValid( bool validateid ) const
            idvalid
            && !mName.isEmpty()
            && !mUri.isEmpty()
-           && mType != QgsAuthenticationProvider::Unknown
+           && mType != QgsAuthenticationConfigBase::Unknown
            && mVersion != 0
          );
 }
@@ -58,7 +58,7 @@ const QgsAuthenticationConfigBase QgsAuthenticationConfigBase::toBaseConfig()
 //////////////////////////////////////////////////////////////////////////////
 
 QgsAuthenticationConfigBasic::QgsAuthenticationConfigBasic()
-    : QgsAuthenticationConfigBase( QgsAuthenticationProvider::Basic, 1 )
+    : QgsAuthenticationConfigBase( QgsAuthenticationConfigBase::Basic, 1 )
     , mRealm( QString() )
     , mUsername( QString() )
     , mPassword( QString() )
@@ -97,8 +97,8 @@ void QgsAuthenticationConfigBasic::loadConfigString( const QString& config )
 /// QgsAuthenticationConfigPki
 //////////////////////////////////////////////////////////////////////////////
 
-QgsAuthenticationConfigPki::QgsAuthenticationConfigPki()
-    : QgsAuthenticationConfigBase( QgsAuthenticationProvider::PkiPaths, 1 )
+QgsAuthenticationConfigPkiPaths::QgsAuthenticationConfigPkiPaths()
+    : QgsAuthenticationConfigBase( QgsAuthenticationConfigBase::PkiPaths, 1 )
     , mCertId( QString() )
     , mKeyId( QString() )
     , mKeyPass( QString() )
@@ -107,7 +107,7 @@ QgsAuthenticationConfigPki::QgsAuthenticationConfigPki()
 {
 }
 
-bool QgsAuthenticationConfigPki::isValid( bool validateid ) const
+bool QgsAuthenticationConfigPkiPaths::isValid( bool validateid ) const
 {
   return (
            QgsAuthenticationConfigBase::isValid( validateid )
@@ -116,14 +116,14 @@ bool QgsAuthenticationConfigPki::isValid( bool validateid ) const
          );
 }
 
-const QString QgsAuthenticationConfigPki::configString() const
+const QString QgsAuthenticationConfigPkiPaths::configString() const
 {
   QStringList configlist = QStringList();
   configlist << mCertId << mKeyId << mKeyPass << mIssuerId << QString::number( mIssuerSelf );
   return configlist.join( mConfSep );
 }
 
-void QgsAuthenticationConfigPki::loadConfigString( const QString& config )
+void QgsAuthenticationConfigPkiPaths::loadConfigString( const QString& config )
 {
   if ( config.isEmpty() )
   {

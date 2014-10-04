@@ -13,6 +13,7 @@
 #include "qgsauthenticationprovider.h"
 #include "qgsauthenticationcrypto.h"
 
+class QgsAuthenticationProvider;
 
 class QgsAuthenticationManager : public QObject
 {
@@ -33,7 +34,6 @@ class QgsAuthenticationManager : public QObject
 
     bool init();
 
-
     bool setMasterPassword( bool verify = false );
 
     bool masterPasswordIsSet() const;
@@ -45,16 +45,20 @@ class QgsAuthenticationManager : public QObject
     bool resetMasterPassword();
 
 
-    bool configIdUnique( const QString &id ) const;
+    void registerProviders();
 
-    const QString uniqueConfigId() const;
+    void updateConfigProviders();
+
+    QgsAuthenticationProvider* configProvider(const QString& authid );
+
+    bool configIdUnique( const QString &id ) const;
 
 
     bool storeAuthenticationConfig( QgsAuthenticationConfigBase &config );
 
     bool updateAuthenticationConfig( const QgsAuthenticationConfigBase& config );
 
-    bool loadAuthenticationConfig( const QString& id, QgsAuthenticationConfigBase &config, bool full = false ) const;
+    bool loadAuthenticationConfig( const QString& id, QgsAuthenticationConfigBase &config, bool full = false );
 
 
     void updateNetworkRequest( QNetworkRequest &request, const QString& authid );
@@ -89,7 +93,11 @@ class QgsAuthenticationManager : public QObject
 
     bool masterPasswordClearDb() const;
 
-    QStringList authDbConfigIds() const;
+
+    const QString uniqueConfigId() const;
+
+    QStringList configIds() const;
+
 
     bool authDbOpen() const;
 
@@ -109,6 +117,9 @@ class QgsAuthenticationManager : public QObject
     static const QString smAuthConfigTable;
     static const QString smAuthPassTable;
     static const QString smAuthManTag;
+
+    QHash<QString, QgsAuthenticationConfigBase::ProviderType> mConfigProviders;
+    QHash<QgsAuthenticationConfigBase::ProviderType, QgsAuthenticationProvider*> mProviders;
 
     QString mMasterPass;
     QString mMasterPassReset;

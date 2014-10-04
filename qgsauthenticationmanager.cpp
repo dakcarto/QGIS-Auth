@@ -60,6 +60,7 @@ bool QgsAuthenticationManager::init()
     if ( dbinfo.size() > 0 )
     {
       emit messageOut( "Auth db exists and has data" );
+      updateConfigProviders();
       return true;
     }
   }
@@ -209,7 +210,7 @@ bool QgsAuthenticationManager::masterPasswordSame( const QString &pass ) const
 
 bool QgsAuthenticationManager::resetMasterPassword()
 {
-  // TODO
+  // TODO: add master password reset
 
   // check that a master password is even set in auth db, if not offer to set one
 
@@ -248,6 +249,14 @@ bool QgsAuthenticationManager::resetMasterPassword()
   return true;
 }
 
+void QgsAuthenticationManager::registerProviders()
+{
+  mProviders.insert( QgsAuthenticationConfigBase::Basic, new QgsAuthenticationProviderBasic() );
+#ifndef QT_NO_OPENSSL
+  mProviders.insert( QgsAuthenticationConfigBase::PkiPaths, new QgsAuthenticationProviderPkiPaths() );
+#endif
+}
+
 
 bool QgsAuthenticationManager::configIdUnique( const QString& id ) const
 {
@@ -256,38 +265,43 @@ bool QgsAuthenticationManager::configIdUnique( const QString& id ) const
     emit messageOut( "Config ID is empty", authManTag(), WARNING );
     return false;
   }
-  QStringList configids = authDbConfigIds();
+  QStringList configids = configIds();
   return !configids.contains( id );
 }
 
-const QString QgsAuthenticationManager::uniqueConfigId() const
+void QgsAuthenticationManager::updateConfigProviders()
 {
-  QStringList configids = authDbConfigIds();
-  QString id;
-  int len = 7;
+  QSqlQuery query( authDbConnection() );
+  query.prepare( QString( "SELECT id, type FROM %1" ).arg( authDbConfigTable() ) );
 
-  while ( true )
+  if ( !authDbQuery( &query ) )
   {
-    id = "";
-    for ( int i = 0; i < len; i++ )
+    return;
+  }
+
+  if ( query.isActive() )
+  {
+    emit messageOut( "Synching configuration providers" );
+    mConfigProviders.clear();
+    while ( query.next() )
     {
-      switch ( qrand() % 2 )
-      {
-        case 0:
-          id += ( '0' + qrand() % 10 );
-          break;
-        case 1:
-          id += ( 'a' + qrand() % 26 );
-          break;
-      }
-    }
-    if ( !configids.contains( id ) )
-    {
-      break;
+      mConfigProviders.insert( query.value( 0 ).toString(),
+                               QgsAuthenticationProvider::providerTypeFromInt( query.value( 1 ).toInt() ) );
     }
   }
-  emit messageOut( QString( "Generated unique ID: %1" ).arg( id ) );
-  return id;
+}
+
+QgsAuthenticationProvider* QgsAuthenticationManager::configProvider( const QString& authid )
+{
+  if ( !mConfigProviders.contains( authid ) )
+    return 0;
+
+  QgsAuthenticationConfigBase::ProviderType ptype = mConfigProviders.value( authid );
+
+  if ( ptype == QgsAuthenticationConfigBase::None || ptype == QgsAuthenticationConfigBase::Unknown )
+    return 0;
+
+  return mProviders.value( ptype );
 }
 
 bool QgsAuthenticationManager::storeAuthenticationConfig( QgsAuthenticationConfigBase &config )
@@ -336,7 +350,7 @@ bool QgsAuthenticationManager::storeAuthenticationConfig( QgsAuthenticationConfi
   // passed-in config should now be like as if it was just loaded from db
   config.setId( uid );
 
-  // TODO: update cache
+  updateConfigProviders();
 
   return true;
 }
@@ -383,18 +397,18 @@ bool QgsAuthenticationManager::updateAuthenticationConfig( const QgsAuthenticati
   if ( !authDbCommit() )
     return false;
 
-  // TODO: update cache
+  updateConfigProviders();
 
   return true;
 }
 
-bool QgsAuthenticationManager::loadAuthenticationConfig( const QString& id, QgsAuthenticationConfigBase &config, bool full ) const
+bool QgsAuthenticationManager::loadAuthenticationConfig( const QString& id, QgsAuthenticationConfigBase &config, bool full )
 {
   if ( full && !setMasterPassword( true ) )
     return false;
 
   QSqlQuery query( authDbConnection() );
-  full = full && config.type() != QgsAuthenticationProvider::None; // negates 'full' if loading into base class
+  full = full && config.type() != QgsAuthenticationConfigBase::None; // negates 'full' if loading into base class
   if ( full )
   {
     query.prepare( QString( "SELECT id, name, uri, type, version, config FROM %1 "
@@ -435,14 +449,22 @@ bool QgsAuthenticationManager::loadAuthenticationConfig( const QString& id, QgsA
   return false;
 }
 
-void QgsAuthenticationManager::updateNetworkRequest( QNetworkRequest &request, const QString &authid )
+void QgsAuthenticationManager::updateNetworkRequest( QNetworkRequest &request, const QString& authid )
 {
-
+  QgsAuthenticationProvider* provider = configProvider( authid );
+  if ( provider )
+  {
+    provider->updateNetworkRequest( request, authid );
+  }
 }
 
-void QgsAuthenticationManager::updateNetworkReply( QNetworkReply *reply, const QString &authid )
+void QgsAuthenticationManager::updateNetworkReply( QNetworkReply *reply, const QString& authid )
 {
-
+  QgsAuthenticationProvider* provider = configProvider( authid );
+  if ( provider )
+  {
+    provider->updateNetworkReply( reply , authid );
+  }
 }
 
 void QgsAuthenticationManager::writeDebug( const QString &message,
@@ -486,7 +508,7 @@ QgsAuthenticationManager::QgsAuthenticationManager( QObject *parent )
 
 QgsAuthenticationManager::~QgsAuthenticationManager()
 {
-
+  qDeleteAll( mProviders.values() );
 }
 
 bool QgsAuthenticationManager::masterPasswordInput()
@@ -588,7 +610,37 @@ bool QgsAuthenticationManager::masterPasswordClearDb() const
   return authDbTransactionQuery( &query );
 }
 
-QStringList QgsAuthenticationManager::authDbConfigIds() const
+const QString QgsAuthenticationManager::uniqueConfigId() const
+{
+  QStringList configids = configIds();
+  QString id;
+  int len = 7;
+
+  while ( true )
+  {
+    id = "";
+    for ( int i = 0; i < len; i++ )
+    {
+      switch ( qrand() % 2 )
+      {
+        case 0:
+          id += ( '0' + qrand() % 10 );
+          break;
+        case 1:
+          id += ( 'a' + qrand() % 26 );
+          break;
+      }
+    }
+    if ( !configids.contains( id ) )
+    {
+      break;
+    }
+  }
+  emit messageOut( QString( "Generated unique ID: %1" ).arg( id ) );
+  return id;
+}
+
+QStringList QgsAuthenticationManager::configIds() const
 {
   QStringList configids = QStringList();
 
