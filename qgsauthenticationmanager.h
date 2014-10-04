@@ -13,9 +13,9 @@
 #include "qgsauthenticationprovider.h"
 #include "qgsauthenticationcrypto.h"
 
-class QgsAuthenticationProvider;
+class QgsAuthProvider;
 
-class QgsAuthenticationManager : public QObject
+class QgsAuthManager : public QObject
 {
     Q_OBJECT
   public:
@@ -28,7 +28,7 @@ class QgsAuthenticationManager : public QObject
       CRITICAL = 2
     };
 
-    static QgsAuthenticationManager *instance();
+    static QgsAuthManager *instance();
 
     QSqlDatabase authDbConnection() const;
 
@@ -49,16 +49,16 @@ class QgsAuthenticationManager : public QObject
 
     void updateConfigProviders();
 
-    QgsAuthenticationProvider* configProvider(const QString& authid );
+    QgsAuthProvider* configProvider(const QString& authid );
 
     bool configIdUnique( const QString &id ) const;
 
 
-    bool storeAuthenticationConfig( QgsAuthenticationConfigBase &config );
+    bool storeAuthenticationConfig( QgsAuthConfigBase &config );
 
-    bool updateAuthenticationConfig( const QgsAuthenticationConfigBase& config );
+    bool updateAuthenticationConfig( const QgsAuthConfigBase& config );
 
-    bool loadAuthenticationConfig( const QString& id, QgsAuthenticationConfigBase &config, bool full = false );
+    bool loadAuthenticationConfig( const QString& id, QgsAuthConfigBase &config, bool full = false );
 
 
     void updateNetworkRequest( QNetworkRequest &request, const QString& authid );
@@ -76,8 +76,8 @@ class QgsAuthenticationManager : public QObject
     void writeDebug( const QString& message, const QString& tag = QString(), MessageLevel level = INFO );
 
   protected:
-    explicit QgsAuthenticationManager( QObject *parent = 0 );
-    ~QgsAuthenticationManager();
+    explicit QgsAuthManager( QObject *parent = 0 );
+    ~QgsAuthManager();
 
   private:
 
@@ -113,13 +113,13 @@ class QgsAuthenticationManager : public QObject
     const QString authDbConfigTable() const { return smAuthConfigTable; }
     const QString authManTag() const { return smAuthManTag; }
 
-    static QgsAuthenticationManager* smInstance;
+    static QgsAuthManager* smInstance;
     static const QString smAuthConfigTable;
     static const QString smAuthPassTable;
     static const QString smAuthManTag;
 
-    QHash<QString, QgsAuthenticationConfigBase::ProviderType> mConfigProviders;
-    QHash<QgsAuthenticationConfigBase::ProviderType, QgsAuthenticationProvider*> mProviders;
+    QHash<QString, QgsAuthConfigBase::ProviderType> mConfigProviders;
+    QHash<QgsAuthConfigBase::ProviderType, QgsAuthProvider*> mProviders;
 
     QString mMasterPass;
     QString mMasterPassReset;

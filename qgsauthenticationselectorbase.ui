@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>QgsAuthenticationSelectorBase</class>
- <widget class="QWidget" name="QgsAuthenticationSelectorBase">
+ <class>QgsAuthSelectorBase</class>
+ <widget class="QWidget" name="QgsAuthSelectorBase">
   <property name="geometry">
    <rect>
     <x>0</x>

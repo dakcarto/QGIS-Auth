@@ -13,7 +13,7 @@
 
 #include "qgsauthenticationconfig.h"
 
-class QgsAuthenticationProvider : public QObject
+class QgsAuthProvider : public QObject
 {
     Q_OBJECT
   public:
@@ -25,16 +25,16 @@ class QgsAuthenticationProvider : public QObject
       CRITICAL = 2
     };
 
-    explicit QgsAuthenticationProvider( QObject *parent = 0 ,
-                                        QgsAuthenticationConfigBase::ProviderType providertype = QgsAuthenticationConfigBase::None );
+    explicit QgsAuthProvider( QObject *parent = 0 ,
+                                        QgsAuthConfigBase::ProviderType providertype = QgsAuthConfigBase::None );
 
-    virtual ~QgsAuthenticationProvider();
+    virtual ~QgsAuthProvider();
 
-    QgsAuthenticationConfigBase::ProviderType providerType() const { return mType; }
+    QgsAuthConfigBase::ProviderType providerType() const { return mType; }
 
-    static QgsAuthenticationConfigBase::ProviderType providerTypeFromInt( int itype );
+    static QgsAuthConfigBase::ProviderType providerTypeFromInt( int itype );
 
-    static const QString typeAsString( QgsAuthenticationConfigBase::ProviderType providertype = QgsAuthenticationConfigBase::None );
+    static const QString typeAsString( QgsAuthConfigBase::ProviderType providertype = QgsAuthConfigBase::None );
 
     static bool urlToResource( const QString& accessurl, QString *resource, bool withpath = false );
 
@@ -52,24 +52,24 @@ class QgsAuthenticationProvider : public QObject
     static const QString authProviderTag() { return tr( "Authentication provider" ); }
 
   private:
-    Q_DISABLE_COPY( QgsAuthenticationProvider )
+    Q_DISABLE_COPY( QgsAuthProvider )
 
-    QgsAuthenticationConfigBase::ProviderType mType;
+    QgsAuthConfigBase::ProviderType mType;
 };
 
-class QgsAuthenticationProviderBasic : public QgsAuthenticationProvider
+class QgsAuthProviderBasic : public QgsAuthProvider
 {
   public:
-    QgsAuthenticationProviderBasic( QObject *parent = 0 );
+    QgsAuthProviderBasic( QObject *parent = 0 );
 
-    ~QgsAuthenticationProviderBasic();
+    ~QgsAuthProviderBasic();
 
-    // QgsAuthenticationProvider interface
+    // QgsAuthProvider interface
     void updateNetworkRequest( QNetworkRequest &request, const QString &authid );
     void updateNetworkReply( QNetworkReply *reply, const QString &authid );
 
   private:
-    Q_DISABLE_COPY( QgsAuthenticationProviderBasic )
+    Q_DISABLE_COPY( QgsAuthProviderBasic )
     static QMap< QString, QPair<QString, QString> > mCredentialCache;
 };
 
@@ -85,7 +85,7 @@ class QgsAuthenticationProviderBasic : public QgsAuthenticationProvider
 class QgsPkiPathsBundle
 {
   public:
-    QgsPkiPathsBundle( const QgsAuthenticationConfigPkiPaths& config,
+    QgsPkiPathsBundle( const QgsAuthConfigPkiPaths& config,
                        const QSslCertificate& cert,
                        const QSslKey& certkey,
                        const QSslCertificate& issuer = QSslCertificate() );
@@ -93,8 +93,8 @@ class QgsPkiPathsBundle
 
     bool isValid();
 
-    const QgsAuthenticationConfigPkiPaths config() const { return mConfig; }
-    void setConfig( const QgsAuthenticationConfigPkiPaths& config ) { mConfig = config; }
+    const QgsAuthConfigPkiPaths config() const { return mConfig; }
+    void setConfig( const QgsAuthConfigPkiPaths& config ) { mConfig = config; }
 
     const QSslCertificate clientCert() const { return mCert; }
     void setClientCert( const QSslCertificate& cert ) { mCert = cert; }
@@ -106,27 +106,27 @@ class QgsPkiPathsBundle
     void setIssuerCert( const QSslCertificate& issuer ) { mIssuer = issuer; }
 
   private:
-    QgsAuthenticationConfigPkiPaths mConfig;
+    QgsAuthConfigPkiPaths mConfig;
     QSslCertificate mCert;
     QSslKey mCertKey;
     QSslCertificate mIssuer;
 };
 
 
-class QgsAuthenticationProviderPkiPaths : public QgsAuthenticationProvider
+class QgsAuthProviderPkiPaths : public QgsAuthProvider
 {
   public:
-    QgsAuthenticationProviderPkiPaths( QObject *parent = 0 );
+    QgsAuthProviderPkiPaths( QObject *parent = 0 );
 
-    ~QgsAuthenticationProviderPkiPaths();
+    ~QgsAuthProviderPkiPaths();
 
-    // QgsAuthenticationProvider interface
+    // QgsAuthProvider interface
     void updateNetworkRequest( QNetworkRequest &request, const QString &authid );
 
     void updateNetworkReply( QNetworkReply *reply, const QString &authid );
 
   private:
-    Q_DISABLE_COPY( QgsAuthenticationProviderPkiPaths )
+    Q_DISABLE_COPY( QgsAuthProviderPkiPaths )
 
     QgsPkiPathsBundle * getPkiPathsBundle( const QString &authid );
 

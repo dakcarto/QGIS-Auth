@@ -9,7 +9,7 @@
 #include "qgsauthenticationconfig.h"
 #include "qgsauthenticationmanager.h"
 
-QgsAuthenticationProvider::QgsAuthenticationProvider( QObject *parent, QgsAuthenticationConfigBase::ProviderType providertype )
+QgsAuthProvider::QgsAuthProvider( QObject *parent, QgsAuthConfigBase::ProviderType providertype )
     : QObject( parent )
     , mType( providertype )
 {
@@ -17,24 +17,24 @@ QgsAuthenticationProvider::QgsAuthenticationProvider( QObject *parent, QgsAuthen
            this, SLOT( writeDebug( const QString&, const QString&, MessageLevel ) ) );
 }
 
-QgsAuthenticationProvider::~QgsAuthenticationProvider()
+QgsAuthProvider::~QgsAuthProvider()
 {
 }
 
-QgsAuthenticationConfigBase::ProviderType QgsAuthenticationProvider::providerTypeFromInt( int itype )
+QgsAuthConfigBase::ProviderType QgsAuthProvider::providerTypeFromInt( int itype )
 {
-  QgsAuthenticationConfigBase::ProviderType ptype = QgsAuthenticationConfigBase::Unknown;
+  QgsAuthConfigBase::ProviderType ptype = QgsAuthConfigBase::Unknown;
   switch ( itype )
   {
     case 0:
-      ptype = QgsAuthenticationConfigBase::None;
+      ptype = QgsAuthConfigBase::None;
       break;
     case 1:
-      ptype = QgsAuthenticationConfigBase::None;
+      ptype = QgsAuthConfigBase::None;
       break;
 #ifndef QT_NO_OPENSSL
     case 2:
-      ptype = QgsAuthenticationConfigBase::PkiPaths;
+      ptype = QgsAuthConfigBase::PkiPaths;
       break;
 #endif
     case 20:
@@ -47,22 +47,22 @@ QgsAuthenticationConfigBase::ProviderType QgsAuthenticationProvider::providerTyp
   return ptype;
 }
 
-const QString QgsAuthenticationProvider::typeAsString( QgsAuthenticationConfigBase::ProviderType providertype )
+const QString QgsAuthProvider::typeAsString( QgsAuthConfigBase::ProviderType providertype )
 {
   QString s = tr( "No authentication configuration set" );
   switch ( providertype )
   {
-    case QgsAuthenticationConfigBase::None:
+    case QgsAuthConfigBase::None:
       break;
-    case QgsAuthenticationConfigBase::Basic:
+    case QgsAuthConfigBase::Basic:
       s = tr( "Basic authentication configuration" );
       break;
 #ifndef QT_NO_OPENSSL
-    case QgsAuthenticationConfigBase::PkiPaths:
+    case QgsAuthConfigBase::PkiPaths:
       s = tr( "PKI paths authentication configuration" );
       break;
 #endif
-    case QgsAuthenticationConfigBase::Unknown:
+    case QgsAuthConfigBase::Unknown:
       s = tr( "Unsupported authentication configuration" );
       break;
     default:
@@ -71,7 +71,7 @@ const QString QgsAuthenticationProvider::typeAsString( QgsAuthenticationConfigBa
   return s;
 }
 
-bool QgsAuthenticationProvider::urlToResource( const QString &accessurl, QString *resource, bool withpath )
+bool QgsAuthProvider::urlToResource( const QString &accessurl, QString *resource, bool withpath )
 {
   QString res = QString();
   if ( !accessurl.isEmpty() )
@@ -86,7 +86,7 @@ bool QgsAuthenticationProvider::urlToResource( const QString &accessurl, QString
   return ( !res.isEmpty() );
 }
 
-void QgsAuthenticationProvider::writeDebug(const QString &message, const QString &tag, MessageLevel level)
+void QgsAuthProvider::writeDebug(const QString &message, const QString &tag, MessageLevel level)
 {
   Q_UNUSED( tag );
 
@@ -110,23 +110,23 @@ void QgsAuthenticationProvider::writeDebug(const QString &message, const QString
 }
 
 //////////////////////////////////////////////////////
-// QgsAuthenticationProviderBasic
+// QgsAuthProviderBasic
 //////////////////////////////////////////////////////
 
-QgsAuthenticationProviderBasic::QgsAuthenticationProviderBasic( QObject *parent )
-    : QgsAuthenticationProvider( parent, QgsAuthenticationConfigBase::Basic )
+QgsAuthProviderBasic::QgsAuthProviderBasic( QObject *parent )
+    : QgsAuthProvider( parent, QgsAuthConfigBase::Basic )
 {
 }
 
-QgsAuthenticationProviderBasic::~QgsAuthenticationProviderBasic()
+QgsAuthProviderBasic::~QgsAuthProviderBasic()
 {
 }
 
-void QgsAuthenticationProviderBasic::updateNetworkRequest( QNetworkRequest &request, const QString &authid )
+void QgsAuthProviderBasic::updateNetworkRequest( QNetworkRequest &request, const QString &authid )
 {
 }
 
-void QgsAuthenticationProviderBasic::updateNetworkReply( QNetworkReply *reply, const QString &authid )
+void QgsAuthProviderBasic::updateNetworkReply( QNetworkReply *reply, const QString &authid )
 {
 }
 
@@ -136,7 +136,7 @@ void QgsAuthenticationProviderBasic::updateNetworkReply( QNetworkReply *reply, c
 // QgsPkiBundle
 //////////////////////////////////////////////////////
 
-QgsPkiPathsBundle::QgsPkiPathsBundle( const QgsAuthenticationConfigPkiPaths& config,
+QgsPkiPathsBundle::QgsPkiPathsBundle( const QgsAuthConfigPkiPaths& config,
                                       const QSslCertificate& cert,
                                       const QSslKey& certkey,
                                       const QSslCertificate& issuer )
@@ -157,24 +157,24 @@ bool QgsPkiPathsBundle::isValid()
 }
 
 //////////////////////////////////////////////////////
-// QgsAuthenticationProviderPkiPaths
+// QgsAuthProviderPkiPaths
 //////////////////////////////////////////////////////
 
-QMap<QString, QgsPkiPathsBundle *> QgsAuthenticationProviderPkiPaths::mPkiPathsBundleCache = QMap<QString, QgsPkiPathsBundle *>();
+QMap<QString, QgsPkiPathsBundle *> QgsAuthProviderPkiPaths::mPkiPathsBundleCache = QMap<QString, QgsPkiPathsBundle *>();
 
-QgsAuthenticationProviderPkiPaths::QgsAuthenticationProviderPkiPaths( QObject *parent )
-    : QgsAuthenticationProvider( parent, QgsAuthenticationConfigBase::PkiPaths )
+QgsAuthProviderPkiPaths::QgsAuthProviderPkiPaths( QObject *parent )
+    : QgsAuthProvider( parent, QgsAuthConfigBase::PkiPaths )
 {
 
 }
 
-QgsAuthenticationProviderPkiPaths::~QgsAuthenticationProviderPkiPaths()
+QgsAuthProviderPkiPaths::~QgsAuthProviderPkiPaths()
 {
   qDeleteAll( mPkiPathsBundleCache.values() );
   mPkiPathsBundleCache.clear();
 }
 
-void QgsAuthenticationProviderPkiPaths::updateNetworkRequest( QNetworkRequest &request, const QString &authid )
+void QgsAuthProviderPkiPaths::updateNetworkRequest( QNetworkRequest &request, const QString &authid )
 {
   // TODO: is this too restrictive, to intercept only HTTPS connections?
   if ( request.url().scheme().toLower() != QString( "https" ) )
@@ -212,7 +212,7 @@ void QgsAuthenticationProviderPkiPaths::updateNetworkRequest( QNetworkRequest &r
   request.setSslConfiguration( sslConfig );
 }
 
-void QgsAuthenticationProviderPkiPaths::updateNetworkReply( QNetworkReply *reply, const QString &authid )
+void QgsAuthProviderPkiPaths::updateNetworkReply( QNetworkReply *reply, const QString &authid )
 {
   QgsPkiPathsBundle * pkibundle = getPkiPathsBundle( authid );
   if ( !pkibundle || !pkibundle->isValid() )
@@ -277,7 +277,7 @@ QSsl::KeyAlgorithm keyAlgorithm_( const QByteArray& keydata )
   return (( keytxt.contains( "BEGIN DSA P" ) ) ? QSsl::Dsa : QSsl::Rsa );
 }
 
-QgsPkiPathsBundle *QgsAuthenticationProviderPkiPaths::getPkiPathsBundle( const QString& authid )
+QgsPkiPathsBundle *QgsAuthProviderPkiPaths::getPkiPathsBundle( const QString& authid )
 {
   QgsPkiPathsBundle * pkibundle = 0;
 
@@ -293,9 +293,9 @@ QgsPkiPathsBundle *QgsAuthenticationProviderPkiPaths::getPkiPathsBundle( const Q
   }
 
   // else build PKI bundle
-  QgsAuthenticationConfigPkiPaths pkiconfig;
+  QgsAuthConfigPkiPaths pkiconfig;
 
-  if ( !QgsAuthenticationManager::instance()->loadAuthenticationConfig( authid, pkiconfig, true ) )
+  if ( !QgsAuthManager::instance()->loadAuthenticationConfig( authid, pkiconfig, true ) )
   {
     emit messageOut( QString( "PKI bundle for authid %1: "
                               "FAILED to retrieve config" ).arg( authid ),
@@ -367,13 +367,13 @@ QgsPkiPathsBundle *QgsAuthenticationProviderPkiPaths::getPkiPathsBundle( const Q
   return pkibundle;
 }
 
-void QgsAuthenticationProviderPkiPaths::putPkiPathsBundle(const QString &authid, QgsPkiPathsBundle *pkibundle)
+void QgsAuthProviderPkiPaths::putPkiPathsBundle(const QString &authid, QgsPkiPathsBundle *pkibundle)
 {
   emit messageOut( QString( "Putting PKI bundle for authid %1" ).arg( authid ) );
   mPkiPathsBundleCache.insert( authid, pkibundle );
 }
 
-void QgsAuthenticationProviderPkiPaths::removePkiPathsBundle( const QString& authid )
+void QgsAuthProviderPkiPaths::removePkiPathsBundle( const QString& authid )
 {
   if ( mPkiPathsBundleCache.contains( authid ) )
   {

@@ -25,7 +25,7 @@
 using namespace CryptoPP;
 using namespace std;
 
-const QString QgsAuthenticationCrypto::encrypt( QString pass, QString text, string cipher )
+const QString QgsAuthCrypto::encrypt( QString pass, QString text, string cipher )
 {
   string res( encryption( pass, text, cipher, true ) );
   if ( res == "Unknown Error" )
@@ -33,7 +33,7 @@ const QString QgsAuthenticationCrypto::encrypt( QString pass, QString text, stri
   return QString::fromStdString( res );
 }
 
-const QString QgsAuthenticationCrypto::decrypt( QString pass, QString text, string cipher )
+const QString QgsAuthCrypto::decrypt( QString pass, QString text, string cipher )
 {
   string res( encryption( pass, text, cipher, false ) );
   if ( res == "Unknown Error" )
@@ -41,7 +41,7 @@ const QString QgsAuthenticationCrypto::decrypt( QString pass, QString text, stri
   return QString::fromStdString( res );
 }
 
-void QgsAuthenticationCrypto::passwordHash( const QString &pass, QString *salt, QString *hash )
+void QgsAuthCrypto::passwordHash( const QString &pass, QString *salt, QString *hash )
 {
   string password = pass.toStdString();
   unsigned int iterations = 10000;
@@ -82,10 +82,10 @@ void QgsAuthenticationCrypto::passwordHash( const QString &pass, QString *salt, 
   *hash = QString::fromStdString( derivedhex );
 }
 
-bool QgsAuthenticationCrypto::verifyPasswordHash( const QString &pass,
-    const QString &salt,
-    const QString& hash,
-    QString *hashderived )
+bool QgsAuthCrypto::verifyPasswordHash( const QString &pass,
+                                        const QString &salt,
+                                        const QString& hash,
+                                        QString *hashderived )
 {
   string password = pass.toStdString();
   // debug output to see if res was "Unknown Error"
@@ -130,7 +130,7 @@ bool QgsAuthenticationCrypto::verifyPasswordHash( const QString &pass,
   return derivedhex == hashhex;
 }
 
-string QgsAuthenticationCrypto::encryption( QString Pass, QString Text, string cipher, bool encrypt )
+string QgsAuthCrypto::encryption( QString Pass, QString Text, string cipher, bool encrypt )
 {
   string text = Text.toStdString();
   string pass = Pass.toStdString();

@@ -61,7 +61,7 @@
 
 using namespace std;
 
-class QgsAuthenticationCrypto
+class QgsAuthCrypto
 {
 
   public:

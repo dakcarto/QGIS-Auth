@@ -3,20 +3,21 @@
 
 #include <QWidget>
 
-namespace Ui {
-class QgsAuthenticationSelectorBase;
+namespace Ui
+{
+  class QgsAuthSelectorBase;
 }
 
-class QgsAuthenticationSelectorBase : public QWidget
+class QgsAuthSelectorBase : public QWidget
 {
     Q_OBJECT
 
   public:
-    explicit QgsAuthenticationSelectorBase(QWidget *parent = 0);
-    ~QgsAuthenticationSelectorBase();
+    explicit QgsAuthSelectorBase( QWidget *parent = 0 );
+    ~QgsAuthSelectorBase();
 
   private:
-    Ui::QgsAuthenticationSelectorBase *ui;
+    Ui::QgsAuthSelectorBase *ui;
 };
 
 #endif // QGSAUTHENTICATIONSELECTORBASE_H

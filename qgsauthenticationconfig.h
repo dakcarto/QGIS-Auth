@@ -3,12 +3,10 @@
 
 #include <QString>
 
-class QgsAuthenticationProvider;
-
 /**
  * @brief Base class for configs
  */
-class QgsAuthenticationConfigBase
+class QgsAuthConfigBase
 {
   public:
     enum ProviderType
@@ -21,10 +19,10 @@ class QgsAuthenticationConfigBase
       Unknown = 20 // padding for more standard auth types
     };
 
-    QgsAuthenticationConfigBase( ProviderType type = None,
+    QgsAuthConfigBase( ProviderType type = None,
                                  int version = 0 );
 
-    QgsAuthenticationConfigBase( const QgsAuthenticationConfigBase& config );
+    QgsAuthConfigBase( const QgsAuthConfigBase& config );
 
     const QString id() const { return mId; }
     void setId( const QString& id ) { mId = id; }
@@ -43,14 +41,14 @@ class QgsAuthenticationConfigBase
 
     const QString typeAsString() const;
 
-    const QgsAuthenticationConfigBase& asBaseConfig();
+    const QgsAuthConfigBase& asBaseConfig();
 
     virtual bool isValid( bool validateid = false ) const;
 
     virtual const QString configString() const { return QString(); }
     virtual void loadConfigString( const QString& config ) { Q_UNUSED( config ); }
 
-    const QgsAuthenticationConfigBase toBaseConfig();
+    const QgsAuthConfigBase toBaseConfig();
 
   protected:
     QString mId;
@@ -63,13 +61,13 @@ class QgsAuthenticationConfigBase
 };
 
 
-class QgsAuthenticationConfigBasic: public QgsAuthenticationConfigBase
+class QgsAuthConfigBasic: public QgsAuthConfigBase
 {
   public:
-    QgsAuthenticationConfigBasic();
+    QgsAuthConfigBasic();
 
-    QgsAuthenticationConfigBasic( const QgsAuthenticationConfigBase& config )
-        : QgsAuthenticationConfigBase( config ) {}
+    QgsAuthConfigBasic( const QgsAuthConfigBase& config )
+        : QgsAuthConfigBase( config ) {}
 
     const QString realm() const { return mRealm; }
     void setRealm( const QString& realm ) { mRealm = realm; }
@@ -91,13 +89,13 @@ class QgsAuthenticationConfigBasic: public QgsAuthenticationConfigBase
     QString mPassword;
 };
 
-class QgsAuthenticationConfigPkiPaths: public QgsAuthenticationConfigBase
+class QgsAuthConfigPkiPaths: public QgsAuthConfigBase
 {
   public:
-    QgsAuthenticationConfigPkiPaths();
+    QgsAuthConfigPkiPaths();
 
-    QgsAuthenticationConfigPkiPaths( const QgsAuthenticationConfigBase& config )
-        : QgsAuthenticationConfigBase( config ) {}
+    QgsAuthConfigPkiPaths( const QgsAuthConfigBase& config )
+        : QgsAuthConfigBase( config ) {}
 
     const QString certId() const { return mCertId; }
     void setCertId( const QString& id ) { mCertId = id; }

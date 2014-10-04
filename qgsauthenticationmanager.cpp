@@ -12,22 +12,22 @@
 #include "qgscredentials.h"
 
 
-QgsAuthenticationManager *QgsAuthenticationManager::smInstance = 0;
-//QMap<QString, QgsAuthPkiGroup *> QgsAuthenticationManager::mAuthPkiGroupCache = QMap<QString, QgsAuthPkiGroup *>();
-const QString QgsAuthenticationManager::smAuthConfigTable = "auth_configs";
-const QString QgsAuthenticationManager::smAuthPassTable = "auth_pass";
-const QString QgsAuthenticationManager::smAuthManTag = QObject::tr( "Authentication Manager" );
+QgsAuthManager *QgsAuthManager::smInstance = 0;
+//QMap<QString, QgsAuthPkiGroup *> QgsAuthManager::mAuthPkiGroupCache = QMap<QString, QgsAuthPkiGroup *>();
+const QString QgsAuthManager::smAuthConfigTable = "auth_configs";
+const QString QgsAuthManager::smAuthPassTable = "auth_pass";
+const QString QgsAuthManager::smAuthManTag = QObject::tr( "Authentication Manager" );
 
-QgsAuthenticationManager *QgsAuthenticationManager::instance()
+QgsAuthManager *QgsAuthManager::instance()
 {
   if ( !smInstance )
   {
-    smInstance = new QgsAuthenticationManager();
+    smInstance = new QgsAuthManager();
   }
   return smInstance;
 }
 
-QSqlDatabase QgsAuthenticationManager::authDbConnection() const
+QSqlDatabase QgsAuthManager::authDbConnection() const
 {
   QSqlDatabase authdb;
   QString connectionname = "authentication.configs";
@@ -46,7 +46,7 @@ QSqlDatabase QgsAuthenticationManager::authDbConnection() const
   return authdb;
 }
 
-bool QgsAuthenticationManager::init()
+bool QgsAuthManager::init()
 {
   QFileInfo dbinfo( QgsApplication::qgisAuthDbFilePath() );
   if ( dbinfo.exists() )
@@ -113,7 +113,7 @@ bool QgsAuthenticationManager::init()
   return true;
 }
 
-bool QgsAuthenticationManager::setMasterPassword( bool verify )
+bool QgsAuthManager::setMasterPassword( bool verify )
 {
   if ( mMasterPass.isEmpty() )
   {
@@ -198,17 +198,17 @@ bool QgsAuthenticationManager::setMasterPassword( bool verify )
   return true;
 }
 
-bool QgsAuthenticationManager::masterPasswordIsSet() const
+bool QgsAuthManager::masterPasswordIsSet() const
 {
   return !mMasterPass.isEmpty();
 }
 
-bool QgsAuthenticationManager::masterPasswordSame( const QString &pass ) const
+bool QgsAuthManager::masterPasswordSame( const QString &pass ) const
 {
   return mMasterPass == pass;
 }
 
-bool QgsAuthenticationManager::resetMasterPassword()
+bool QgsAuthManager::resetMasterPassword()
 {
   // TODO: add master password reset
 
@@ -249,16 +249,16 @@ bool QgsAuthenticationManager::resetMasterPassword()
   return true;
 }
 
-void QgsAuthenticationManager::registerProviders()
+void QgsAuthManager::registerProviders()
 {
-  mProviders.insert( QgsAuthenticationConfigBase::Basic, new QgsAuthenticationProviderBasic() );
+  mProviders.insert( QgsAuthConfigBase::Basic, new QgsAuthProviderBasic() );
 #ifndef QT_NO_OPENSSL
-  mProviders.insert( QgsAuthenticationConfigBase::PkiPaths, new QgsAuthenticationProviderPkiPaths() );
+  mProviders.insert( QgsAuthConfigBase::PkiPaths, new QgsAuthProviderPkiPaths() );
 #endif
 }
 
 
-bool QgsAuthenticationManager::configIdUnique( const QString& id ) const
+bool QgsAuthManager::configIdUnique( const QString& id ) const
 {
   if ( id.isEmpty() )
   {
@@ -269,7 +269,7 @@ bool QgsAuthenticationManager::configIdUnique( const QString& id ) const
   return !configids.contains( id );
 }
 
-void QgsAuthenticationManager::updateConfigProviders()
+void QgsAuthManager::updateConfigProviders()
 {
   QSqlQuery query( authDbConnection() );
   query.prepare( QString( "SELECT id, type FROM %1" ).arg( authDbConfigTable() ) );
@@ -286,25 +286,25 @@ void QgsAuthenticationManager::updateConfigProviders()
     while ( query.next() )
     {
       mConfigProviders.insert( query.value( 0 ).toString(),
-                               QgsAuthenticationProvider::providerTypeFromInt( query.value( 1 ).toInt() ) );
+                               QgsAuthProvider::providerTypeFromInt( query.value( 1 ).toInt() ) );
     }
   }
 }
 
-QgsAuthenticationProvider* QgsAuthenticationManager::configProvider( const QString& authid )
+QgsAuthProvider* QgsAuthManager::configProvider( const QString& authid )
 {
   if ( !mConfigProviders.contains( authid ) )
     return 0;
 
-  QgsAuthenticationConfigBase::ProviderType ptype = mConfigProviders.value( authid );
+  QgsAuthConfigBase::ProviderType ptype = mConfigProviders.value( authid );
 
-  if ( ptype == QgsAuthenticationConfigBase::None || ptype == QgsAuthenticationConfigBase::Unknown )
+  if ( ptype == QgsAuthConfigBase::None || ptype == QgsAuthConfigBase::Unknown )
     return 0;
 
   return mProviders.value( ptype );
 }
 
-bool QgsAuthenticationManager::storeAuthenticationConfig( QgsAuthenticationConfigBase &config )
+bool QgsAuthManager::storeAuthenticationConfig( QgsAuthConfigBase &config )
 {
   if ( !setMasterPassword( true ) )
     return false;
@@ -336,7 +336,7 @@ bool QgsAuthenticationManager::storeAuthenticationConfig( QgsAuthenticationConfi
   query.bindValue( ":uri", config.uri() );
   query.bindValue( ":type", ( int ) config.type() );
   query.bindValue( ":version", config.version() );
-  query.bindValue( ":config", QgsAuthenticationCrypto::encrypt( mMasterPass, configstring, "AES" ) );
+  query.bindValue( ":config", QgsAuthCrypto::encrypt( mMasterPass, configstring, "AES" ) );
 
   if ( !authDbStartTransaction() )
     return false;
@@ -355,7 +355,7 @@ bool QgsAuthenticationManager::storeAuthenticationConfig( QgsAuthenticationConfi
   return true;
 }
 
-bool QgsAuthenticationManager::updateAuthenticationConfig( const QgsAuthenticationConfigBase& config )
+bool QgsAuthManager::updateAuthenticationConfig( const QgsAuthConfigBase& config )
 {
   if ( !setMasterPassword( true ) )
     return false;
@@ -386,7 +386,7 @@ bool QgsAuthenticationManager::updateAuthenticationConfig( const QgsAuthenticati
   query.bindValue( ":uri", config.uri() );
   query.bindValue( ":type", ( int ) config.type() );
   query.bindValue( ":version", config.version() );
-  query.bindValue( ":config", QgsAuthenticationCrypto::encrypt( mMasterPass, configstring, "AES" ) );
+  query.bindValue( ":config", QgsAuthCrypto::encrypt( mMasterPass, configstring, "AES" ) );
 
   if ( !authDbStartTransaction() )
     return false;
@@ -402,13 +402,13 @@ bool QgsAuthenticationManager::updateAuthenticationConfig( const QgsAuthenticati
   return true;
 }
 
-bool QgsAuthenticationManager::loadAuthenticationConfig( const QString& id, QgsAuthenticationConfigBase &config, bool full )
+bool QgsAuthManager::loadAuthenticationConfig( const QString& id, QgsAuthConfigBase &config, bool full )
 {
   if ( full && !setMasterPassword( true ) )
     return false;
 
   QSqlQuery query( authDbConnection() );
-  full = full && config.type() != QgsAuthenticationConfigBase::None; // negates 'full' if loading into base class
+  full = full && config.type() != QgsAuthConfigBase::None; // negates 'full' if loading into base class
   if ( full )
   {
     query.prepare( QString( "SELECT id, name, uri, type, version, config FROM %1 "
@@ -435,12 +435,12 @@ bool QgsAuthenticationManager::loadAuthenticationConfig( const QString& id, QgsA
       config.setId( query.value( 0 ).toString() );
       config.setName( query.value( 1 ).toString() );
       config.setUri( query.value( 2 ).toString() );
-      config.setType( QgsAuthenticationProvider::providerTypeFromInt( query.value( 3 ).toInt() ) );
+      config.setType( QgsAuthProvider::providerTypeFromInt( query.value( 3 ).toInt() ) );
       config.setVersion( query.value( 4 ).toInt() );
 
       if ( full )
       {
-        config.loadConfigString( QgsAuthenticationCrypto::decrypt( mMasterPass, query.value( 5 ).toString(), "AES" ) );
+        config.loadConfigString( QgsAuthCrypto::decrypt( mMasterPass, query.value( 5 ).toString(), "AES" ) );
       }
 
       return true;
@@ -449,25 +449,25 @@ bool QgsAuthenticationManager::loadAuthenticationConfig( const QString& id, QgsA
   return false;
 }
 
-void QgsAuthenticationManager::updateNetworkRequest( QNetworkRequest &request, const QString& authid )
+void QgsAuthManager::updateNetworkRequest( QNetworkRequest &request, const QString& authid )
 {
-  QgsAuthenticationProvider* provider = configProvider( authid );
+  QgsAuthProvider* provider = configProvider( authid );
   if ( provider )
   {
     provider->updateNetworkRequest( request, authid );
   }
 }
 
-void QgsAuthenticationManager::updateNetworkReply( QNetworkReply *reply, const QString& authid )
+void QgsAuthManager::updateNetworkReply( QNetworkReply *reply, const QString& authid )
 {
-  QgsAuthenticationProvider* provider = configProvider( authid );
+  QgsAuthProvider* provider = configProvider( authid );
   if ( provider )
   {
     provider->updateNetworkReply( reply , authid );
   }
 }
 
-void QgsAuthenticationManager::writeDebug( const QString &message,
+void QgsAuthManager::writeDebug( const QString &message,
     const QString &tag,
     MessageLevel level )
 {
@@ -497,7 +497,7 @@ void QgsAuthenticationManager::writeDebug( const QString &message,
   qDebug( "%s", msg.toLatin1().constData() );
 }
 
-QgsAuthenticationManager::QgsAuthenticationManager( QObject *parent )
+QgsAuthManager::QgsAuthManager( QObject *parent )
     : QObject( parent )
     , mMasterPass( QString() )
     , mMasterPassReset( QString() )
@@ -506,12 +506,12 @@ QgsAuthenticationManager::QgsAuthenticationManager( QObject *parent )
            this, SLOT( writeDebug( const QString&, const QString&, MessageLevel ) ) );
 }
 
-QgsAuthenticationManager::~QgsAuthenticationManager()
+QgsAuthManager::~QgsAuthManager()
 {
   qDeleteAll( mProviders.values() );
 }
 
-bool QgsAuthenticationManager::masterPasswordInput()
+bool QgsAuthManager::masterPasswordInput()
 {
   QString pass;
   QgsCredentials * creds = QgsCredentials::instance();
@@ -528,7 +528,7 @@ bool QgsAuthenticationManager::masterPasswordInput()
   return false;
 }
 
-bool QgsAuthenticationManager::masterPasswordResetInput()
+bool QgsAuthManager::masterPasswordResetInput()
 {
   QString pass;
   QgsCredentials * creds = QgsCredentials::instance();
@@ -545,7 +545,7 @@ bool QgsAuthenticationManager::masterPasswordResetInput()
   return false;
 }
 
-bool QgsAuthenticationManager::masterPasswordRowsInDb( int *rows ) const
+bool QgsAuthManager::masterPasswordRowsInDb( int *rows ) const
 {
   QSqlQuery query( authDbConnection() );
   query.prepare( QString( "SELECT Count(*) FROM %1" ).arg( authDbPassTable() ) );
@@ -560,7 +560,7 @@ bool QgsAuthenticationManager::masterPasswordRowsInDb( int *rows ) const
   return ok;
 }
 
-bool QgsAuthenticationManager::masterPasswordCheckAgainstDb() const
+bool QgsAuthManager::masterPasswordCheckAgainstDb() const
 {
   // first verify there is only one row in auth db (uses first found)
 
@@ -577,13 +577,13 @@ bool QgsAuthenticationManager::masterPasswordCheckAgainstDb() const
 
   query.clear();
 
-  return QgsAuthenticationCrypto::verifyPasswordHash( mMasterPass, salt, hash );
+  return QgsAuthCrypto::verifyPasswordHash( mMasterPass, salt, hash );
 }
 
-bool QgsAuthenticationManager::masterPasswordStoreInDb() const
+bool QgsAuthManager::masterPasswordStoreInDb() const
 {
   QString salt, hash;
-  QgsAuthenticationCrypto::passwordHash( mMasterPass, &salt, &hash );
+  QgsAuthCrypto::passwordHash( mMasterPass, &salt, &hash );
 
   QSqlQuery query( authDbConnection() );
   query.prepare( QString( "INSERT INTO %1 (salt, hash) VALUES (:salt, :hash)" ).arg( authDbPassTable() ) );
@@ -603,14 +603,14 @@ bool QgsAuthenticationManager::masterPasswordStoreInDb() const
   return true;
 }
 
-bool QgsAuthenticationManager::masterPasswordClearDb() const
+bool QgsAuthManager::masterPasswordClearDb() const
 {
   QSqlQuery query( authDbConnection() );
   query.prepare( QString( "DELETE FROM %1" ).arg( authDbPassTable() ) );
   return authDbTransactionQuery( &query );
 }
 
-const QString QgsAuthenticationManager::uniqueConfigId() const
+const QString QgsAuthManager::uniqueConfigId() const
 {
   QStringList configids = configIds();
   QString id;
@@ -640,7 +640,7 @@ const QString QgsAuthenticationManager::uniqueConfigId() const
   return id;
 }
 
-QStringList QgsAuthenticationManager::configIds() const
+QStringList QgsAuthManager::configIds() const
 {
   QStringList configids = QStringList();
 
@@ -662,7 +662,7 @@ QStringList QgsAuthenticationManager::configIds() const
   return configids;
 }
 
-bool QgsAuthenticationManager::authDbOpen() const
+bool QgsAuthManager::authDbOpen() const
 {
   QSqlDatabase authdb = authDbConnection();
   if ( !authdb.isOpen() )
@@ -680,7 +680,7 @@ bool QgsAuthenticationManager::authDbOpen() const
   return true;
 }
 
-bool QgsAuthenticationManager::authDbQuery( QSqlQuery *query ) const
+bool QgsAuthManager::authDbQuery( QSqlQuery *query ) const
 {
 
   query->setForwardOnly( true );
@@ -696,7 +696,7 @@ bool QgsAuthenticationManager::authDbQuery( QSqlQuery *query ) const
   return true;
 }
 
-bool QgsAuthenticationManager::authDbStartTransaction() const
+bool QgsAuthManager::authDbStartTransaction() const
 {
   if ( !authDbConnection().transaction() )
   {
@@ -707,7 +707,7 @@ bool QgsAuthenticationManager::authDbStartTransaction() const
   return true;
 }
 
-bool QgsAuthenticationManager::authDbCommit() const
+bool QgsAuthManager::authDbCommit() const
 {
   if ( !authDbConnection().commit() )
   {
@@ -719,7 +719,7 @@ bool QgsAuthenticationManager::authDbCommit() const
   return true;
 }
 
-bool QgsAuthenticationManager::authDbTransactionQuery( QSqlQuery *query ) const
+bool QgsAuthManager::authDbTransactionQuery( QSqlQuery *query ) const
 {
   if ( !authDbConnection().transaction() )
   {

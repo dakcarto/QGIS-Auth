@@ -21,9 +21,9 @@ MainWindow::MainWindow( QWidget *parent )
 //    f.remove();
 //  }
 
-  QgsAuthenticationManager::instance()->init();
+  QgsAuthManager::instance()->init();
 
-  connect( QgsAuthenticationManager::instance(), SIGNAL( masterPasswordVerified( bool ) ),
+  connect( QgsAuthManager::instance(), SIGNAL( masterPasswordVerified( bool ) ),
            this, SLOT( masterPasswordVerificationChanged( bool ) ) );
 
   lePassword->setText( "mypassword" );
@@ -47,7 +47,7 @@ void MainWindow::on_teEncryptIn_textChanged()
   if ( !pass.isEmpty() && !in.isEmpty() )
   {
     teEncryptCrypt->setPlainText(
-      QgsAuthenticationCrypto::encrypt( pass, in, "AES" ) );
+      QgsAuthCrypto::encrypt( pass, in, "AES" ) );
   }
 }
 
@@ -58,7 +58,7 @@ void MainWindow::on_teEncryptCrypt_textChanged()
   if ( !pass.isEmpty() && !crypt.isEmpty() )
   {
     teEncryptOut->setPlainText(
-      QgsAuthenticationCrypto::decrypt( pass, crypt, "AES" ) );
+      QgsAuthCrypto::decrypt( pass, crypt, "AES" ) );
   }
 }
 
@@ -74,40 +74,40 @@ void MainWindow::setButtonTexts()
 
 void MainWindow::on_btnOne_clicked()
 {
-//  QgsAuthenticationManager::instance()->inputMasterPassword();
-//  teOut->appendPlainText( QgsAuthenticationManager::instance()->uniqueConfigId() );
+//  QgsAuthManager::instance()->inputMasterPassword();
+//  teOut->appendPlainText( QgsAuthManager::instance()->uniqueConfigId() );
 
-//  QgsAuthenticationCrypto::passwordHash( lePassword->text(), &mSalt, &mHash );
+//  QgsAuthCrypto::passwordHash( lePassword->text(), &mSalt, &mHash );
 //  teOut->appendPlainText( QString( "Salt: %1\nHash: %2" ).arg( mSalt ).arg( mHash ) );
 
-  QgsAuthenticationManager::instance()->setMasterPassword();
+  QgsAuthManager::instance()->setMasterPassword();
 }
 
 void MainWindow::on_btnTwo_clicked()
 {
 //  QString derived;
-//  bool ok = QgsAuthenticationCrypto::verifyPasswordHash( lePassword->text(), mSalt, mHash, &derived );
+//  bool ok = QgsAuthCrypto::verifyPasswordHash( lePassword->text(), mSalt, mHash, &derived );
 //  teOut->appendPlainText( QString( "Hash verified: %1" ).arg( ok ? "yes" : "no" ) );
 //  teOut->appendPlainText( QString( "Derived hash: %1" ).arg( derived ) );
 
-  QgsAuthenticationManager::instance()->setMasterPassword( true );
+  QgsAuthManager::instance()->setMasterPassword( true );
 }
 
 void MainWindow::on_btnThree_clicked()
 {
 //  QString derived;
-//  bool ok = QgsAuthenticationCrypto::verifyPasswordHash( lePassword->text(), "OH58VEVT", mHash, &derived );
+//  bool ok = QgsAuthCrypto::verifyPasswordHash( lePassword->text(), "OH58VEVT", mHash, &derived );
 //  teOut->appendPlainText( QString( "Hash verified (bad salt): %1" ).arg( ok ? "yes" : "no" ) );
 //  teOut->appendPlainText( QString( "Derived hash (bad salt): %1" ).arg( derived ) );
 
-//  ok = QgsAuthenticationCrypto::verifyPasswordHash( "nonsene", mSalt, mHash, &derived );
+//  ok = QgsAuthCrypto::verifyPasswordHash( "nonsene", mSalt, mHash, &derived );
 //  teOut->appendPlainText( QString( "Hash verified (bad pass): %1" ).arg( ok ? "yes" : "no" ) );
 //  teOut->appendPlainText( QString( "Derived hash (bad pass): %1" ).arg( derived ) );
 
-  QgsAuthenticationManager::instance()->resetMasterPassword();
+  QgsAuthManager::instance()->resetMasterPassword();
 }
 
 void MainWindow::on_btnFour_clicked()
 {
-  QgsAuthenticationManager::instance()->clearMasterPassword();
+  QgsAuthManager::instance()->clearMasterPassword();
 }

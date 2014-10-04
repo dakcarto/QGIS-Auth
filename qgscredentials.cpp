@@ -48,7 +48,7 @@ bool QgsCredentials::getMasterResetPassword( QString *newpass )
       break;
     }
 
-    if ( ok && !text.isEmpty() && !QgsAuthenticationManager::instance()->masterPasswordSame( text ) )
+    if ( ok && !text.isEmpty() && !QgsAuthManager::instance()->masterPasswordSame( text ) )
     {
       *newpass = text;
       break;
