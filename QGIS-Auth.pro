@@ -28,33 +28,36 @@ LIBS += -L$(HOMEBREW_PREFIX)/lib -lcryptopp
 DEFINES += CRYPTOPP_DISABLE_ASM
 
 SOURCES += \
-  main.cpp \
-  webpage.cpp \
-  testwidget.cpp \
-  qgsauthenticationselectorbase.cpp \
-  qgsauthenticationmanager.cpp \
-  qgsapplication.cpp \
-  qgsauthenticationconfig.cpp \
-  qgscredentials.cpp \
-  qgsauthenticationcrypto.cpp \
-  qgsauthenticationprovider.cpp \
-  qgsauthenticationwidgetbase.cpp
+    main.cpp \
+    webpage.cpp \
+    testwidget.cpp \
+    qgsauthenticationmanager.cpp \
+    qgsapplication.cpp \
+    qgsauthenticationconfig.cpp \
+    qgscredentials.cpp \
+    qgsauthenticationcrypto.cpp \
+    qgsauthenticationprovider.cpp \
+    qgsauthenticationconfigwidget.cpp \
+    qgsauthenticationconfigeditor.cpp \
+    qgsauthenticationconfigselect.cpp
 
 HEADERS += \
-  webpage.h \
-  testwidget.h \
-  qgsauthenticationselectorbase.h \
-  qgsauthenticationmanager.h \
-  qgsapplication.h \
-  qgsauthenticationconfig.h \
-  qgscredentials.h \
-  qgsauthenticationcrypto.h \
-  qgsauthenticationprovider.h \
-  qgsauthenticationwidgetbase.h
+    webpage.h \
+    testwidget.h \
+    qgsauthenticationmanager.h \
+    qgsapplication.h \
+    qgsauthenticationconfig.h \
+    qgscredentials.h \
+    qgsauthenticationcrypto.h \
+    qgsauthenticationprovider.h \
+    qgsauthenticationconfigwidget.h \
+    qgsauthenticationconfigeditor.h \
+    qgsauthenticationconfigselect.h
 
 #RESOURCES += qgis-auth.qrc
 FORMS += \
-  webpage.ui \
-  testwidget.ui \
-  qgsauthenticationselectorbase.ui \
-  qgsauthenticationwidgetbase.ui
+    webpage.ui \
+    testwidget.ui \
+    qgsauthenticationconfigwidget.ui \
+    qgsauthenticationconfigeditor.ui \
+    qgsauthenticationconfigselect.ui

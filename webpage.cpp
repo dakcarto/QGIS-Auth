@@ -33,7 +33,7 @@
 #include <QSslError>
 #include <QSslKey>
 
-#include "qgsauthenticationselectorbase.h"
+#include "qgsauthenticationconfigeditor.h"
 
 
 //#include <QtCrypto>
@@ -199,7 +199,7 @@ void WebPage::on_btnAuth_clicked()
 {
   if ( !mAuthSelector )
   {
-    mAuthSelector = new QgsAuthSelectorBase();
+    mAuthSelector = new QgsAuthConfigEditor();
     mAuthSelector->setWindowModality( Qt::WindowModal );
   }
   mAuthSelector->show();

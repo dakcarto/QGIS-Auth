@@ -27,7 +27,7 @@
 #include <QNetworkAccessManager>
 #include <QSslCertificate>
 
-#include <qgsauthenticationselectorbase.h>
+#include "qgsauthenticationconfigeditor.h"
 
 
 class WebPage : public QDialog, private Ui::WebPage
@@ -68,7 +68,7 @@ class WebPage : public QDialog, private Ui::WebPage
     bool mLoaded;
 
     TestWidget *mTestWidget;
-    QgsAuthSelectorBase *mAuthSelector;
+    QgsAuthConfigEditor *mAuthSelector;
 };
 
 #endif // WEBPAGE_H
