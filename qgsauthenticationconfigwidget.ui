@@ -20,10 +20,52 @@
    <string>Authentication</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
+   <item row="4" column="0" colspan="2">
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QComboBox" name="cmbAuthProviderType">
+       <item>
+        <property name="text">
+         <string>Username/Password</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>PKI Certificate</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="bthnClear">
+       <property name="text">
+        <string>Clear</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item row="2" column="0">
+    <widget class="QLabel" name="label_3">
+     <property name="text">
+      <string>Resource</string>
+     </property>
+    </widget>
+   </item>
+   <item row="8" column="0" colspan="2">
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Reset|QDialogButtonBox::Save</set>
+     </property>
+    </widget>
+   </item>
    <item row="2" column="1">
     <widget class="QLineEdit" name="leResource">
      <property name="placeholderText">
       <string>Optional URL resource</string>
+     </property>
+     <property name="clearButtonEnabled">
+      <bool>true</bool>
      </property>
     </widget>
    </item>
@@ -31,6 +73,9 @@
     <widget class="QLineEdit" name="leName">
      <property name="placeholderText">
       <string>Required</string>
+     </property>
+     <property name="clearButtonEnabled">
+      <bool>true</bool>
      </property>
     </widget>
    </item>
@@ -52,6 +97,9 @@
          <property name="placeholderText">
           <string>Optional</string>
          </property>
+         <property name="clearButtonEnabled">
+          <bool>true</bool>
+         </property>
         </widget>
        </item>
        <item row="1" column="0">
@@ -65,6 +113,9 @@
         <widget class="QLineEdit" name="leBasicUsername">
          <property name="placeholderText">
           <string>Required</string>
+         </property>
+         <property name="clearButtonEnabled">
+          <bool>true</bool>
          </property>
         </widget>
        </item>
@@ -83,7 +134,7 @@
          <property name="sizeHint" stdset="0">
           <size>
            <width>20</width>
-           <height>40</height>
+           <height>0</height>
           </size>
          </property>
         </spacer>
@@ -99,6 +150,9 @@
         <widget class="QLineEdit" name="leBasicRealm">
          <property name="placeholderText">
           <string>Optional</string>
+         </property>
+         <property name="clearButtonEnabled">
+          <bool>true</bool>
          </property>
         </widget>
        </item>
@@ -159,6 +213,9 @@
            </property>
            <property name="placeholderText">
             <string>Required</string>
+           </property>
+           <property name="clearButtonEnabled">
+            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -228,6 +285,9 @@
            <property name="placeholderText">
             <string>Optional</string>
            </property>
+           <property name="clearButtonEnabled">
+            <bool>true</bool>
+           </property>
           </widget>
          </item>
          <item row="1" column="0">
@@ -271,12 +331,21 @@
            <property name="placeholderText">
             <string>Required</string>
            </property>
+           <property name="clearButtonEnabled">
+            <bool>true</bool>
+           </property>
           </widget>
          </item>
          <item row="1" column="0" colspan="2">
           <widget class="QLineEdit" name="lePkiPathsIssuer_2">
+           <property name="echoMode">
+            <enum>QLineEdit::Password</enum>
+           </property>
            <property name="placeholderText">
             <string>Optional passphrase</string>
+           </property>
+           <property name="clearButtonEnabled">
+            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -293,42 +362,21 @@
      </property>
     </widget>
    </item>
-   <item row="4" column="0" colspan="2">
-    <layout class="QHBoxLayout" name="horizontalLayout">
-     <item>
-      <widget class="QComboBox" name="cmbAuthProviderType">
-       <item>
-        <property name="text">
-         <string>Username/Password</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>PKI Certificate</string>
-        </property>
-       </item>
-      </widget>
-     </item>
-     <item>
-      <widget class="QToolButton" name="bthnClear">
-       <property name="text">
-        <string>Clear</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </item>
-   <item row="2" column="0">
-    <widget class="QLabel" name="label_3">
-     <property name="text">
-      <string>Resource</string>
-     </property>
-    </widget>
-   </item>
    <item row="7" column="0" colspan="2">
-    <widget class="QDialogButtonBox" name="buttonBox">
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Reset|QDialogButtonBox::Save</set>
+    <widget class="QLabel" name="label">
+     <property name="font">
+      <font>
+       <italic>true</italic>
+      </font>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">color: rgb(128, 128, 128);</string>
+     </property>
+     <property name="text">
+      <string>Note: Saving writes directly to authentication database</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
      </property>
     </widget>
    </item>
