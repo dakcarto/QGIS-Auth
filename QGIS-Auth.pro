@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui network sql
+QT += core gui network sql
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -35,7 +35,8 @@ SOURCES += main.cpp\
   qgsauthenticationconfig.cpp \
   qgscredentials.cpp \
   qgsauthenticationcrypto.cpp \
-  qgsauthenticationprovider.cpp
+  qgsauthenticationprovider.cpp \
+  qgsauthenticationwidgetbase.cpp
 
 HEADERS += mainwindow.h \
   qgsauthenticationselectorbase.h \
@@ -44,8 +45,10 @@ HEADERS += mainwindow.h \
   qgsauthenticationconfig.h \
   qgscredentials.h \
   qgsauthenticationcrypto.h \
-  qgsauthenticationprovider.h
+  qgsauthenticationprovider.h \
+  qgsauthenticationwidgetbase.h
 
 #RESOURCES += qgis-auth.qrc
 FORMS += mainwindow.ui \
-  qgsauthenticationselectorbase.ui
+  qgsauthenticationselectorbase.ui \
+  qgsauthenticationwidgetbase.ui
