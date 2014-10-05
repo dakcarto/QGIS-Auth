@@ -62,7 +62,7 @@
    <item row="6" column="0" colspan="2">
     <widget class="QStackedWidget" name="stkwProviderType">
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="pageBasic">
       <layout class="QGridLayout" name="gridLayout_4">
@@ -402,6 +402,26 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>leName</tabstop>
+  <tabstop>leResource</tabstop>
+  <tabstop>cmbAuthProviderType</tabstop>
+  <tabstop>leBasicUsername</tabstop>
+  <tabstop>leBasicPassword</tabstop>
+  <tabstop>chkBasicPasswordShow</tabstop>
+  <tabstop>leBasicRealm</tabstop>
+  <tabstop>btnPkiPathsCert</tabstop>
+  <tabstop>btnPkiPathsKey</tabstop>
+  <tabstop>lePkiPathsKeyPass</tabstop>
+  <tabstop>chkPkiPathsPassShow</tabstop>
+  <tabstop>btnPkiPathsIssuer</tabstop>
+  <tabstop>chkPkiPathsIssuerSelf</tabstop>
+  <tabstop>lePkiPathsCert</tabstop>
+  <tabstop>lePkiPathsKey</tabstop>
+  <tabstop>lePkiPathsIssuer</tabstop>
+  <tabstop>btnClear</tabstop>
+  <tabstop>lePkiPathsMsg</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

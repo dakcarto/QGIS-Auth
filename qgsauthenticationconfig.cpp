@@ -112,17 +112,12 @@ const QString QgsAuthConfigBase::typeToString() const
 
 bool QgsAuthConfigBase::isValid( bool validateid ) const
 {
-  bool idvalid = true;
-  if ( validateid )
-  {
-    idvalid = !mId.isEmpty() && QgsAuthManager::instance()->configIdUnique( mId );
-  }
+  bool idvalid = validateid ? !mId.isEmpty() : true;
+
   return (
            idvalid
            && !mName.isEmpty()
-           && !mUri.isEmpty()
            && mType != QgsAuthType::Unknown
-           && mVersion != 0
          );
 }
 
@@ -149,6 +144,7 @@ bool QgsAuthConfigBasic::isValid( bool validateid ) const
   // password can be empty
   return (
            QgsAuthConfigBase::isValid( validateid )
+           && mVersion != 0
            && !mRealm.isEmpty()
            && !mUsername.isEmpty()
          );
@@ -190,6 +186,7 @@ bool QgsAuthConfigPkiPaths::isValid( bool validateid ) const
 {
   return (
            QgsAuthConfigBase::isValid( validateid )
+           && mVersion != 0
            && !mCertId.isEmpty()
            && !mKeyId.isEmpty()
          );

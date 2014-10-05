@@ -21,11 +21,9 @@ static QString validRed_( const QString& selector = "*" )
   return QString( "%1{color: rgb(200, 0, 0);}" ).arg( selector );
 }
 
-QgsAuthConfigWidget::QgsAuthConfigWidget( QWidget *parent, const AuthIdPair& authidpair )
+QgsAuthConfigWidget::QgsAuthConfigWidget( const QString& authid , QWidget *parent )
     : QDialog( parent )
-    , mAuthId( authidpair.first )
-    , mAuthIdType( authidpair.second )
-    , mAuthIdBase( QgsAuthConfigBase() )
+    , mAuthId( authid )
 {
 
   setupUi( this );
@@ -34,12 +32,12 @@ QgsAuthConfigWidget::QgsAuthConfigWidget( QWidget *parent, const AuthIdPair& aut
   connect( buttonBox, SIGNAL( accepted() ), this, SLOT( saveConfig() ) );
   connect( buttonBox->button( QDialogButtonBox::Reset ), SIGNAL( clicked() ), this, SLOT( resetConfig() ) );
 
-  cmbAuthProviderType->addItem( tr( "Username/Password" ) );
+  cmbAuthProviderType->addItem( tr( "Username/Password" ), QVariant( QgsAuthType::Basic ) );
 
 #ifdef QT_NO_OPENSSL
   stkwProviderType->removeWidget( pagePkiPaths );
 #else
-  cmbAuthProviderType->addItem( tr( "PKI Certificate" ) );
+  cmbAuthProviderType->addItem( tr( "PKI Certificate" ), QVariant( QgsAuthType::PkiPaths ) );
 #endif
 
   connect( cmbAuthProviderType, SIGNAL( currentIndexChanged( int ) ),
@@ -65,13 +63,29 @@ QgsAuthConfigWidget::~QgsAuthConfigWidget()
 
 void QgsAuthConfigWidget::loadConfig()
 {
-  // edit mode requires master password to have been set and verified against auth db
-  if ( mAuthId.isEmpty() || !QgsAuthManager::instance()->setMasterPassword( true ) )
-  {
+  if ( mAuthId.isEmpty() )
     return;
-  }
 
-  if ( mAuthIdType == QgsAuthType::Basic )
+  qDebug( "Loading auth id: %s", mAuthId.toAscii().constData() );
+
+  QgsAuthType::ProviderType authtype = QgsAuthManager::instance()->configProviderType( mAuthId );
+
+  qDebug( "Loading auth type: %s", QgsAuthType::typeToString( authtype ).toAscii().constData() );
+
+  if ( authtype == QgsAuthType::None || authtype == QgsAuthType::Unknown )
+    return;
+
+  // edit mode requires master password to have been set and verified against auth db
+  if ( !QgsAuthManager::instance()->setMasterPassword( true ) )
+    return;
+
+  int indx = providerIndexByType( authtype );
+  if ( indx == -1 )
+    return;
+
+  cmbAuthProviderType->setCurrentIndex( indx );
+
+  if ( authtype == QgsAuthType::Basic )
   {
     QgsAuthConfigBasic configbasic;
     if ( QgsAuthManager::instance()->loadAuthenticationConfig( mAuthId, configbasic, true ) )
@@ -80,7 +94,6 @@ void QgsAuthConfigWidget::loadConfig()
       {
         leName->setText( configbasic.name() );
         leResource->setText( configbasic.uri() );
-        cmbAuthProviderType->setCurrentIndex(( int ) configbasic.type() );
 
         leBasicUsername->setText( configbasic.username() );
         leBasicPassword->setText( configbasic.password() );
@@ -89,7 +102,7 @@ void QgsAuthConfigWidget::loadConfig()
     }
   }
 #ifndef QT_NO_OPENSSL
-  else if ( mAuthIdType == QgsAuthType::PkiPaths )
+  else if ( authtype == QgsAuthType::PkiPaths )
   {
     stkwProviderType->setCurrentIndex( stkwProviderType->indexOf( pagePkiPaths ) );
     QgsAuthConfigPkiPaths configpki;
@@ -99,7 +112,6 @@ void QgsAuthConfigWidget::loadConfig()
       {
         leName->setText( configpki.name() );
         leResource->setText( configpki.uri() );
-        cmbAuthProviderType->setCurrentIndex(( int ) configpki.type() );
 
         lePkiPathsCert->setText( configpki.certId() );
         lePkiPathsKey->setText( configpki.keyId() );
@@ -137,11 +149,19 @@ void QgsAuthConfigWidget::saveConfig()
 
     if ( !mAuthId.isEmpty() ) // update
     {
-      QgsAuthManager::instance()->updateAuthenticationConfig( configbasic );
+      configbasic.setId( mAuthId );
+      if ( QgsAuthManager::instance()->updateAuthenticationConfig( configbasic ) )
+      {
+        emit authenticationConfigUpdated( mAuthId );
+      }
     }
     else // create new
     {
-      QgsAuthManager::instance()->storeAuthenticationConfig( configbasic );
+      if ( QgsAuthManager::instance()->storeAuthenticationConfig( configbasic ) )
+      {
+        mAuthId = configbasic.id();
+        emit authenticationConfigStored( mAuthId );
+      }
     }
   }
 #ifndef QT_NO_OPENSSL
@@ -159,11 +179,19 @@ void QgsAuthConfigWidget::saveConfig()
 
     if ( !mAuthId.isEmpty() ) // update
     {
-      QgsAuthManager::instance()->updateAuthenticationConfig( configpki );
+      configpki.setId( mAuthId );
+      if ( QgsAuthManager::instance()->updateAuthenticationConfig( configpki ) )
+      {
+        emit authenticationConfigUpdated( mAuthId );
+      }
     }
     else // create new
     {
-      QgsAuthManager::instance()->storeAuthenticationConfig( configpki );
+      if ( QgsAuthManager::instance()->storeAuthenticationConfig( configpki ) )
+      {
+        mAuthId = configpki.id();
+        emit authenticationConfigStored( mAuthId );
+      }
     }
   }
 #endif
@@ -247,6 +275,11 @@ void QgsAuthConfigWidget::on_chkBasicPasswordShow_stateChanged( int state )
 bool QgsAuthConfigWidget::validateBasic()
 {
   return !leBasicUsername->text().isEmpty();
+}
+
+int QgsAuthConfigWidget::providerIndexByType( QgsAuthType::ProviderType ptype )
+{
+  return cmbAuthProviderType->findData( QVariant( ptype ) );
 }
 
 void QgsAuthConfigWidget::fileFound( bool found, QWidget *widget )

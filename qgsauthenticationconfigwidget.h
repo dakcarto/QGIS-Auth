@@ -19,10 +19,14 @@ class QgsAuthConfigWidget : public QDialog, private Ui::QgsAuthConfigWidget
       Unknown
     };
 
-    typedef QPair<QString, QgsAuthType::ProviderType> AuthIdPair;
-
-    explicit QgsAuthConfigWidget( QWidget *parent = 0, const AuthIdPair& authidpair = AuthIdPair() );
+    explicit QgsAuthConfigWidget( const QString &authid = QString(), QWidget *parent = 0 );
     ~QgsAuthConfigWidget();
+
+    const QString configId() const { return mAuthId; }
+
+  signals:
+    void authenticationConfigStored( const QString& authid );
+    void authenticationConfigUpdated( const QString& authid );
 
   private slots:
     void loadConfig();
@@ -71,12 +75,12 @@ class QgsAuthConfigWidget : public QDialog, private Ui::QgsAuthConfigWidget
     bool validatePkiPaths();
 #endif
 
+    int providerIndexByType( QgsAuthType::ProviderType ptype );
+
     void fileFound( bool found, QWidget * widget );
     QString getOpenFileName( const QString& title, const QString& extfilter );
 
     QString mAuthId;
-    QgsAuthType::ProviderType mAuthIdType;
-    QgsAuthConfigBase mAuthIdBase;
 };
 
 #endif // QGSAUTHENTICATIONCINFIGWIDGET_H

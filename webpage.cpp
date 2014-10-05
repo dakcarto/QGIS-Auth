@@ -83,6 +83,8 @@ WebPage::WebPage( QWidget *parent )
   connect( comboBox, SIGNAL( activated( const QString& ) ), this, SLOT( loadUrl( const QString& ) ) );
   connect( clearButton, SIGNAL( clicked() ), this, SLOT( clearLog() ) );
 
+  connect( this, SIGNAL( messageOut( const QString&, const QString&, MessageLevel ) ),
+           this, SLOT( writeDebug( const QString&, const QString&, MessageLevel ) ) );
 
   QgsAuthManager::instance()->init();
 }
@@ -219,7 +221,18 @@ void WebPage::on_btnAuthConfigSave_clicked()
 {
   QgsAuthConfigWidget * aw = new QgsAuthConfigWidget( 0 );
   aw->setWindowModality( Qt::WindowModal );
-  aw->exec();
+  connect( aw, SIGNAL( authenticationConfigStored( const QString& ) ),
+           this, SIGNAL( messageOut( const QString& ) ) );
+  connect( aw, SIGNAL( authenticationConfigUpdated( const QString& ) ),
+           this, SIGNAL( messageOut( const QString& ) ) );
+  if ( aw->exec() )
+  {
+    emit messageOut( QString( "Stored authid: %1" ).arg( aw->configId() ) );
+  }
+  else
+  {
+    emit messageOut( "QgsAuthConfigWidget->exec() = 0" );
+  }
 }
 
 void WebPage::on_btnAuthConfigEdit_clicked()
@@ -227,7 +240,46 @@ void WebPage::on_btnAuthConfigEdit_clicked()
   if ( !QgsAuthManager::instance()->setMasterPassword( true ) )
     return;
 
-  QgsAuthConfigWidget * aw = new QgsAuthConfigWidget( 0, qMakePair( QString( "rk28j52" ), QgsAuthType::Basic ) );
+  QgsAuthConfigWidget * aw = new QgsAuthConfigWidget( "rk28j52", 0 );
   aw->setWindowModality( Qt::WindowModal );
-  aw->exec();
+  connect( aw, SIGNAL( authenticationConfigStored( const QString& ) ),
+           this, SIGNAL( messageOut( const QString& ) ) );
+  connect( aw, SIGNAL( authenticationConfigUpdated( const QString& ) ),
+           this, SIGNAL( messageOut( const QString& ) ) );
+  if ( aw->exec() )
+  {
+    emit messageOut( QString( "Update authid: %1" ).arg( aw->configId() ) );
+  }
+  else
+  {
+    emit messageOut( "QgsAuthConfigWidget->exec() = 0" );
+  }
+}
+
+void WebPage::writeDebug( const QString& message, const QString& tag, WebPage::MessageLevel level )
+{
+  Q_UNUSED( tag );
+
+  QString msg;
+  switch ( level )
+  {
+    case INFO:
+      break;
+    case WARNING:
+      msg += "WARNING: ";
+      break;
+    case CRITICAL:
+      msg += "ERROR: ";
+      break;
+    default:
+      break;
+  }
+
+  if ( !tag.isEmpty() )
+  {
+    msg += QString( "( %1 ) " ).arg( tag );
+  }
+
+  msg += message;
+  qDebug( "%s", msg.toLatin1().constData() );
 }

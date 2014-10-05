@@ -47,9 +47,11 @@ class QgsAuthManager : public QObject
 
     void registerProviders();
 
-    void updateConfigProviders();
+    void updateConfigProviderTypes();
 
     QgsAuthProvider* configProvider( const QString& authid );
+
+    QgsAuthType::ProviderType configProviderType( const QString& authid );
 
     const QString uniqueConfigId() const;
 

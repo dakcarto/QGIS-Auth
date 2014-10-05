@@ -61,7 +61,7 @@ bool QgsAuthManager::init()
     if ( dbinfo.size() > 0 )
     {
       emit messageOut( "Auth db exists and has data" );
-      updateConfigProviders();
+      updateConfigProviderTypes();
       return true;
     }
   }
@@ -301,7 +301,7 @@ bool QgsAuthManager::configIdUnique( const QString& id ) const
   return !configids.contains( id );
 }
 
-void QgsAuthManager::updateConfigProviders()
+void QgsAuthManager::updateConfigProviderTypes()
 {
   QSqlQuery query( authDbConnection() );
   query.prepare( QString( "SELECT id, type FROM %1" ).arg( authDbConfigTable() ) );
@@ -313,12 +313,12 @@ void QgsAuthManager::updateConfigProviders()
 
   if ( query.isActive() )
   {
-    emit messageOut( "Synching configuration providers" );
+    emit messageOut( "Synching existing auth config provider types" );
     mConfigProviders.clear();
     while ( query.next() )
     {
       mConfigProviders.insert( query.value( 0 ).toString(),
-                               QgsAuthType::providerTypeFromInt( query.value( 1 ).toInt() ) );
+                               QgsAuthType::stringToType( query.value( 1 ).toString() ) );
     }
   }
 }
@@ -334,6 +334,14 @@ QgsAuthProvider* QgsAuthManager::configProvider( const QString& authid )
     return 0;
 
   return mProviders.value( ptype );
+}
+
+QgsAuthType::ProviderType QgsAuthManager::configProviderType( const QString& authid )
+{
+  if ( !mConfigProviders.contains( authid ) )
+    return QgsAuthType::Unknown;
+
+  return mConfigProviders.value( authid );
 }
 
 bool QgsAuthManager::storeAuthenticationConfig( QgsAuthConfigBase &config )
@@ -356,6 +364,14 @@ bool QgsAuthManager::storeAuthenticationConfig( QgsAuthConfigBase &config )
                      authManTag(), CRITICAL );
     return false;
   }
+#if( 0 )
+  emit messageOut( QString( "authDbConfigTable(): %1" ).arg( authDbConfigTable() ) );
+  emit messageOut( QString( "name: %1" ).arg( config.name() ) );
+  emit messageOut( QString( "uri: %1" ).arg( config.uri() ) );
+  emit messageOut( QString( "type: %1" ).arg( config.typeToString() ) );
+  emit messageOut( QString( "version: %1" ).arg( config.version() ) );
+  emit messageOut( QString( "config: %1" ).arg( configstring ) ); // DO NOT LEAVE THIS LINE UNCOMMENTED !
+#endif
 
   QSqlQuery query( authDbConnection() );
   query.prepare( QString( "INSERT INTO %1 (id, name, uri, type, version, config) "
@@ -382,8 +398,9 @@ bool QgsAuthManager::storeAuthenticationConfig( QgsAuthConfigBase &config )
   // passed-in config should now be like as if it was just loaded from db
   config.setId( uid );
 
-  updateConfigProviders();
+  updateConfigProviderTypes();
 
+  emit messageOut( QString( "Store config SUCCESS for authid: %1" ).arg( uid ) );
   return true;
 }
 
@@ -408,10 +425,25 @@ bool QgsAuthManager::updateAuthenticationConfig( const QgsAuthConfigBase& config
     return false;
   }
 
+#if( 0 )
+  emit messageOut( QString( "authDbConfigTable(): %1" ).arg( authDbConfigTable() ) );
+  emit messageOut( QString( "id: %1" ).arg( config.id() ) );
+  emit messageOut( QString( "name: %1" ).arg( config.name() ) );
+  emit messageOut( QString( "uri: %1" ).arg( config.uri() ) );
+  emit messageOut( QString( "type: %1" ).arg( config.typeToString() ) );
+  emit messageOut( QString( "version: %1" ).arg( config.version() ) );
+  emit messageOut( QString( "config: %1" ).arg( configstring ) ); // DO NOT LEAVE THIS LINE UNCOMMENTED !
+#endif
+
   QSqlQuery query( authDbConnection() );
-  query.prepare( QString( "UPDATE %1 "
-                          "SET name = ':name', uri = ':uri', type = :type, version = :version, config = ':config') "
-                          "WHERE id = ':id'" ).arg( authDbConfigTable() ) );
+  if ( !query.prepare( QString( "UPDATE %1 "
+                                "SET name = :name, uri = :uri, type = :type, version = :version, config = :config "
+                                "WHERE id = :id" ).arg( authDbConfigTable() ) ) )
+  {
+    emit messageOut( tr( "Update config: FAILED to prepare query" ),
+                     authManTag(), CRITICAL );
+    return false;
+  }
 
   query.bindValue( ":id", config.id() );
   query.bindValue( ":name", config.name() );
@@ -429,7 +461,9 @@ bool QgsAuthManager::updateAuthenticationConfig( const QgsAuthConfigBase& config
   if ( !authDbCommit() )
     return false;
 
-  updateConfigProviders();
+  updateConfigProviderTypes();
+
+  emit messageOut( QString( "Update config SUCCESS for authid: %1" ).arg( config.id() ) );
 
   return true;
 }
@@ -444,14 +478,13 @@ bool QgsAuthManager::loadAuthenticationConfig( const QString& id, QgsAuthConfigB
   if ( full )
   {
     query.prepare( QString( "SELECT id, name, uri, type, version, config FROM %1 "
-                            "WHERE id = ':someid'" ).arg( authDbConfigTable() ) );
+                            "WHERE id = :id" ).arg( authDbConfigTable() ) );
   }
   else
   {
     query.prepare( QString( "SELECT id, name, uri, type, version FROM %1 "
-                            "WHERE id = ':someid'" ).arg( authDbConfigTable() ) );
+                            "WHERE id = :id" ).arg( authDbConfigTable() ) );
   }
-
 
   query.bindValue( ":someid", id );
 
@@ -475,6 +508,7 @@ bool QgsAuthManager::loadAuthenticationConfig( const QString& id, QgsAuthConfigB
         config.loadConfigString( QgsAuthCrypto::decrypt( mMasterPass, query.value( 5 ).toString(), "AES" ) );
       }
 
+      emit messageOut( QString( "Load %1 config SUCCESS for authid: %2" ).arg( full ? "full" : "base" ) .arg( id ) );
       return true;
     }
   }

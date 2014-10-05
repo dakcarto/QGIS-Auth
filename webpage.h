@@ -35,8 +35,19 @@ class WebPage : public QDialog, private Ui::WebPage
     Q_OBJECT
 
   public:
+    enum MessageLevel
+    {
+      INFO = 0,
+      WARNING = 1,
+      CRITICAL = 2
+    };
+
+
     explicit WebPage( QWidget *parent = 0 );
     ~WebPage();
+
+  signals:
+    void messageOut( const QString& message, const QString& tag = QString(), MessageLevel level = INFO ) const;
 
   protected:
     void showEvent( QShowEvent * );
@@ -57,6 +68,8 @@ class WebPage : public QDialog, private Ui::WebPage
 
     void on_btnAuthConfigSave_clicked();
     void on_btnAuthConfigEdit_clicked();
+
+    void writeDebug( const QString& message, const QString& tag = QString(), MessageLevel level = INFO );
 
   private:
     void appendLog( const QString& msg );
