@@ -34,36 +34,36 @@
 #include <QSslKey>
 
 #include "qgsauthenticationconfigeditor.h"
+#include "qgsauthenticationconfigwidget.h"
 
 
 //#include <QtCrypto>
 
 WebPage::WebPage( QWidget *parent )
-  : QDialog( parent )
-  , mNaMan( 0 )
-  , mReply( 0 )
-  , mLoaded( false )
-  , mTestWidget( 0 )
-  , mAuthSelector( 0 )
+    : QDialog( parent )
+    , mNaMan( 0 )
+    , mReply( 0 )
+    , mLoaded( false )
+    , mTestWidget( 0 )
 {
-  setupUi(this);
+  setupUi( this );
 
   comboBox->lineEdit()->setAlignment( Qt::AlignLeft );
 
   QStringList urlList;
   urlList << "http://localhost"
-          << QString( "http://localhost:8080" )
-          << QString( "https://localhost:8443" )
-          << QString( "http://www.google.com" )
-          << QString( "https://localhost:8443/geoserver/opengeo/wms?service=WMS&version=1.1.0"
-                      "&request=GetMap&layers=opengeo:countries&styles=&bbox=-180.0,-90.0,180.0,90.0"
-                      "&width=720&height=400&srs=EPSG:4326&format=application/openlayers" );
+  << QString( "http://localhost:8080" )
+  << QString( "https://localhost:8443" )
+  << QString( "http://www.google.com" )
+  << QString( "https://localhost:8443/geoserver/opengeo/wms?service=WMS&version=1.1.0"
+              "&request=GetMap&layers=opengeo:countries&styles=&bbox=-180.0,-90.0,180.0,90.0"
+              "&width=720&height=400&srs=EPSG:4326&format=application/openlayers" );
 
   comboBox->addItems( urlList );
 
   mNaMan = webView->page()->networkAccessManager();
 
-  connect( mNaMan, SIGNAL( finished( QNetworkReply*) ), this, SLOT( requestReply( QNetworkReply* ) ) );
+  connect( mNaMan, SIGNAL( finished( QNetworkReply* ) ), this, SLOT( requestReply( QNetworkReply* ) ) );
   connect(
     mNaMan, SIGNAL( sslErrors( QNetworkReply*, const QList<QSslError>& ) ),
     this, SLOT( onSslErrors( QNetworkReply*, const QList<QSslError>& ) )
@@ -140,7 +140,7 @@ void WebPage::loadUrl( const QUrl& url )
 
   QNetworkRequest req;
   req.setUrl( url );
-  req.setRawHeader("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:32.0) Gecko/20100101 Firefox/32.0" );
+  req.setRawHeader( "User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:32.0) Gecko/20100101 Firefox/32.0" );
 
   // TODO: update request
 
@@ -197,12 +197,9 @@ void WebPage::onSslErrors( QNetworkReply* reply, const QList<QSslError>& errors 
 
 void WebPage::on_btnAuth_clicked()
 {
-  if ( !mAuthSelector )
-  {
-    mAuthSelector = new QgsAuthConfigEditor();
-    mAuthSelector->setWindowModality( Qt::WindowModal );
-  }
-  mAuthSelector->show();
+  QgsAuthConfigEditor * ae = new QgsAuthConfigEditor();
+  ae->setWindowModality( Qt::WindowModal );
+  ae->show();
 }
 
 void WebPage::on_btnTests_clicked()
@@ -213,4 +210,19 @@ void WebPage::on_btnTests_clicked()
     mTestWidget->setWindowModality( Qt::WindowModal );
   }
   mTestWidget->show();
+}
+
+void WebPage::on_btnAuthConfigSave_clicked()
+{
+  QgsAuthConfigWidget * aw = new QgsAuthConfigWidget();
+  aw->setWindowModality( Qt::WindowModal );
+  aw->exec();
+}
+
+void WebPage::on_btnAuthConfigEdit_clicked()
+{
+  QgsAuthIdPair authpair = qMakePair( QString( "rk28j52" ), QgsAuthType::Basic );
+  QgsAuthConfigWidget * aw = new QgsAuthConfigWidget( 0, authpair );
+  aw->setWindowModality( Qt::WindowModal );
+  aw->exec();
 }

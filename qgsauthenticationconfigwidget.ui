@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
  <class>QgsAuthConfigWidget</class>
- <widget class="QWidget" name="QgsAuthConfigWidget">
+ <widget class="QDialog" name="QgsAuthConfigWidget">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>547</width>
-    <height>388</height>
+    <width>515</width>
+    <height>407</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -23,21 +23,10 @@
    <item row="4" column="0" colspan="2">
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
-      <widget class="QComboBox" name="cmbAuthProviderType">
-       <item>
-        <property name="text">
-         <string>Username/Password</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>PKI Certificate</string>
-        </property>
-       </item>
-      </widget>
+      <widget class="QComboBox" name="cmbAuthProviderType"/>
      </item>
      <item>
-      <widget class="QToolButton" name="bthnClear">
+      <widget class="QToolButton" name="btnClear">
        <property name="text">
         <string>Clear</string>
        </property>
@@ -45,62 +34,96 @@
      </item>
     </layout>
    </item>
-   <item row="2" column="0">
-    <widget class="QLabel" name="label_3">
-     <property name="text">
-      <string>Resource</string>
-     </property>
-    </widget>
-   </item>
-   <item row="8" column="0" colspan="2">
-    <widget class="QDialogButtonBox" name="buttonBox">
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Reset|QDialogButtonBox::Save</set>
-     </property>
-    </widget>
-   </item>
    <item row="2" column="1">
     <widget class="QLineEdit" name="leResource">
      <property name="placeholderText">
       <string>Optional URL resource</string>
      </property>
-     <property name="clearButtonEnabled">
-      <bool>true</bool>
-     </property>
     </widget>
    </item>
-   <item row="0" column="1">
-    <widget class="QLineEdit" name="leName">
-     <property name="placeholderText">
-      <string>Required</string>
+   <item row="7" column="0" colspan="2">
+    <widget class="QLabel" name="label">
+     <property name="font">
+      <font>
+       <italic>true</italic>
+      </font>
      </property>
-     <property name="clearButtonEnabled">
-      <bool>true</bool>
+     <property name="styleSheet">
+      <string notr="true">color: rgb(128, 128, 128);</string>
+     </property>
+     <property name="text">
+      <string>Note: Saving writes directly to authentication database</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
      </property>
     </widget>
    </item>
    <item row="6" column="0" colspan="2">
-    <widget class="QStackedWidget" name="stckwCertStore">
+    <widget class="QStackedWidget" name="stkwProviderType">
      <property name="currentIndex">
       <number>1</number>
      </property>
      <widget class="QWidget" name="pageBasic">
       <layout class="QGridLayout" name="gridLayout_4">
-       <item row="1" column="1">
-        <widget class="QLineEdit" name="leBasicPassword">
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <item row="0" column="0">
+        <widget class="QLabel" name="label_5">
          <property name="text">
-          <string/>
-         </property>
-         <property name="echoMode">
-          <enum>QLineEdit::Password</enum>
-         </property>
-         <property name="placeholderText">
-          <string>Optional</string>
-         </property>
-         <property name="clearButtonEnabled">
-          <bool>true</bool>
+          <string>Username</string>
          </property>
         </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QLabel" name="label_6">
+         <property name="text">
+          <string>Realm</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <layout class="QHBoxLayout" name="horizontalLayout_2">
+         <property name="spacing">
+          <number>6</number>
+         </property>
+         <item>
+          <widget class="QLineEdit" name="leBasicPassword">
+           <property name="text">
+            <string/>
+           </property>
+           <property name="echoMode">
+            <enum>QLineEdit::Password</enum>
+           </property>
+           <property name="placeholderText">
+            <string>Optional</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="chkBasicPasswordShow">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>Show</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
        <item row="1" column="0">
         <widget class="QLabel" name="label_4">
@@ -114,20 +137,17 @@
          <property name="placeholderText">
           <string>Required</string>
          </property>
-         <property name="clearButtonEnabled">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="0">
-        <widget class="QLabel" name="label_5">
-         <property name="text">
-          <string>Username</string>
-         </property>
         </widget>
        </item>
        <item row="3" column="1">
-        <spacer name="verticalSpacer">
+        <widget class="QLineEdit" name="leBasicRealm">
+         <property name="placeholderText">
+          <string>Optional</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1">
+        <spacer name="verticalSpacer_2">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
          </property>
@@ -138,23 +158,6 @@
           </size>
          </property>
         </spacer>
-       </item>
-       <item row="2" column="0">
-        <widget class="QLabel" name="label_6">
-         <property name="text">
-          <string>Realm</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="1">
-        <widget class="QLineEdit" name="leBasicRealm">
-         <property name="placeholderText">
-          <string>Optional</string>
-         </property>
-         <property name="clearButtonEnabled">
-          <bool>true</bool>
-         </property>
-        </widget>
        </item>
       </layout>
      </widget>
@@ -172,35 +175,6 @@
        <property name="bottomMargin">
         <number>0</number>
        </property>
-       <property name="verticalSpacing">
-        <number>12</number>
-       </property>
-       <item row="3" column="0">
-        <widget class="QLabel" name="lblPkiPathsCert">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="text">
-          <string>Cert</string>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="0">
-        <widget class="QLabel" name="lblPkiPathsIssuer">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="text">
-          <string>Issuer</string>
-         </property>
-        </widget>
-       </item>
        <item row="3" column="1">
         <layout class="QGridLayout" name="gridLayout_3">
          <property name="spacing">
@@ -213,9 +187,6 @@
            </property>
            <property name="placeholderText">
             <string>Required</string>
-           </property>
-           <property name="clearButtonEnabled">
-            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -246,20 +217,7 @@
          </item>
         </layout>
        </item>
-       <item row="5" column="0">
-        <widget class="QLabel" name="lblPkiPathsKey">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="text">
-          <string>Key</string>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="1">
+       <item row="10" column="1">
         <layout class="QGridLayout" name="gridLayout_6">
          <property name="horizontalSpacing">
           <number>0</number>
@@ -285,9 +243,6 @@
            <property name="placeholderText">
             <string>Optional</string>
            </property>
-           <property name="clearButtonEnabled">
-            <bool>true</bool>
-           </property>
           </widget>
          </item>
          <item row="1" column="0">
@@ -305,51 +260,118 @@
          </item>
         </layout>
        </item>
-       <item row="5" column="1">
-        <layout class="QGridLayout" name="gridLayout_5">
-         <property name="horizontalSpacing">
-          <number>0</number>
+       <item row="4" column="0">
+        <widget class="QLabel" name="lblPkiPathsKey">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
          </property>
-         <property name="verticalSpacing">
+         <property name="text">
+          <string>Key</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1">
+        <layout class="QVBoxLayout" name="verticalLayout_3">
+         <property name="spacing">
           <number>6</number>
          </property>
-         <item row="0" column="1">
-          <widget class="QToolButton" name="btnPkiPathsKey">
-           <property name="text">
-            <string>...</string>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_3">
+           <property name="spacing">
+            <number>0</number>
            </property>
-           <property name="popupMode">
-            <enum>QToolButton::InstantPopup</enum>
-           </property>
-          </widget>
+           <item>
+            <widget class="QLineEdit" name="lePkiPathsKey">
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+             <property name="placeholderText">
+              <string>Required</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QToolButton" name="btnPkiPathsKey">
+             <property name="text">
+              <string>...</string>
+             </property>
+             <property name="popupMode">
+              <enum>QToolButton::InstantPopup</enum>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </item>
-         <item row="0" column="0">
-          <widget class="QLineEdit" name="lePkiPathsKey">
-           <property name="readOnly">
-            <bool>true</bool>
-           </property>
-           <property name="placeholderText">
-            <string>Required</string>
-           </property>
-           <property name="clearButtonEnabled">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="0" colspan="2">
-          <widget class="QLineEdit" name="lePkiPathsIssuer_2">
-           <property name="echoMode">
-            <enum>QLineEdit::Password</enum>
-           </property>
-           <property name="placeholderText">
-            <string>Optional passphrase</string>
-           </property>
-           <property name="clearButtonEnabled">
-            <bool>true</bool>
-           </property>
-          </widget>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_4">
+           <item>
+            <widget class="QLineEdit" name="lePkiPathsKeyPass">
+             <property name="echoMode">
+              <enum>QLineEdit::Password</enum>
+             </property>
+             <property name="placeholderText">
+              <string>Optional passphrase</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="chkPkiPathsPassShow">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="text">
+              <string>Show</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </item>
         </layout>
+       </item>
+       <item row="10" column="0">
+        <widget class="QLabel" name="lblPkiPathsIssuer">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>Issuer</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QLabel" name="lblPkiPathsCert">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>Cert</string>
+         </property>
+        </widget>
+       </item>
+       <item row="11" column="1">
+        <spacer name="verticalSpacer_3">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>0</height>
+          </size>
+         </property>
+        </spacer>
        </item>
       </layout>
      </widget>
@@ -362,43 +384,29 @@
      </property>
     </widget>
    </item>
-   <item row="7" column="0" colspan="2">
-    <widget class="QLabel" name="label">
-     <property name="font">
-      <font>
-       <italic>true</italic>
-      </font>
+   <item row="8" column="0" colspan="2">
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Reset|QDialogButtonBox::Save</set>
      </property>
-     <property name="styleSheet">
-      <string notr="true">color: rgb(128, 128, 128);</string>
-     </property>
+    </widget>
+   </item>
+   <item row="2" column="0">
+    <widget class="QLabel" name="label_3">
      <property name="text">
-      <string>Note: Saving writes directly to authentication database</string>
+      <string>Resource</string>
      </property>
-     <property name="alignment">
-      <set>Qt::AlignCenter</set>
+    </widget>
+   </item>
+   <item row="0" column="1">
+    <widget class="QLineEdit" name="leName">
+     <property name="placeholderText">
+      <string>Required</string>
      </property>
     </widget>
    </item>
   </layout>
  </widget>
  <resources/>
- <connections>
-  <connection>
-   <sender>cmbAuthProviderType</sender>
-   <signal>currentIndexChanged(int)</signal>
-   <receiver>stckwCertStore</receiver>
-   <slot>setCurrentIndex(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>170</x>
-     <y>87</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>523</x>
-     <y>129</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
+ <connections/>
 </ui>

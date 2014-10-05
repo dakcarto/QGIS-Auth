@@ -132,6 +132,20 @@
       </widget>
      </item>
      <item>
+      <widget class="QToolButton" name="btnAuthConfigSave">
+       <property name="text">
+        <string>Auth config save</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="btnAuthConfigEdit">
+       <property name="text">
+        <string>Auth config edit</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QToolButton" name="btnTests">
        <property name="text">
         <string>Tests</string>

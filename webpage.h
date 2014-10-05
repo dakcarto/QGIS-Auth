@@ -28,11 +28,11 @@
 #include <QSslCertificate>
 
 #include "qgsauthenticationconfigeditor.h"
-
+#include "qgsauthenticationconfigwidget.h"
 
 class WebPage : public QDialog, private Ui::WebPage
 {
-  Q_OBJECT
+    Q_OBJECT
 
   public:
     explicit WebPage( QWidget *parent = 0 );
@@ -55,6 +55,9 @@ class WebPage : public QDialog, private Ui::WebPage
     void on_btnAuth_clicked();
     void on_btnTests_clicked();
 
+    void on_btnAuthConfigSave_clicked();
+    void on_btnAuthConfigEdit_clicked();
+
   private:
     void appendLog( const QString& msg );
     QSslCertificate certAuth();
@@ -68,7 +71,6 @@ class WebPage : public QDialog, private Ui::WebPage
     bool mLoaded;
 
     TestWidget *mTestWidget;
-    QgsAuthConfigEditor *mAuthSelector;
 };
 
 #endif // WEBPAGE_H
