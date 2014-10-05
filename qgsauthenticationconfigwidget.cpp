@@ -1,19 +1,31 @@
 #include "qgsauthenticationconfigwidget.h"
 #include "ui_qgsauthenticationconfigwidget.h"
 
+#include <QDateTime>
 #include <QDir>
 #include <QFileDialog>
 #include <QPushButton>
+#include <QSettings>
+#include <QSslCertificate>
+#include <QSslKey>
 
 #include "qgsauthenticationconfig.h"
 #include "qgsauthenticationmanager.h"
+
+static QString validGreen_( const QString& selector = "*" )
+{
+  return QString( "%1{color: rgb(0, 170, 0);}" ).arg( selector );
+}
+static QString validRed_( const QString& selector = "*" )
+{
+  return QString( "%1{color: rgb(200, 0, 0);}" ).arg( selector );
+}
 
 QgsAuthConfigWidget::QgsAuthConfigWidget( QWidget *parent, const QgsAuthIdPair &authidpair )
     : QDialog( parent )
     , mAuthId( authidpair.first )
     , mAuthIdType( authidpair.second )
     , mAuthIdBase( QgsAuthConfigBase() )
-    , mRecentDir( QDir::homePath() )
 {
 
   setupUi( this );
@@ -35,10 +47,16 @@ QgsAuthConfigWidget::QgsAuthConfigWidget( QWidget *parent, const QgsAuthIdPair &
   connect( stkwProviderType, SIGNAL( currentChanged( int ) ),
            cmbAuthProviderType, SLOT( setCurrentIndex( int ) ) );
 
+  connect( cmbAuthProviderType, SIGNAL( currentIndexChanged( int ) ),
+           this, SLOT( validateAuth() ) );
+  connect( stkwProviderType, SIGNAL( currentChanged( int ) ),
+           this, SLOT( validateAuth() ) );
+
   cmbAuthProviderType->setCurrentIndex( 0 );
   stkwProviderType->setCurrentIndex( 0 );
 
   loadConfig();
+  validateAuth();
 }
 
 QgsAuthConfigWidget::~QgsAuthConfigWidget()
@@ -98,11 +116,13 @@ void QgsAuthConfigWidget::resetConfig()
 {
   clearAll();
   loadConfig();
+  validateAuth();
 }
 
 void QgsAuthConfigWidget::saveConfig()
 {
-  // TODO: verify can save
+  if ( !QgsAuthManager::instance()->setMasterPassword( true ) )
+    return;
 
   QWidget *curpage = stkwProviderType->currentWidget();
   if ( curpage == pageBasic ) // basic
@@ -153,27 +173,21 @@ void QgsAuthConfigWidget::saveConfig()
 
 void QgsAuthConfigWidget::on_btnClear_clicked()
 {
-  switch ( cmbAuthProviderType->currentIndex() )
+  QWidget *curpage = stkwProviderType->currentWidget();
+  if ( curpage == pageBasic )
   {
-    case 0: // basic
-      leBasicUsername->clear();
-      leBasicPassword->clear();
-      leBasicRealm->clear();
-      chkBasicPasswordShow->setChecked( false );
-      break;
-#ifndef QT_NO_OPENSSL
-    case 1: // pki paths
-      lePkiPathsCert->clear();
-      lePkiPathsKey->clear();
-      lePkiPathsKeyPass->clear();
-      chkPkiPathsPassShow->setChecked( false );
-      lePkiPathsIssuer->clear();
-      chkPkiPathsIssuerSelf->setChecked( false );
-      break;
-#endif
-    default:
-      break;
+    leBasicUsername->clear();
+    leBasicPassword->clear();
+    leBasicRealm->clear();
+    chkBasicPasswordShow->setChecked( false );
   }
+#ifndef QT_NO_OPENSSL
+  else if ( curpage == pagePkiPaths )
+  {
+    clearPkiPathsCert();
+  }
+#endif
+  validateAuth();
 }
 
 void QgsAuthConfigWidget::clearAll()
@@ -189,13 +203,40 @@ void QgsAuthConfigWidget::clearAll()
 
 #ifndef QT_NO_OPENSSL
   // pki paths
-  lePkiPathsCert->clear();
-  lePkiPathsKey->clear();
-  lePkiPathsKeyPass->clear();
-  chkPkiPathsPassShow->setChecked( false );
-  lePkiPathsIssuer->clear();
-  chkPkiPathsIssuerSelf->setChecked( false );
+  clearPkiPathsCert();
 #endif
+
+  validateAuth();
+}
+
+void QgsAuthConfigWidget::validateAuth()
+{
+  bool authok = !leName->text().isEmpty();
+
+  QWidget *curpage = stkwProviderType->currentWidget();
+  if ( curpage == pageBasic )
+  {
+    authok = authok && validateBasic();
+  }
+#ifndef QT_NO_OPENSSL
+  else if ( curpage == pagePkiPaths )
+  {
+    authok = authok && validatePkiPaths();
+  }
+#endif
+  buttonBox->button( QDialogButtonBox::Save )->setEnabled( authok );
+}
+
+void QgsAuthConfigWidget::on_leName_textChanged( const QString& txt )
+{
+  Q_UNUSED( txt );
+  validateAuth();
+}
+
+void QgsAuthConfigWidget::on_leBasicUsername_textChanged( const QString& txt )
+{
+  Q_UNUSED( txt );
+  validateAuth();
 }
 
 void QgsAuthConfigWidget::on_chkBasicPasswordShow_stateChanged( int state )
@@ -203,17 +244,158 @@ void QgsAuthConfigWidget::on_chkBasicPasswordShow_stateChanged( int state )
   leBasicPassword->setEchoMode(( state > 0 ) ? QLineEdit::Normal : QLineEdit::Password );
 }
 
-QString QgsAuthConfigWidget::getOpenFileName()
+bool QgsAuthConfigWidget::validateBasic()
 {
-  QString f = QFileDialog::getOpenFileName( this, tr( "Open PEM File" ), mRecentDir, tr( "PEM (*.pem *.key)" ) );
+  return !leBasicUsername->text().isEmpty();
+}
+
+void QgsAuthConfigWidget::fileFound( bool found, QWidget *widget )
+{
+  if ( !found )
+  {
+    widget->setStyleSheet( validRed_( "QLineEdit" ) );
+    widget->setToolTip( tr( "File not found" ) );
+  }
+  else
+  {
+    widget->setStyleSheet( "" );
+    widget->setToolTip( "" );
+  }
+}
+
+QString QgsAuthConfigWidget::getOpenFileName( const QString& title, const QString& extfilter )
+{
+  QSettings settings;
+  QString recentdir = settings.value( "UI/lastPkiPathsOpenFileDir", QDir::homePath() ).toString();
+  QString f = QFileDialog::getOpenFileName( this, title, recentdir, extfilter );
   if ( !f.isEmpty() )
   {
-    mRecentDir = QFileInfo( f ).absoluteDir().path();
+    settings.setValue( "UI/lastPkiPathsOpenFileDir", QFileInfo( f ).absoluteDir().path() );
   }
   return f;
 }
 
 #ifndef QT_NO_OPENSSL
+void QgsAuthConfigWidget::clearPkiPathsMessage()
+{
+  lePkiPathsMsg->clear();
+  lePkiPathsMsg->setStyleSheet( "" );
+}
+
+void QgsAuthConfigWidget::writePkiPathsMessage( const QString &msg, QgsAuthConfigWidget::Validity valid )
+{
+  QString ss;
+  QString txt( msg );
+  switch ( valid )
+  {
+    case Valid:
+      ss = validGreen_( "QLineEdit" );
+      txt = tr( "Valid: %1" ).arg( msg );
+      break;
+    case Invalid:
+      ss = validRed_( "QLineEdit" );
+      txt = tr( "Invalid: %1" ).arg( msg );
+      break;
+    case Unknown:
+      ss = "";
+      break;
+    default:
+      ss = "";
+  }
+  lePkiPathsMsg->setStyleSheet( ss );
+  lePkiPathsMsg->setText( txt );
+  lePkiPathsMsg->setCursorPosition( 0 );
+}
+
+void QgsAuthConfigWidget::clearPkiPathsCert()
+{
+  clearPkiPathsCertId();
+  clearPkiPathsKeyId();
+  clearPkiPathsKeyPassphrase();
+  clearPkiPathsIssuerId();
+  clearPkiPathsIssuerSelfSigned();
+
+  clearPkiPathsMessage();
+}
+
+void QgsAuthConfigWidget::clearPkiPathsCertId()
+{
+  lePkiPathsCert->clear();
+  lePkiPathsCert->setStyleSheet( "" );
+  validateAuth();
+}
+
+void QgsAuthConfigWidget::clearPkiPathsKeyId()
+{
+  lePkiPathsKey->clear();
+  lePkiPathsKey->setStyleSheet( "" );
+  validateAuth();
+}
+
+void QgsAuthConfigWidget::clearPkiPathsKeyPassphrase()
+{
+  lePkiPathsKeyPass->clear();
+  lePkiPathsKeyPass->setStyleSheet( "" );
+  validateAuth();
+}
+
+void QgsAuthConfigWidget::clearPkiPathsIssuerId()
+{
+  lePkiPathsIssuer->clear();
+  lePkiPathsIssuer->setStyleSheet( "" );
+  validateAuth();
+}
+
+void QgsAuthConfigWidget::clearPkiPathsIssuerSelfSigned()
+{
+  chkPkiPathsIssuerSelf->setChecked( false );
+  validateAuth();
+}
+
+bool QgsAuthConfigWidget::validatePkiPaths()
+{
+  bool certvalid = false;
+
+  // required components
+  QString certpath( lePkiPathsCert->text() );
+  QString keypath( lePkiPathsKey->text() );
+
+  bool certfound = QFile::exists( certpath );
+  bool keyfound = QFile::exists( keypath );
+
+  fileFound( certpath.isEmpty() || certfound, lePkiPathsCert );
+  fileFound( keypath.isEmpty() || keyfound, lePkiPathsKey );
+
+  if ( !certfound || !keyfound )
+  {
+    writePkiPathsMessage( tr( "Missing cert/key components" ), Invalid );
+    return false;
+  }
+
+  // check for issue date validity, then notify status
+  QSslCertificate cert;
+  QFile file( certpath );
+  if ( file.open( QIODevice::ReadOnly | QIODevice::Text ) )
+  {
+    cert = QSslCertificate( file.readAll(), QSsl::Pem );
+    file.close();
+  }
+  else
+  {
+    writePkiPathsMessage( tr( "Failed to read certificate file" ), Invalid );
+    return false;
+  }
+
+  certvalid = cert.isValid();
+  QDateTime startDate( cert.effectiveDate() );
+  QDateTime endDate( cert.expiryDate() );
+
+  writePkiPathsMessage( tr( "%1 thru %2" ).arg( startDate.toString() ).arg( endDate.toString() ),
+                        ( certvalid ? Valid : Invalid ) );
+
+  return certvalid;
+}
+
 void QgsAuthConfigWidget::on_chkPkiPathsPassShow_stateChanged( int state )
 {
   lePkiPathsKeyPass->setEchoMode(( state > 0 ) ? QLineEdit::Normal : QLineEdit::Password );
@@ -221,28 +403,31 @@ void QgsAuthConfigWidget::on_chkPkiPathsPassShow_stateChanged( int state )
 
 void QgsAuthConfigWidget::on_btnPkiPathsCert_clicked()
 {
-  const QString& fn = getOpenFileName();
+  const QString& fn = getOpenFileName( tr( "Open PEM File" ),  tr( "PEM (*.pem)" ) );
   if ( !fn.isEmpty() )
   {
     lePkiPathsCert->setText( fn );
+    validateAuth();
   }
 }
 
 void QgsAuthConfigWidget::on_btnPkiPathsKey_clicked()
 {
-  const QString& fn = getOpenFileName();
+  const QString& fn = getOpenFileName( tr( "Open PEM File" ),  tr( "PEM (*.pem *.key)" ) );
   if ( !fn.isEmpty() )
   {
     lePkiPathsKey->setText( fn );
+    validateAuth();
   }
 }
 
 void QgsAuthConfigWidget::on_btnPkiPathsIssuer_clicked()
 {
-  const QString& fn = getOpenFileName();
+  const QString& fn = getOpenFileName( tr( "Open PEM File" ),  tr( "PEM (*.pem)" ) );
   if ( !fn.isEmpty() )
   {
     lePkiPathsIssuer->setText( fn );
+    validateAuth();
   }
 }
 #endif
