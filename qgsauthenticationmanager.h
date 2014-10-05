@@ -51,6 +51,8 @@ class QgsAuthManager : public QObject
 
     QgsAuthProvider* configProvider( const QString& authid );
 
+    const QString uniqueConfigId() const;
+
     bool configIdUnique( const QString &id ) const;
 
 
@@ -93,8 +95,6 @@ class QgsAuthManager : public QObject
 
     bool masterPasswordClearDb() const;
 
-
-    const QString uniqueConfigId() const;
 
     QStringList configIds() const;
 

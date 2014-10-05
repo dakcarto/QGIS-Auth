@@ -5,6 +5,7 @@
 #include <QSqlDatabase>
 #include <QSqlError>
 #include <QSqlQuery>
+#include <QTime>
 #include <QVariant>
 
 #include "qgsapplication.h"
@@ -257,6 +258,37 @@ void QgsAuthManager::registerProviders()
 #endif
 }
 
+const QString QgsAuthManager::uniqueConfigId() const
+{
+  QStringList configids = configIds();
+  QString id;
+  int len = 7;
+  uint seed = ( uint ) QTime::currentTime().msec();
+  qsrand( seed );
+
+  while ( true )
+  {
+    id = "";
+    for ( int i = 0; i < len; i++ )
+    {
+      switch ( qrand() % 2 )
+      {
+        case 0:
+          id += ( '0' + qrand() % 10 );
+          break;
+        case 1:
+          id += ( 'a' + qrand() % 26 );
+          break;
+      }
+    }
+    if ( !configids.contains( id ) )
+    {
+      break;
+    }
+  }
+  emit messageOut( QString( "Generated unique ID: %1" ).arg( id ) );
+  return id;
+}
 
 bool QgsAuthManager::configIdUnique( const QString& id ) const
 {
@@ -608,36 +640,6 @@ bool QgsAuthManager::masterPasswordClearDb() const
   QSqlQuery query( authDbConnection() );
   query.prepare( QString( "DELETE FROM %1" ).arg( authDbPassTable() ) );
   return authDbTransactionQuery( &query );
-}
-
-const QString QgsAuthManager::uniqueConfigId() const
-{
-  QStringList configids = configIds();
-  QString id;
-  int len = 7;
-
-  while ( true )
-  {
-    id = "";
-    for ( int i = 0; i < len; i++ )
-    {
-      switch ( qrand() % 2 )
-      {
-        case 0:
-          id += ( '0' + qrand() % 10 );
-          break;
-        case 1:
-          id += ( 'a' + qrand() % 26 );
-          break;
-      }
-    }
-    if ( !configids.contains( id ) )
-    {
-      break;
-    }
-  }
-  emit messageOut( QString( "Generated unique ID: %1" ).arg( id ) );
-  return id;
 }
 
 QStringList QgsAuthManager::configIds() const

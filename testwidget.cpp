@@ -75,12 +75,12 @@ void TestWidget::setButtonTexts()
 void TestWidget::on_btnOne_clicked()
 {
 //  QgsAuthManager::instance()->inputMasterPassword();
-//  teOut->appendPlainText( QgsAuthManager::instance()->uniqueConfigId() );
+  teOut->appendPlainText( QgsAuthManager::instance()->uniqueConfigId() );
 
 //  QgsAuthCrypto::passwordHash( lePassword->text(), &mSalt, &mHash );
 //  teOut->appendPlainText( QString( "Salt: %1\nHash: %2" ).arg( mSalt ).arg( mHash ) );
 
-  QgsAuthManager::instance()->setMasterPassword();
+//  QgsAuthManager::instance()->setMasterPassword();
 }
 
 void TestWidget::on_btnTwo_clicked()
