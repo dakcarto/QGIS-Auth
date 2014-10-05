@@ -6,6 +6,18 @@
 #include <QObject>
 
 
+const QHash<QgsAuthType::ProviderType, QString> QgsAuthType::typeNameHash()
+{
+  QHash<QgsAuthType::ProviderType, QString> typeNames;
+  typeNames.insert( QgsAuthType::None, QObject::tr( "None" ) );
+  typeNames.insert( QgsAuthType::Basic, QObject::tr( "Basic" ) );
+#ifndef QT_NO_OPENSSL
+  typeNames.insert( QgsAuthType::PkiPaths, QObject::tr( "PKI-Paths" ) );
+#endif
+  typeNames.insert( QgsAuthType::Unknown, QObject::tr( "Unknown" ) );
+  return typeNames;
+}
+
 QgsAuthType::ProviderType QgsAuthType::providerTypeFromInt( int itype )
 {
   ProviderType ptype = Unknown;
@@ -33,7 +45,17 @@ QgsAuthType::ProviderType QgsAuthType::providerTypeFromInt( int itype )
 
 }
 
-const QString QgsAuthType::typeAsString( QgsAuthType::ProviderType providertype )
+const QString QgsAuthType::typeToString( QgsAuthType::ProviderType providertype )
+{
+  return QgsAuthType::typeNameHash().value( providertype, QObject::tr( "Unknown" ) );
+}
+
+QgsAuthType::ProviderType QgsAuthType::stringToType( const QString& name )
+{
+  return QgsAuthType::typeNameHash().key( name, QgsAuthType::Unknown );
+}
+
+const QString QgsAuthType::typeDescription( QgsAuthType::ProviderType providertype )
 {
   QString s = QObject::tr( "No authentication configuration set" );
   switch ( providertype )
@@ -83,9 +105,9 @@ QgsAuthConfigBase::QgsAuthConfigBase( const QgsAuthConfigBase &config )
 {
 }
 
-const QString QgsAuthConfigBase::typeAsString() const
+const QString QgsAuthConfigBase::typeToString() const
 {
-  return QgsAuthType::typeAsString( mType );
+  return QgsAuthType::typeToString( mType );
 }
 
 bool QgsAuthConfigBase::isValid( bool validateid ) const

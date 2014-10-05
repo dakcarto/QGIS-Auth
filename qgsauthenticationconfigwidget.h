@@ -7,8 +7,6 @@
 #include "qgsauthenticationconfig.h"
 
 
-typedef QPair<QString, QgsAuthType::ProviderType> QgsAuthIdPair;
-
 class QgsAuthConfigWidget : public QDialog, private Ui::QgsAuthConfigWidget
 {
     Q_OBJECT
@@ -21,7 +19,9 @@ class QgsAuthConfigWidget : public QDialog, private Ui::QgsAuthConfigWidget
       Unknown
     };
 
-    explicit QgsAuthConfigWidget( QWidget *parent = 0, const QgsAuthIdPair& authidpair = QgsAuthIdPair() );
+    typedef QPair<QString, QgsAuthType::ProviderType> AuthIdPair;
+
+    explicit QgsAuthConfigWidget( QWidget *parent = 0, const AuthIdPair& authidpair = AuthIdPair() );
     ~QgsAuthConfigWidget();
 
   private slots:

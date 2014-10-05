@@ -90,7 +90,7 @@ bool QgsAuthManager::init()
                   "    'id' TEXT NOT NULL,\n"
                   "    'name' TEXT NOT NULL,\n"
                   "    'uri' TEXT,\n"
-                  "    'type' INTEGER NOT NULL,\n"
+                  "    'type' TEXT NOT NULL,\n"
                   "    'version' INTEGER NOT NULL\n"
                   ", 'config' TEXT  NOT NULL);" ).arg( authDbConfigTable() );
   query.prepare( qstr );
@@ -334,7 +334,7 @@ bool QgsAuthManager::storeAuthenticationConfig( QgsAuthConfigBase &config )
   query.bindValue( ":id", uid );
   query.bindValue( ":name", config.name() );
   query.bindValue( ":uri", config.uri() );
-  query.bindValue( ":type", ( int ) config.type() );
+  query.bindValue( ":type", config.typeToString() );
   query.bindValue( ":version", config.version() );
   query.bindValue( ":config", QgsAuthCrypto::encrypt( mMasterPass, configstring, "AES" ) );
 
@@ -384,7 +384,7 @@ bool QgsAuthManager::updateAuthenticationConfig( const QgsAuthConfigBase& config
   query.bindValue( ":id", config.id() );
   query.bindValue( ":name", config.name() );
   query.bindValue( ":uri", config.uri() );
-  query.bindValue( ":type", ( int ) config.type() );
+  query.bindValue( ":type", config.typeToString() );
   query.bindValue( ":version", config.version() );
   query.bindValue( ":config", QgsAuthCrypto::encrypt( mMasterPass, configstring, "AES" ) );
 
@@ -435,7 +435,7 @@ bool QgsAuthManager::loadAuthenticationConfig( const QString& id, QgsAuthConfigB
       config.setId( query.value( 0 ).toString() );
       config.setName( query.value( 1 ).toString() );
       config.setUri( query.value( 2 ).toString() );
-      config.setType( QgsAuthType::providerTypeFromInt( query.value( 3 ).toInt() ) );
+      config.setType( QgsAuthType::stringToType( query.value( 3 ).toString() ) );
       config.setVersion( query.value( 4 ).toInt() );
 
       if ( full )

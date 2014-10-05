@@ -33,6 +33,7 @@
 #include <QSslError>
 #include <QSslKey>
 
+#include "qgsauthenticationmanager.h"
 #include "qgsauthenticationconfigeditor.h"
 #include "qgsauthenticationconfigwidget.h"
 
@@ -82,6 +83,8 @@ WebPage::WebPage( QWidget *parent )
   connect( comboBox, SIGNAL( activated( const QString& ) ), this, SLOT( loadUrl( const QString& ) ) );
   connect( clearButton, SIGNAL( clicked() ), this, SLOT( clearLog() ) );
 
+
+  QgsAuthManager::instance()->init();
 }
 
 WebPage::~WebPage()
@@ -197,7 +200,7 @@ void WebPage::onSslErrors( QNetworkReply* reply, const QList<QSslError>& errors 
 
 void WebPage::on_btnAuth_clicked()
 {
-  QgsAuthConfigEditor * ae = new QgsAuthConfigEditor();
+  QgsAuthConfigEditor * ae = new QgsAuthConfigEditor( 0 );
   ae->setWindowModality( Qt::WindowModal );
   ae->show();
 }
@@ -214,15 +217,17 @@ void WebPage::on_btnTests_clicked()
 
 void WebPage::on_btnAuthConfigSave_clicked()
 {
-  QgsAuthConfigWidget * aw = new QgsAuthConfigWidget();
+  QgsAuthConfigWidget * aw = new QgsAuthConfigWidget( 0 );
   aw->setWindowModality( Qt::WindowModal );
   aw->exec();
 }
 
 void WebPage::on_btnAuthConfigEdit_clicked()
 {
-  QgsAuthIdPair authpair = qMakePair( QString( "rk28j52" ), QgsAuthType::Basic );
-  QgsAuthConfigWidget * aw = new QgsAuthConfigWidget( 0, authpair );
+  if ( !QgsAuthManager::instance()->setMasterPassword( true ) )
+    return;
+
+  QgsAuthConfigWidget * aw = new QgsAuthConfigWidget( 0, qMakePair( QString( "rk28j52" ), QgsAuthType::Basic ) );
   aw->setWindowModality( Qt::WindowModal );
   aw->exec();
 }

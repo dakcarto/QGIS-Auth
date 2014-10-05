@@ -21,7 +21,7 @@ static QString validRed_( const QString& selector = "*" )
   return QString( "%1{color: rgb(200, 0, 0);}" ).arg( selector );
 }
 
-QgsAuthConfigWidget::QgsAuthConfigWidget( QWidget *parent, const QgsAuthIdPair &authidpair )
+QgsAuthConfigWidget::QgsAuthConfigWidget( QWidget *parent, const AuthIdPair& authidpair )
     : QDialog( parent )
     , mAuthId( authidpair.first )
     , mAuthIdType( authidpair.second )
@@ -76,7 +76,7 @@ void QgsAuthConfigWidget::loadConfig()
     QgsAuthConfigBasic configbasic;
     if ( QgsAuthManager::instance()->loadAuthenticationConfig( mAuthId, configbasic, true ) )
     {
-      if ( configbasic.isValid() )
+      if ( configbasic.isValid() && configbasic.type() != QgsAuthType::Unknown )
       {
         leName->setText( configbasic.name() );
         leResource->setText( configbasic.uri() );
@@ -95,7 +95,7 @@ void QgsAuthConfigWidget::loadConfig()
     QgsAuthConfigPkiPaths configpki;
     if ( QgsAuthManager::instance()->loadAuthenticationConfig( mAuthId, configpki, true ) )
     {
-      if ( configpki.isValid() )
+      if ( configpki.isValid() && configpki.type() != QgsAuthType::Unknown )
       {
         leName->setText( configpki.name() );
         leResource->setText( configpki.uri() );

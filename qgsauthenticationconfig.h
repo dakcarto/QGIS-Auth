@@ -1,6 +1,7 @@
 #ifndef QGSAUTHENTICATIONCONFIG_H
 #define QGSAUTHENTICATIONCONFIG_H
 
+#include <QHash>
 #include <QString>
 
 
@@ -17,9 +18,15 @@ class QgsAuthType
       Unknown = 20 // padding for more standard auth types
     };
 
+    static const QHash<ProviderType, QString> typeNameHash();
+
     static ProviderType providerTypeFromInt( int itype );
 
-    static const QString typeAsString( ProviderType providertype = None );
+    static const QString typeToString( ProviderType providertype = None );
+
+    static ProviderType stringToType( const QString& name );
+
+    static const QString typeDescription( ProviderType providertype = None );
 };
 
 /**
@@ -48,7 +55,7 @@ class QgsAuthConfigBase
     int version() const { return mVersion; }
     void setVersion( int version ) { mVersion = version; }
 
-    const QString typeAsString() const;
+    const QString typeToString() const;
 
     const QgsAuthConfigBase& asBaseConfig();
 
