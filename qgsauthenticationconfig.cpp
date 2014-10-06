@@ -57,21 +57,21 @@ QgsAuthType::ProviderType QgsAuthType::stringToType( const QString& name )
 
 const QString QgsAuthType::typeDescription( QgsAuthType::ProviderType providertype )
 {
-  QString s = QObject::tr( "No authentication configuration set" );
+  QString s = QObject::tr( "No authentication set" );
   switch ( providertype )
   {
     case None:
       break;
     case Basic:
-      s = QObject::tr( "Basic authentication configuration" );
+      s = QObject::tr( "Basic authentication" );
       break;
 #ifndef QT_NO_OPENSSL
     case PkiPaths:
-      s = QObject::tr( "PKI paths authentication configuration" );
+      s = QObject::tr( "PKI paths authentication" );
       break;
 #endif
     case Unknown:
-      s = QObject::tr( "Unsupported authentication configuration" );
+      s = QObject::tr( "Unsupported authentication" );
       break;
     default:
       break;

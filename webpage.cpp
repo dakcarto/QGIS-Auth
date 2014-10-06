@@ -22,6 +22,7 @@
 
 #include "testwidget.h"
 
+#include <QDialog>
 #include <QDir>
 #include <QInputDialog>
 #include <QLineEdit>
@@ -35,6 +36,7 @@
 
 #include "qgsauthenticationmanager.h"
 #include "qgsauthenticationconfigeditor.h"
+#include "qgsauthenticationconfigselect.h"
 #include "qgsauthenticationconfigwidget.h"
 
 
@@ -200,11 +202,43 @@ void WebPage::onSslErrors( QNetworkReply* reply, const QList<QSslError>& errors 
   appendLog( msg );
 }
 
-void WebPage::on_btnAuth_clicked()
+void WebPage::on_btnAuthEditor_clicked()
 {
   QgsAuthConfigEditor * ae = new QgsAuthConfigEditor( 0 );
   ae->setWindowModality( Qt::WindowModal );
   ae->show();
+}
+
+void WebPage::on_btnAuthSelect_clicked()
+{
+  QDialog * dlg = new QDialog( 0 );
+  dlg->setWindowTitle( tr( "Select Authentication" ) );
+  QVBoxLayout *layout = new QVBoxLayout( dlg );
+
+  QgsAuthConfigSelect * as = new QgsAuthConfigSelect( dlg );
+  as->setConfigId( "rk28j52" );
+  layout->addWidget( as );
+
+  QDialogButtonBox *buttonBox = new QDialogButtonBox(
+      QDialogButtonBox::Ok | QDialogButtonBox::Cancel,
+      Qt::Horizontal, dlg );
+  layout->addWidget( buttonBox );
+
+  connect( buttonBox, SIGNAL( accepted() ), dlg, SLOT( accept() ) );
+  connect( buttonBox, SIGNAL( rejected() ), dlg, SLOT( close() ) );
+
+  dlg->setLayout( layout );
+  dlg->setWindowModality( Qt::WindowModal );
+  dlg->setLayout( new QVBoxLayout );
+  dlg->adjustSize();
+  if ( dlg->exec() )
+  {
+    emit messageOut( QString( "Selected authid: %1" ).arg( as->configId() ) );
+  }
+  else
+  {
+    emit messageOut( "QgsAuthConfigWidget->exec() = 0" );
+  }
 }
 
 void WebPage::on_btnTests_clicked()
@@ -217,44 +251,26 @@ void WebPage::on_btnTests_clicked()
   mTestWidget->show();
 }
 
-void WebPage::on_btnAuthConfigSave_clicked()
-{
-  QgsAuthConfigWidget * aw = new QgsAuthConfigWidget( 0 );
-  aw->setWindowModality( Qt::WindowModal );
-  connect( aw, SIGNAL( authenticationConfigStored( const QString& ) ),
-           this, SIGNAL( messageOut( const QString& ) ) );
-  connect( aw, SIGNAL( authenticationConfigUpdated( const QString& ) ),
-           this, SIGNAL( messageOut( const QString& ) ) );
-  if ( aw->exec() )
-  {
-    emit messageOut( QString( "Stored authid: %1" ).arg( aw->configId() ) );
-  }
-  else
-  {
-    emit messageOut( "QgsAuthConfigWidget->exec() = 0" );
-  }
-}
+//void WebPage::on_btnAuthConfigEdit_clicked()
+//{
+//  if ( !QgsAuthManager::instance()->setMasterPassword( true ) )
+//    return;
 
-void WebPage::on_btnAuthConfigEdit_clicked()
-{
-  if ( !QgsAuthManager::instance()->setMasterPassword( true ) )
-    return;
-
-  QgsAuthConfigWidget * aw = new QgsAuthConfigWidget( "rk28j52", 0 );
-  aw->setWindowModality( Qt::WindowModal );
-  connect( aw, SIGNAL( authenticationConfigStored( const QString& ) ),
-           this, SIGNAL( messageOut( const QString& ) ) );
-  connect( aw, SIGNAL( authenticationConfigUpdated( const QString& ) ),
-           this, SIGNAL( messageOut( const QString& ) ) );
-  if ( aw->exec() )
-  {
-    emit messageOut( QString( "Update authid: %1" ).arg( aw->configId() ) );
-  }
-  else
-  {
-    emit messageOut( "QgsAuthConfigWidget->exec() = 0" );
-  }
-}
+//  QgsAuthConfigWidget * aw = new QgsAuthConfigWidget( "rk28j52", 0 );
+//  aw->setWindowModality( Qt::WindowModal );
+//  connect( aw, SIGNAL( authenticationConfigStored( const QString& ) ),
+//           this, SIGNAL( messageOut( const QString& ) ) );
+//  connect( aw, SIGNAL( authenticationConfigUpdated( const QString& ) ),
+//           this, SIGNAL( messageOut( const QString& ) ) );
+//  if ( aw->exec() )
+//  {
+//    emit messageOut( QString( "Update authid: %1" ).arg( aw->configId() ) );
+//  }
+//  else
+//  {
+//    emit messageOut( "QgsAuthConfigWidget->exec() = 0" );
+//  }
+//}
 
 void WebPage::writeDebug( const QString& message, const QString& tag, WebPage::MessageLevel level )
 {

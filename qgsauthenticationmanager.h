@@ -57,12 +57,16 @@ class QgsAuthManager : public QObject
 
     bool configIdUnique( const QString &id ) const;
 
+    QHash<QString, QgsAuthConfigBase> availableConfigs();
+
 
     bool storeAuthenticationConfig( QgsAuthConfigBase &config );
 
     bool updateAuthenticationConfig( const QgsAuthConfigBase& config );
 
-    bool loadAuthenticationConfig( const QString& id, QgsAuthConfigBase &config, bool full = false );
+    bool loadAuthenticationConfig( const QString& authid, QgsAuthConfigBase &config, bool full = false );
+
+    bool removeAuthenticationConfig( const QString& authid );
 
 
     void updateNetworkRequest( QNetworkRequest &request, const QString& authid );

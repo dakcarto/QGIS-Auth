@@ -301,6 +301,36 @@ bool QgsAuthManager::configIdUnique( const QString& id ) const
   return !configids.contains( id );
 }
 
+QHash<QString, QgsAuthConfigBase> QgsAuthManager::availableConfigs()
+{
+  QHash<QString, QgsAuthConfigBase> baseConfigs;
+
+  QSqlQuery query( authDbConnection() );
+  query.prepare( QString( "SELECT id, name, uri, type, version FROM %1" ).arg( authDbConfigTable() ) );
+
+  if ( !authDbQuery( &query ) )
+  {
+    return baseConfigs;
+  }
+
+  if ( query.isActive() && query.isSelect() )
+  {
+    while ( query.next() )
+    {
+      QString authid = query.value( 0 ).toString();
+      QgsAuthConfigBase config;
+      config.setId( authid );
+      config.setName( query.value( 1 ).toString() );
+      config.setUri( query.value( 2 ).toString() );
+      config.setType( QgsAuthType::stringToType( query.value( 3 ).toString() ) );
+      config.setVersion( query.value( 4 ).toInt() );
+
+      baseConfigs.insert( authid, config );
+    }
+  }
+  return baseConfigs;
+}
+
 void QgsAuthManager::updateConfigProviderTypes()
 {
   QSqlQuery query( authDbConnection() );
@@ -468,7 +498,7 @@ bool QgsAuthManager::updateAuthenticationConfig( const QgsAuthConfigBase& config
   return true;
 }
 
-bool QgsAuthManager::loadAuthenticationConfig( const QString& id, QgsAuthConfigBase &config, bool full )
+bool QgsAuthManager::loadAuthenticationConfig( const QString& authid, QgsAuthConfigBase &config, bool full )
 {
   if ( full && !setMasterPassword( true ) )
     return false;
@@ -486,7 +516,7 @@ bool QgsAuthManager::loadAuthenticationConfig( const QString& id, QgsAuthConfigB
                             "WHERE id = :id" ).arg( authDbConfigTable() ) );
   }
 
-  query.bindValue( ":someid", id );
+  query.bindValue( ":id", authid );
 
   if ( !authDbQuery( &query ) )
   {
@@ -508,11 +538,43 @@ bool QgsAuthManager::loadAuthenticationConfig( const QString& id, QgsAuthConfigB
         config.loadConfigString( QgsAuthCrypto::decrypt( mMasterPass, query.value( 5 ).toString(), "AES" ) );
       }
 
-      emit messageOut( QString( "Load %1 config SUCCESS for authid: %2" ).arg( full ? "full" : "base" ) .arg( id ) );
+      emit messageOut( QString( "Load %1 config SUCCESS for authid: %2" ).arg( full ? "full" : "base" ) .arg( authid ) );
       return true;
+    }
+    if ( query.next() )
+    {
+      emit messageOut( QString( "Select contains more than one for authid: %1" ).arg( authid ),
+                       authManTag(), WARNING );
     }
   }
   return false;
+}
+
+bool QgsAuthManager::removeAuthenticationConfig( const QString& authid )
+{
+  if ( authid.isEmpty() )
+    return false;
+
+  QSqlQuery query( authDbConnection() );
+
+  query.prepare( QString( "DELETE FROM %1 WHERE id = :id" ).arg( authDbConfigTable() ) );
+
+  query.bindValue( ":id", authid );
+
+  if ( !authDbStartTransaction() )
+    return false;
+
+  if ( !authDbQuery( &query ) )
+    return false;
+
+  if ( !authDbCommit() )
+    return false;
+
+  updateConfigProviderTypes();
+
+  emit messageOut( QString( "REMOVED config for authid: %1" ).arg( authid ) );
+
+  return true;
 }
 
 void QgsAuthManager::updateNetworkRequest( QNetworkRequest &request, const QString& authid )

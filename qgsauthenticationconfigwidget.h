@@ -19,7 +19,7 @@ class QgsAuthConfigWidget : public QDialog, private Ui::QgsAuthConfigWidget
       Unknown
     };
 
-    explicit QgsAuthConfigWidget( const QString &authid = QString(), QWidget *parent = 0 );
+    explicit QgsAuthConfigWidget( QWidget *parent = 0, const QString& authid = QString() );
     ~QgsAuthConfigWidget();
 
     const QString configId() const { return mAuthId; }

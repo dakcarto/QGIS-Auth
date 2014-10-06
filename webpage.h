@@ -63,11 +63,9 @@ class WebPage : public QDialog, private Ui::WebPage
     void clearWebView();
     void clearLog();
 
-    void on_btnAuth_clicked();
+    void on_btnAuthEditor_clicked();
+    void on_btnAuthSelect_clicked();
     void on_btnTests_clicked();
-
-    void on_btnAuthConfigSave_clicked();
-    void on_btnAuthConfigEdit_clicked();
 
     void writeDebug( const QString& message, const QString& tag = QString(), MessageLevel level = INFO );
 

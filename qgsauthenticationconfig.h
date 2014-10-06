@@ -40,6 +40,8 @@ class QgsAuthConfigBase
 
     QgsAuthConfigBase( const QgsAuthConfigBase& config );
 
+    virtual ~QgsAuthConfigBase() {}
+
     const QString id() const { return mId; }
     void setId( const QString& id ) { mId = id; }
 
@@ -85,6 +87,8 @@ class QgsAuthConfigBasic: public QgsAuthConfigBase
     QgsAuthConfigBasic( const QgsAuthConfigBase& config )
         : QgsAuthConfigBase( config ) {}
 
+    ~QgsAuthConfigBasic() {}
+
     const QString realm() const { return mRealm; }
     void setRealm( const QString& realm ) { mRealm = realm; }
 
@@ -112,6 +116,8 @@ class QgsAuthConfigPkiPaths: public QgsAuthConfigBase
 
     QgsAuthConfigPkiPaths( const QgsAuthConfigBase& config )
         : QgsAuthConfigBase( config ) {}
+
+    ~QgsAuthConfigPkiPaths() {}
 
     const QString certId() const { return mCertId; }
     void setCertId( const QString& id ) { mCertId = id; }

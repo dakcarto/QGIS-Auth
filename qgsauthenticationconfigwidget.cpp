@@ -21,7 +21,7 @@ static QString validRed_( const QString& selector = "*" )
   return QString( "%1{color: rgb(200, 0, 0);}" ).arg( selector );
 }
 
-QgsAuthConfigWidget::QgsAuthConfigWidget( const QString& authid , QWidget *parent )
+QgsAuthConfigWidget::QgsAuthConfigWidget( QWidget *parent , const QString& authid )
     : QDialog( parent )
     , mAuthId( authid )
 {
@@ -66,10 +66,9 @@ void QgsAuthConfigWidget::loadConfig()
   if ( mAuthId.isEmpty() )
     return;
 
-  qDebug( "Loading auth id: %s", mAuthId.toAscii().constData() );
-
   QgsAuthType::ProviderType authtype = QgsAuthManager::instance()->configProviderType( mAuthId );
 
+  qDebug( "Loading auth id: %s", mAuthId.toAscii().constData() );
   qDebug( "Loading auth type: %s", QgsAuthType::typeToString( authtype ).toAscii().constData() );
 
   if ( authtype == QgsAuthType::None || authtype == QgsAuthType::Unknown )
