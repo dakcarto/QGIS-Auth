@@ -126,6 +126,7 @@ class QgsAuthManager : public QObject
 
     QHash<QString, QgsAuthType::ProviderType> mConfigProviders;
     QHash<QgsAuthType::ProviderType, QgsAuthProvider*> mProviders;
+    bool mProvidersRegistered;
 
     QString mMasterPass;
     QString mMasterPassReset;

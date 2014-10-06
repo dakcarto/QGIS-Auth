@@ -139,6 +139,11 @@ void QgsAuthProviderPkiPaths::updateNetworkRequest( QNetworkRequest &request, co
                               "not HTTPS" ).arg( authid ) );
     return;
   }
+  else
+  {
+    emit messageOut( QString( "Update request SSL config: "
+                              "HTTPS connection for authid: %1" ).arg( authid ) );
+  }
 
   QgsPkiPathsBundle * pkibundle = getPkiPathsBundle( authid );
   if ( !pkibundle || !pkibundle->isValid() )
@@ -147,6 +152,11 @@ void QgsAuthProviderPkiPaths::updateNetworkRequest( QNetworkRequest &request, co
                               "PKI bundle invalid" ).arg( authid ),
                      authProviderTag(), CRITICAL );
     return;
+  }
+  else
+  {
+    emit messageOut( QString( "Update request SSL config: "
+                              "PKI bundle valid for authid: %1" ).arg( authid ) );
   }
 
   QSslConfiguration sslConfig = request.sslConfiguration();
@@ -170,6 +180,18 @@ void QgsAuthProviderPkiPaths::updateNetworkRequest( QNetworkRequest &request, co
 
 void QgsAuthProviderPkiPaths::updateNetworkReply( QNetworkReply *reply, const QString &authid )
 {
+  if ( reply->request().url().scheme().toLower() != QString( "https" ) )
+  {
+    emit messageOut( QString( "Update reply SSL errors SKIPPED for authid %1: "
+                              "not HTTPS" ).arg( authid ) );
+    return;
+  }
+  else
+  {
+    emit messageOut( QString( "Update reply SSL errors: "
+                              "HTTPS connection for authid: %1" ).arg( authid ) );
+  }
+
   QgsPkiPathsBundle * pkibundle = getPkiPathsBundle( authid );
   if ( !pkibundle || !pkibundle->isValid() )
   {
@@ -177,6 +199,11 @@ void QgsAuthProviderPkiPaths::updateNetworkReply( QNetworkReply *reply, const QS
                               "PKI bundle invalid for authid: %1" ).arg( authid ),
                      authProviderTag(), CRITICAL );
     return;
+  }
+  else
+  {
+    emit messageOut( QString( "Update reply SSL errors: "
+                              "PKI bundle is valid for authid: %1" ).arg( authid ) );
   }
   if ( !pkibundle->config().issuerSelfSigned() )
   {

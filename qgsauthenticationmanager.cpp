@@ -49,6 +49,8 @@ QSqlDatabase QgsAuthManager::authDbConnection() const
 
 bool QgsAuthManager::init()
 {
+  registerProviders();
+
   QFileInfo dbinfo( QgsApplication::qgisAuthDbFilePath() );
   if ( dbinfo.exists() )
   {
@@ -252,10 +254,14 @@ bool QgsAuthManager::resetMasterPassword()
 
 void QgsAuthManager::registerProviders()
 {
-  mProviders.insert( QgsAuthType::Basic, new QgsAuthProviderBasic() );
+  if ( !mProvidersRegistered )
+  {
+    mProviders.insert( QgsAuthType::Basic, new QgsAuthProviderBasic() );
 #ifndef QT_NO_OPENSSL
-  mProviders.insert( QgsAuthType::PkiPaths, new QgsAuthProviderPkiPaths() );
+    mProviders.insert( QgsAuthType::PkiPaths, new QgsAuthProviderPkiPaths() );
 #endif
+  }
+  mProvidersRegistered = true;
 }
 
 const QString QgsAuthManager::uniqueConfigId() const
@@ -356,12 +362,18 @@ void QgsAuthManager::updateConfigProviderTypes()
 QgsAuthProvider* QgsAuthManager::configProvider( const QString& authid )
 {
   if ( !mConfigProviders.contains( authid ) )
+  {
+    emit messageOut( QString( "No config provider found for authid: %1" ).arg( authid ) );
     return 0;
+  }
 
   QgsAuthType::ProviderType ptype = mConfigProviders.value( authid );
 
   if ( ptype == QgsAuthType::None || ptype == QgsAuthType::Unknown )
+  {
+    emit messageOut( QString( "Provider type None or Unknown for authid: %1" ).arg( authid ) );
     return 0;
+  }
 
   return mProviders.value( ptype );
 }
@@ -584,6 +596,10 @@ void QgsAuthManager::updateNetworkRequest( QNetworkRequest &request, const QStri
   {
     provider->updateNetworkRequest( request, authid );
   }
+  else
+  {
+    emit messageOut( QString( "No provider returned for authid: %1" ).arg( authid ) );
+  }
 }
 
 void QgsAuthManager::updateNetworkReply( QNetworkReply *reply, const QString& authid )
@@ -627,6 +643,7 @@ void QgsAuthManager::writeDebug( const QString &message,
 
 QgsAuthManager::QgsAuthManager( QObject *parent )
     : QObject( parent )
+    , mProvidersRegistered( false )
     , mMasterPass( QString() )
     , mMasterPassReset( QString() )
 {

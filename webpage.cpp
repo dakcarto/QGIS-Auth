@@ -149,7 +149,7 @@ void WebPage::loadUrl( const QUrl& url )
   req.setUrl( url );
   req.setRawHeader( "User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:32.0) Gecko/20100101 Firefox/32.0" );
 
-  // TODO: update request
+  QgsAuthManager::instance()->updateNetworkRequest( req, QString( "rk28j52" ) );
 
   //webView->load( req ); // hey, why doesn't this work? doesn't pass ssl cert/key
 
@@ -158,7 +158,7 @@ void WebPage::loadUrl( const QUrl& url )
 
   mReply = mNaMan->get( req );
 
-  // TODO: update reply
+  QgsAuthManager::instance()->updateNetworkReply( mReply, QString( "rk28j52" ) );
 
   clearWebView();
   setLocation( mReply->request().url() );
@@ -229,7 +229,6 @@ void WebPage::on_btnAuthSelect_clicked()
 
   dlg->setLayout( layout );
   dlg->setWindowModality( Qt::WindowModal );
-  dlg->setLayout( new QVBoxLayout );
   dlg->adjustSize();
   if ( dlg->exec() )
   {
