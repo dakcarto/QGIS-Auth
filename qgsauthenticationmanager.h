@@ -32,6 +32,8 @@ class QgsAuthManager : public QObject
 
     QSqlDatabase authDbConnection() const;
 
+    const QString authDbConfigTable() const { return smAuthConfigTable; }
+
     bool init();
 
     bool setMasterPassword( bool verify = false );
@@ -116,7 +118,6 @@ class QgsAuthManager : public QObject
     bool authDbTransactionQuery( QSqlQuery *query ) const;
 
     const QString authDbPassTable() const { return smAuthPassTable; }
-    const QString authDbConfigTable() const { return smAuthConfigTable; }
     const QString authManTag() const { return smAuthManTag; }
 
     static QgsAuthManager* smInstance;

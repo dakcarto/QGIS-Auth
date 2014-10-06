@@ -61,3 +61,5 @@ FORMS += \
     qgsauthenticationconfigwidget.ui \
     qgsauthenticationconfigeditor.ui \
     qgsauthenticationconfigselect.ui
+
+RESOURCES += /Users/larrys/QGIS/github.com/QGIS/images/images.qrc

@@ -204,9 +204,23 @@ void WebPage::onSslErrors( QNetworkReply* reply, const QList<QSslError>& errors 
 
 void WebPage::on_btnAuthEditor_clicked()
 {
-  QgsAuthConfigEditor * ae = new QgsAuthConfigEditor( 0 );
-  ae->setWindowModality( Qt::WindowModal );
-  ae->show();
+  QDialog * dlg = new QDialog( 0 );
+  dlg->setWindowTitle( tr( "Authentication Configurations" ) );
+  QVBoxLayout *layout = new QVBoxLayout( dlg );
+
+  QgsAuthConfigEditor * ae = new QgsAuthConfigEditor( dlg );
+  layout->addWidget( ae );
+
+  QDialogButtonBox *buttonBox = new QDialogButtonBox( QDialogButtonBox::Close,
+      Qt::Horizontal, dlg );
+  layout->addWidget( buttonBox );
+
+  connect( buttonBox, SIGNAL( rejected() ), dlg, SLOT( close() ) );
+
+  dlg->setLayout( layout );
+  dlg->setWindowModality( Qt::WindowModal );
+  dlg->exec();
+
 }
 
 void WebPage::on_btnAuthSelect_clicked()
@@ -220,8 +234,8 @@ void WebPage::on_btnAuthSelect_clicked()
   layout->addWidget( as );
 
   QDialogButtonBox *buttonBox = new QDialogButtonBox(
-      QDialogButtonBox::Ok | QDialogButtonBox::Cancel,
-      Qt::Horizontal, dlg );
+    QDialogButtonBox::Ok | QDialogButtonBox::Cancel,
+    Qt::Horizontal, dlg );
   layout->addWidget( buttonBox );
 
   connect( buttonBox, SIGNAL( accepted() ), dlg, SLOT( accept() ) );
@@ -229,7 +243,6 @@ void WebPage::on_btnAuthSelect_clicked()
 
   dlg->setLayout( layout );
   dlg->setWindowModality( Qt::WindowModal );
-  dlg->adjustSize();
   if ( dlg->exec() )
   {
     emit messageOut( QString( "Selected authid: %1" ).arg( as->configId() ) );
