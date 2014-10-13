@@ -40,8 +40,6 @@
 #include "qgsauthenticationconfigwidget.h"
 
 
-//#include <QtCrypto>
-
 WebPage::WebPage( QWidget *parent )
     : QDialog( parent )
     , mNaMan( 0 )
@@ -149,7 +147,8 @@ void WebPage::loadUrl( const QUrl& url )
   req.setUrl( url );
   req.setRawHeader( "User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:32.0) Gecko/20100101 Firefox/32.0" );
 
-  QgsAuthManager::instance()->updateNetworkRequest( req, QString( "rk28j52" ) );
+  if ( !leAuthId->text().isEmpty() )
+    QgsAuthManager::instance()->updateNetworkRequest( req, leAuthId->text() );
 
   //webView->load( req ); // hey, why doesn't this work? doesn't pass ssl cert/key
 
@@ -158,7 +157,8 @@ void WebPage::loadUrl( const QUrl& url )
 
   mReply = mNaMan->get( req );
 
-  QgsAuthManager::instance()->updateNetworkReply( mReply, QString( "rk28j52" ) );
+  if ( !leAuthId->text().isEmpty() )
+    QgsAuthManager::instance()->updateNetworkReply( mReply, leAuthId->text() );
 
   clearWebView();
   setLocation( mReply->request().url() );
@@ -230,7 +230,8 @@ void WebPage::on_btnAuthSelect_clicked()
   QVBoxLayout *layout = new QVBoxLayout( dlg );
 
   QgsAuthConfigSelect * as = new QgsAuthConfigSelect( dlg );
-  as->setConfigId( "rk28j52" );
+  if ( !leAuthId->text().isEmpty() )
+    as->setConfigId( leAuthId->text() );
   layout->addWidget( as );
 
   QDialogButtonBox *buttonBox = new QDialogButtonBox(
@@ -246,6 +247,7 @@ void WebPage::on_btnAuthSelect_clicked()
   if ( dlg->exec() )
   {
     emit messageOut( QString( "Selected authid: %1" ).arg( as->configId() ) );
+    leAuthId->setText( as->configId() );
   }
   else
   {

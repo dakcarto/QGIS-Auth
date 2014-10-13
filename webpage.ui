@@ -125,16 +125,19 @@
       </spacer>
      </item>
      <item>
-      <widget class="QToolButton" name="btnAuthEditor">
+      <widget class="QToolButton" name="btnAuthSelect">
        <property name="text">
-        <string>Auth editor...</string>
+        <string>Auth select...</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QToolButton" name="btnAuthSelect">
+      <widget class="QLineEdit" name="leAuthId"/>
+     </item>
+     <item>
+      <widget class="QToolButton" name="btnAuthEditor">
        <property name="text">
-        <string>Auth select...</string>
+        <string>Auth editor...</string>
        </property>
       </widget>
      </item>
