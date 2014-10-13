@@ -516,6 +516,9 @@ bool QgsAuthManager::updateAuthenticationConfig( const QgsAuthConfigBase& config
   if ( !authDbCommit() )
     return false;
 
+  // should come before updating provider types, in case user switched providers in config
+  removeCachedConfig( config.id() );
+
   updateConfigProviderTypes();
 
   emit messageOut( QString( "Update config SUCCESS for authid: %1" ).arg( config.id() ) );
@@ -595,6 +598,8 @@ bool QgsAuthManager::removeAuthenticationConfig( const QString& authid )
   if ( !authDbCommit() )
     return false;
 
+  removeCachedConfig( authid );
+
   updateConfigProviderTypes();
 
   emit messageOut( QString( "REMOVED config for authid: %1" ).arg( authid ) );
@@ -621,6 +626,15 @@ void QgsAuthManager::updateNetworkReply( QNetworkReply *reply, const QString& au
   if ( provider )
   {
     provider->updateNetworkReply( reply , authid );
+  }
+}
+
+void QgsAuthManager::removeCachedConfig( const QString& authid )
+{
+  QgsAuthProvider* provider = configProvider( authid );
+  if ( provider )
+  {
+    provider->removeCachedConfig( authid );
   }
 }
 

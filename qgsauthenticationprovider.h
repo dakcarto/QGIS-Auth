@@ -38,6 +38,8 @@ class QgsAuthProvider : public QObject
 
     virtual void updateNetworkReply( QNetworkReply *reply, const QString& authid ) = 0;
 
+    virtual void removeCachedConfig( const QString& authid ) = 0;
+
   signals:
     void messageOut( const QString& message, const QString& tag = authProviderTag(), MessageLevel level = INFO ) const;
 
@@ -63,6 +65,7 @@ class QgsAuthProviderBasic : public QgsAuthProvider
     // QgsAuthProvider interface
     void updateNetworkRequest( QNetworkRequest &request, const QString &authid );
     void updateNetworkReply( QNetworkReply *reply, const QString &authid );
+    void removeCachedConfig( const QString& authid );
 
   private:
     Q_DISABLE_COPY( QgsAuthProviderBasic )
@@ -118,8 +121,8 @@ class QgsAuthProviderPkiPaths : public QgsAuthProvider
 
     // QgsAuthProvider interface
     void updateNetworkRequest( QNetworkRequest &request, const QString &authid );
-
     void updateNetworkReply( QNetworkReply *reply, const QString &authid );
+    void removeCachedConfig( const QString& authid );
 
   private:
     Q_DISABLE_COPY( QgsAuthProviderPkiPaths )

@@ -82,6 +82,7 @@ class QgsAuthManager : public QObject
     void masterPasswordVerified( bool verified ) const;
 
   public slots:
+    void removeCachedConfig( const QString& authid );
 
   private slots:
     void writeDebug( const QString& message, const QString& tag = QString(), MessageLevel level = INFO );
