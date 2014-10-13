@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QNetworkReply>
 #include <QNetworkRequest>
+#include <QtCrypto>
 #include <QSqlDatabase>
 #include <QSqlError>
 #include <QSqlQuery>
@@ -103,6 +104,7 @@ class QgsAuthManager : public QObject
 
     bool masterPasswordClearDb() const;
 
+    const QString masterPasswordCiv() const;
 
     QStringList configIds() const;
 
@@ -124,6 +126,8 @@ class QgsAuthManager : public QObject
     static const QString smAuthConfigTable;
     static const QString smAuthPassTable;
     static const QString smAuthManTag;
+
+    QCA::Initializer * mQcaInitializer;
 
     QHash<QString, QgsAuthType::ProviderType> mConfigProviders;
     QHash<QgsAuthType::ProviderType, QgsAuthProvider*> mProviders;

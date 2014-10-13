@@ -1,247 +1,127 @@
-// This 'encryption' function was culled from the Qrypto project
-// Copyright (C) 2008-2010 Amine Roukh <amineroukh@gmail.com>
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 3
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; If not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-
-
 #include "qgsauthenticationcrypto.h"
 
-#include <string.h>
-
-// for Mac, define CRYPTOPP_DISABLE_ASM for build, if
-// libcryptopp.dylib was built that way as well, e.g. Homebrew's
-
-#include "cryptopp/aes.h"
-#include "cryptopp/osrng.h"
-#include "cryptopp/pwdbased.h"
-
-#include "cryptopp/modes.h" // xxx_Mode< >
-#include "cryptopp/filters.h" // StringSource and StreamTransformation
-#include "cryptopp/hex.h"
-#include "cryptopp/sha.h"
-
 #include <QObject>
-//#include <QtCrypto>
+#include <QtCrypto>
 
-using namespace CryptoPP;
-using namespace std;
+// culled from MeePasswords (GPL2)
+// https://github.com/ruedigergad/meepasswords/blob/master/entrystorage.h
+#define CIPHER_SIGNATURE "aes256-cbc-pkcs7"
+#define CIPHER_TYPE "aes256"
+#define CIPHER_MODE QCA::Cipher::CBC
+#define CIPHER_PADDING QCA::Cipher::PKCS7
+#define CIPHER_IV_LENGTH 32
+#define CIPHER_PROVIDER "qca-ossl"
+#define PASSWORD_HASH_ALGORITHM "sha256"
+#define RANDOM_KEY_LENGTH 16
+#define KEY_GEN_ITERATIONS 10000
+#define KEY_GEN_LENGTH 16
+#define KEY_GEN_IV_LENGTH 16
 
-const QString QgsAuthCrypto::encrypt( QString pass, QString text, QString cipher )
+
+const QString QgsAuthCrypto::encrypt( QString pass, QString cipheriv, QString text )
 {
-//  return encryption( pass, text, cipher, true );
-  Q_UNUSED( cipher );
-  return encryptdecrypt( pass, text, true );
+  return encryptdecrypt( pass, cipheriv, text, true );
 }
 
-const QString QgsAuthCrypto::decrypt( QString pass, QString text, QString cipher )
+const QString QgsAuthCrypto::decrypt( QString pass, QString cipheriv, QString text )
 {
-//  return encryption( pass, text, cipher, false ) ;
-  Q_UNUSED( cipher );
-  return encryptdecrypt( pass, text, false );
+  return encryptdecrypt( pass, cipheriv, text, false );
 }
 
-void QgsAuthCrypto::passwordHash( const QString &pass, QString *salt, QString *hash )
+static QCA::SymmetricKey passwordKey_( const QString& pass, const QCA::InitializationVector& salt )
 {
-  string password = pass.toStdString();
-  unsigned int iterations = 10000;
-
-  AutoSeededRandomPool rng;
-
-  SecByteBlock pwsalt( SHA256::DIGESTSIZE );
-  rng.GenerateBlock( pwsalt, pwsalt.size() );
-
-  SecByteBlock derivedkey( SHA256::DIGESTSIZE );
-
-  PKCS5_PBKDF2_HMAC<SHA256> pbkdf;
-
-  pbkdf.DeriveKey(
-    derivedkey, derivedkey.size(),
-    0x00,
-    ( byte * ) password.data(), password.size(),
-    pwsalt, pwsalt.size(),
-    iterations
-  );
-  string salthex;
-  StringSource ps(
-    pwsalt, pwsalt.size(), true,
-    new HexEncoder( new StringSink( salthex ) )
-  );
-  string derivedhex;
-  StringSource dh(
-    derivedkey, derivedkey.size(), true,
-    new HexEncoder( new StringSink( derivedhex ) )
-  );
-
-  // LEAVE THIS DEBUG OUTPUT COMMENTED OUT, except during testing of source edits
-  //qDebug( "salt hex: %s", salthex.c_str() );
-  *salt = encrypt( pass, QString::fromStdString( salthex ), "AES" );
-  //qDebug( "salt hex encrypted (out): %s", salt->toStdString().c_str() );
-  *hash = QString::fromStdString( derivedhex );
+  QCA::SecureArray passarray( QByteArray( pass.toUtf8().constData() ) );
+  QCA::SecureArray passhash( QCA::Hash( PASSWORD_HASH_ALGORITHM ).hash( passarray ) );
+  return QCA::PBKDF2().makeKey( passhash, salt, KEY_GEN_LENGTH, KEY_GEN_ITERATIONS );
 }
 
-bool QgsAuthCrypto::verifyPasswordHash( const QString &pass,
-                                        const QString &salt,
-                                        const QString& hash,
-                                        QString *hashderived )
+void QgsAuthCrypto::passwordKeyHash( const QString& pass, QString *salt, QString *hash, QString *cipheriv )
 {
-  string password = pass.toStdString();
-  // debug output to see if res was "Unknown Error"
-  //qDebug( "salt hex encrypted (in): %s", salt.toStdString().c_str() );
-  string salthex = decrypt( pass, salt, "AES" ).toStdString();
-  // LEAVE THIS DEBUG OUTPUT COMMENTED OUT, except during testing of source edits
-  //qDebug( "salt hex decrypted: %s", salthex.c_str() );
-  string hashhex = hash.toStdString();
-  unsigned int iterations = 10000;
+  QCA::InitializationVector saltiv = QCA::InitializationVector( KEY_GEN_IV_LENGTH );
+  QCA::SymmetricKey key = passwordKey_( pass, saltiv );
 
-  SecByteBlock pwsalt( SHA256::DIGESTSIZE );
+  if ( !key.isEmpty() )
+  {
+    *salt = QCA::arrayToHex( saltiv.toByteArray() );
+    qDebug( "salt hex: %s", qPrintable( salt->toAscii() ) );
 
-  HexDecoder decoder;
-  decoder.Put(( byte * ) salthex.data(), salthex.size() );
-  decoder.MessageEnd();
-  decoder.Get( pwsalt.BytePtr(), pwsalt.size() );
+    *hash = QCA::arrayToHex( key.toByteArray() );
+    qDebug( "hash hex: %s", qPrintable( hash->toAscii() ) );
 
-  SecByteBlock derivedkey( SHA256::DIGESTSIZE );
+    if ( cipheriv )
+    {
+      *cipheriv = QCA::arrayToHex( QCA::InitializationVector( CIPHER_IV_LENGTH ).toByteArray() );
+      qDebug( "cipheriv hex: %s", qPrintable( cipheriv->toAscii() ) );
+    }
+  }
+}
 
-  PKCS5_PBKDF2_HMAC<SHA256> pbkdf;
-
-  pbkdf.DeriveKey(
-    derivedkey, derivedkey.size(),
-    0x00,
-    ( byte * ) password.data(), password.size(),
-    pwsalt, pwsalt.size(),
-    iterations
-  );
-
-  string derivedhex;
-  StringSource dh(
-    derivedkey, derivedkey.size(), true,
-    new HexEncoder( new StringSink( derivedhex ) )
-  );
+bool QgsAuthCrypto::verifyPasswordKeyHash( const QString& pass,
+    const QString& salt,
+    const QString& hash,
+    QString *hashderived )
+{
+  QCA::InitializationVector saltiv( QCA::hexToArray( salt ) );
+  QString derived( QCA::arrayToHex( passwordKey_( pass, saltiv ).toByteArray() ) );
 
   if ( hashderived )
   {
-    *hashderived = QString::fromStdString( derivedhex );
+    *hashderived = derived;
   }
 
-  return derivedhex == hashhex;
+  return hash == derived;
 }
 
-QString QgsAuthCrypto::encryption( QString passstr, QString textstr, QString ciphername, bool encrypt )
-{
-  string pass = passstr.toStdString();
-  string text = textstr.toStdString();
-  string cipher = ciphername.toStdString();
-  string ciphertext;
-  string recoveredtext;
-
-  if ( cipher == "AES" )
-  {
-    byte key[ AES::DEFAULT_KEYLENGTH ], iv[ AES::BLOCKSIZE ];
-    StringSource ks(
-      reinterpret_cast<const char*>( pass.c_str() ), true,
-      new HashFilter( *( new SHA256 ), new ArraySink( key, AES::DEFAULT_KEYLENGTH ) )
-    );
-    memset( iv, 0x00, AES::BLOCKSIZE );
-
-    if ( encrypt )
-    {
-      CBC_Mode<AES>::Encryption encryptor( key, sizeof( key ), iv );
-      StringSource es(
-        text, true,
-        new StreamTransformationFilter( encryptor, new HexEncoder( new StringSink( ciphertext ) ) )
-      );
-    }
-    else
-    {
-      try
-      {
-        CBC_Mode<AES>::Decryption decryptor( key, sizeof( key ), iv );
-        StringSource ds(
-          text, true,
-          new HexDecoder( new StreamTransformationFilter( decryptor, new StringSink( recoveredtext ) ) )
-        );
-      }
-      catch ( Exception& e )
-      {
-        return QString( e.what() );
-      }
-      catch ( ... )
-      {
-        return QString( "Unknown Error" );
-      }
-    }
-  }
-
-
-  if ( encrypt )
-    return QString::fromStdString( ciphertext );
-
-  return QString::fromStdString( recoveredtext );
-}
-
-QString QgsAuthCrypto::encryptdecrypt( QString passstr, QString textstr, bool encrypt )
+QString QgsAuthCrypto::encryptdecrypt( QString passstr,
+                                       QString cipheriv,
+                                       QString textstr,
+                                       bool encrypt )
 {
   QString outtxt = QString();
+  QCA::InitializationVector iv( QCA::hexToArray( cipheriv ) );
 
-  //initialize QCA
-  QCA::Initializer init = QCA::Initializer();
-
-  if ( !QCA::isSupported( "aes256-cbc-pkcs7" ) )
+  // TODO: add this and other checks to a separate routine, returning bool
+  if ( !QCA::isSupported( CIPHER_SIGNATURE ) )
   {
-      qDebug( "AES256 CBC PKCS7 not supported - "
-              "please check if qca-ossl plugin"
-              "installed correctly !" );
-      return outtxt;
+    qDebug( "'%s' not supported: check if qca-ossl plugin is installed",
+            CIPHER_SIGNATURE );
+    return outtxt;
   }
 
-  QCA::SymmetricKey key( QCA::SecureArray( passstr.toUtf8() ) );
+  QCA::SymmetricKey key( QCA::SecureArray( QByteArray( passstr.toUtf8().constData() ) ) );
 
   if ( encrypt )
   {
-    QCA::Cipher cipher = QCA::Cipher( QString( "aes256" ), QCA::Cipher::CBC,
-                                      QCA::Cipher::PKCS7, QCA::Encode,
-                                      key, QCA::InitializationVector( 0 ),
-                                      QString( "qca-ossl" ) );
+    QCA::Cipher cipher = QCA::Cipher( CIPHER_TYPE, CIPHER_MODE, CIPHER_PADDING,
+                                      QCA::Encode, key, iv,
+                                      CIPHER_PROVIDER );
 
-    QCA::SecureArray secureData( textstr.toUtf8() );
-    QCA::SecureArray encryptedData( cipher.process( secureData ) );
+    QCA::SecureArray securedata( textstr.toUtf8() );
+    QCA::SecureArray encrypteddata( cipher.process( securedata ) );
     if ( !cipher.ok() )
     {
       qDebug( "Encryption failed!" );
       return outtxt;
     }
-    outtxt = QCA::arrayToHex( encryptedData.toByteArray() );
-    // qDebug( "encryptedHex: %s", qPrintable( outtxt ) );
+    outtxt = QCA::arrayToHex( encrypteddata.toByteArray() );
+    // qDebug( "Encrypted hex: %s", qPrintable( outtxt ) );
   }
   else
   {
-    QCA::Cipher cipher = QCA::Cipher( QString( "aes256" ), QCA::Cipher::CBC,
-                                      QCA::Cipher::PKCS7, QCA::Decode,
-                                      key, QCA::InitializationVector( 0 ),
-                                      QString( "qca-ossl" ) );
+    QCA::Cipher cipher = QCA::Cipher( CIPHER_TYPE, CIPHER_MODE, CIPHER_PADDING,
+                                      QCA::Decode, key, iv,
+                                      CIPHER_PROVIDER );
 
     QCA::SecureArray ciphertext( QCA::hexToArray( textstr ) );
-    QCA::SecureArray decryptedData( cipher.process( ciphertext ) );
+    QCA::SecureArray decrypteddata( cipher.process( ciphertext ) );
     if ( !cipher.ok() )
     {
       qDebug( "Decryption failed!" );
       return outtxt;
     }
 
-    outtxt = QString( decryptedData.data() );
-    // qDebug( "%s", outtxt.toUtf8().constData() ); // DO NOT LEAVE THIS LINE UNCOMMENTED
+    outtxt = QString( decrypteddata.toByteArray() );
+    // qDebug( "Decrypted text %s", qPrintable( outtxt ) ); // DO NOT LEAVE THIS LINE UNCOMMENTED
   }
 
   return outtxt;
