@@ -135,6 +135,13 @@
       <widget class="QLineEdit" name="leAuthId"/>
      </item>
      <item>
+      <widget class="QToolButton" name="btnAuthClearCached">
+       <property name="text">
+        <string>Clear cached Id</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QToolButton" name="btnAuthEditor">
        <property name="text">
         <string>Auth editor...</string>
