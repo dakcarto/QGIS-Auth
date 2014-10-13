@@ -18,6 +18,14 @@ DEPENDPATH += . src
 INCLUDEPATH += . src
 INCLUDEPATH += $(HOMEBREW_PREFIX)/include
 
+INCLUDEPATH += $(HOMEBREW_PREFIX)/opt/qca/include/QtCrypto
+win32 {
+    LIBS += -L$$quote(qca-2.0.3/lib) -lqca2
+}
+unix {
+    LIBS += -L$(HOMEBREW_PREFIX)/opt/qca/lib -lqca
+}
+
 QMAKE_CXXFLAGS += -isystem $(HOMEBREW_PREFIX)/include
 
 LIBS += -L$(HOMEBREW_PREFIX)/lib -lcryptopp
