@@ -732,7 +732,6 @@ bool QgsAuthManager::masterPasswordRowsInDb( int *rows ) const
     *rows = query.value( 0 ).toInt();
   }
 
-  query.clear();
   return ok;
 }
 
@@ -750,8 +749,6 @@ bool QgsAuthManager::masterPasswordCheckAgainstDb() const
 
   QString salt = query.value( 0 ).toString();
   QString hash = query.value( 1 ).toString();
-
-  query.clear();
 
   return QgsAuthCrypto::verifyPasswordKeyHash( mMasterPass, salt, hash );
 }
@@ -796,8 +793,6 @@ const QString QgsAuthManager::masterPasswordCiv() const
 
   if ( !query.first() )
     return QString();
-
-  query.clear();
 
   return query.value( 0 ).toString();
 }
