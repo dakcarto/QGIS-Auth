@@ -3,7 +3,7 @@
 #include <QObject>
 #include <QtCrypto>
 
-// culled from MeePasswords (GPL2)
+// defines culled from MeePasswords (GPL2)
 // https://github.com/ruedigergad/meepasswords/blob/master/entrystorage.h
 #define CIPHER_SIGNATURE "aes256-cbc-pkcs7"
 #define CIPHER_TYPE "aes256"
