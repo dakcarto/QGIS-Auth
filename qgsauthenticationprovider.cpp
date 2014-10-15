@@ -8,13 +8,11 @@
 
 #include "qgsauthenticationconfig.h"
 #include "qgsauthenticationmanager.h"
+#include "qgslogger.h"
 
-QgsAuthProvider::QgsAuthProvider( QObject *parent, QgsAuthType::ProviderType providertype )
-    : QObject( parent )
-    , mType( providertype )
+QgsAuthProvider::QgsAuthProvider( QgsAuthType::ProviderType providertype )
+    : mType( providertype )
 {
-  connect( this, SIGNAL( messageOut( const QString&, const QString&, MessageLevel ) ),
-           this, SLOT( writeDebug( const QString&, const QString&, MessageLevel ) ) );
 }
 
 QgsAuthProvider::~QgsAuthProvider()
@@ -36,53 +34,85 @@ bool QgsAuthProvider::urlToResource( const QString &accessurl, QString *resource
   return ( !res.isEmpty() );
 }
 
-void QgsAuthProvider::writeDebug( const QString &message, const QString &tag, MessageLevel level )
-{
-  Q_UNUSED( tag );
-
-  QString msg;
-  switch ( level )
-  {
-    case INFO:
-      break;
-    case WARNING:
-      msg += "WARNING: ";
-      break;
-    case CRITICAL:
-      msg += "ERROR: ";
-      break;
-    default:
-      break;
-  }
-
-  msg += message;
-  qDebug( "%s", msg.toLatin1().constData() );
-}
-
 
 //////////////////////////////////////////////////////
 // QgsAuthProviderBasic
 //////////////////////////////////////////////////////
 
-QgsAuthProviderBasic::QgsAuthProviderBasic( QObject *parent )
-    : QgsAuthProvider( parent, QgsAuthType::Basic )
+QMap<QString, QgsAuthConfigBasic> QgsAuthProviderBasic::mAuthBasicCache = QMap<QString, QgsAuthConfigBasic>();
+
+QgsAuthProviderBasic::QgsAuthProviderBasic()
+    : QgsAuthProvider( QgsAuthType::Basic )
 {
 }
 
 QgsAuthProviderBasic::~QgsAuthProviderBasic()
 {
+  mAuthBasicCache.clear();
 }
 
-void QgsAuthProviderBasic::updateNetworkRequest( QNetworkRequest &request, const QString &authid )
+void QgsAuthProviderBasic::updateNetworkRequest( QNetworkRequest& request, const QString& authid )
 {
-  Q_UNUSED( request );
-  Q_UNUSED( authid );
+  QgsAuthConfigBasic config = getAuthBasicConfig( authid );
+  if ( !config.isValid() )
+  {
+    QgsDebugMsg( QString( "Update request config FAILED for authid: %1: basic config invalid" ).arg( authid ) );
+    return;
+  }
+
+  QString username = config.username();
+  QString password = config.password();
+
+  if ( !username.isEmpty() )
+  {
+    request.setRawHeader( "Authorization", "Basic " + QString( "%1:%2" ).arg( username ).arg( password ).toAscii().toBase64() );
+  }
 }
 
-void QgsAuthProviderBasic::updateNetworkReply( QNetworkReply *reply, const QString &authid )
+void QgsAuthProviderBasic::updateNetworkReply( QNetworkReply *reply, const QString& authid )
 {
   Q_UNUSED( reply );
   Q_UNUSED( authid );
+}
+
+QgsAuthConfigBasic QgsAuthProviderBasic::getAuthBasicConfig( const QString& authid )
+{
+  QgsAuthConfigBasic config;
+
+  // check if it is cached
+  if ( mAuthBasicCache.contains( authid ) )
+  {
+    config = mAuthBasicCache.value( authid );
+    QgsDebugMsg( QString( "Retrieved basic bundle for authid %1" ).arg( authid ) );
+    return config;
+  }
+
+  // else build basic bundle
+  if ( !QgsAuthManager::instance()->loadAuthenticationConfig( authid, config, true ) )
+  {
+    QgsDebugMsg( QString( "Basic bundle for authid %1: FAILED to retrieve config" ).arg( authid ) );
+    return config;
+  }
+
+  // cache bundle
+  putAuthBasicConfig( authid, config );
+
+  return config;
+}
+
+void QgsAuthProviderBasic::putAuthBasicConfig( const QString& authid, QgsAuthConfigBasic config )
+{
+  QgsDebugMsg( QString( "Putting basic config for authid %1" ).arg( authid ) );
+  mAuthBasicCache.insert( authid, config );
+}
+
+void QgsAuthProviderBasic::removeAuthBasicConfig( const QString& authid )
+{
+  if ( mAuthBasicCache.contains( authid ) )
+  {
+    mAuthBasicCache.remove( authid );
+    QgsDebugMsg( QString( "Removed basic config for authid: %1" ).arg( authid ) );
+  }
 }
 
 void QgsAuthProviderBasic::removeCachedConfig( const QString& authid )
@@ -123,8 +153,8 @@ bool QgsPkiPathsBundle::isValid()
 
 QMap<QString, QgsPkiPathsBundle *> QgsAuthProviderPkiPaths::mPkiPathsBundleCache = QMap<QString, QgsPkiPathsBundle *>();
 
-QgsAuthProviderPkiPaths::QgsAuthProviderPkiPaths( QObject *parent )
-    : QgsAuthProvider( parent, QgsAuthType::PkiPaths )
+QgsAuthProviderPkiPaths::QgsAuthProviderPkiPaths()
+    : QgsAuthProvider( QgsAuthType::PkiPaths )
 {
 
 }
@@ -140,33 +170,29 @@ void QgsAuthProviderPkiPaths::updateNetworkRequest( QNetworkRequest &request, co
   // TODO: is this too restrictive, to intercept only HTTPS connections?
   if ( request.url().scheme().toLower() != QString( "https" ) )
   {
-    emit messageOut( QString( "Update request SSL config SKIPPED for authid %1: "
-                              "not HTTPS" ).arg( authid ) );
+    QgsDebugMsg( QString( "Update request SSL config SKIPPED for authid %1: not HTTPS" ).arg( authid ) );
     return;
   }
   else
   {
-    emit messageOut( QString( "Update request SSL config: "
-                              "HTTPS connection for authid: %1" ).arg( authid ) );
+    QgsDebugMsg( QString( "Update request SSL config: HTTPS connection for authid: %1" ).arg( authid ) );
   }
 
   QgsPkiPathsBundle * pkibundle = getPkiPathsBundle( authid );
   if ( !pkibundle || !pkibundle->isValid() )
   {
-    emit messageOut( QString( "Update request SSL config FAILED for authid: %1: "
-                              "PKI bundle invalid" ).arg( authid ),
-                     authProviderTag(), CRITICAL );
+    QgsDebugMsg( QString( "Update request SSL config FAILED for authid: %1: PKI bundle invalid" ).arg( authid ) );
     return;
   }
   else
   {
-    emit messageOut( QString( "Update request SSL config: "
-                              "PKI bundle valid for authid: %1" ).arg( authid ) );
+    QgsDebugMsg( QString( "Update request SSL config: PKI bundle valid for authid: %1" ).arg( authid ) );
   }
 
   QSslConfiguration sslConfig = request.sslConfiguration();
   //QSslConfiguration sslConfig( QSslConfiguration::defaultConfiguration() );
 
+  // TODO: test for supported protocols for OpenSSL version built against
   //sslConfig.setProtocol( QSsl::TlsV1SslV3 );
 
   QSslCertificate issuercert = pkibundle->issuerCert();
@@ -187,34 +213,28 @@ void QgsAuthProviderPkiPaths::updateNetworkReply( QNetworkReply *reply, const QS
 {
   if ( reply->request().url().scheme().toLower() != QString( "https" ) )
   {
-    emit messageOut( QString( "Update reply SSL errors SKIPPED for authid %1: "
-                              "not HTTPS" ).arg( authid ) );
+    QgsDebugMsg( QString( "Update reply SSL errors SKIPPED for authid %1: not HTTPS" ).arg( authid ) );
     return;
   }
   else
   {
-    emit messageOut( QString( "Update reply SSL errors: "
-                              "HTTPS connection for authid: %1" ).arg( authid ) );
+    QgsDebugMsg( QString( "Update reply SSL errors: HTTPS connection for authid: %1" ).arg( authid ) );
   }
 
   QgsPkiPathsBundle * pkibundle = getPkiPathsBundle( authid );
   if ( !pkibundle || !pkibundle->isValid() )
   {
-    emit messageOut( QString( "Update reply SSL errors FAILED: "
-                              "PKI bundle invalid for authid: %1" ).arg( authid ),
-                     authProviderTag(), CRITICAL );
+    QgsDebugMsg( QString( "Update reply SSL errors FAILED: PKI bundle invalid for authid: %1" ).arg( authid ) );
     return;
   }
   else
   {
-    emit messageOut( QString( "Update reply SSL errors: "
-                              "PKI bundle is valid for authid: %1" ).arg( authid ) );
+    QgsDebugMsg( QString( "Update reply SSL errors: PKI bundle is valid for authid: %1" ).arg( authid ) );
   }
   if ( !pkibundle->config().issuerSelfSigned() )
   {
     // TODO: maybe sniff cert to see if it is self-signed, regardless of what user defines
-    emit messageOut( QString( "Update reply SSL errors SKIPPED for authid %1: "
-                              "PKI issuer not set as self-signed" ).arg( authid ) );
+    QgsDebugMsg( QString( "Update reply SSL errors SKIPPED for authid %1: issuer not self-signed" ).arg( authid ) );
     return;
   }
 
@@ -236,8 +256,7 @@ void QgsAuthProviderPkiPaths::updateNetworkReply( QNetworkReply *reply, const QS
   }
   if ( error.error() != QSslError::NoError )
   {
-    emit messageOut( QString( "Adding self-signed cert expected ssl error "
-                              "for %1 for authid: %2" ).arg( issuer ).arg( authid ) );
+    QgsDebugMsg( QString( "Adding self-signed cert expected ssl error for %1 for authid: %2" ).arg( issuer ).arg( authid ) );
     expectedSslErrors.append( error );
     reply->ignoreSslErrors( expectedSslErrors );
   }
@@ -279,57 +298,51 @@ QSsl::KeyAlgorithm keyAlgorithm_( const QByteArray& keydata )
 
 QgsPkiPathsBundle *QgsAuthProviderPkiPaths::getPkiPathsBundle( const QString& authid )
 {
-  QgsPkiPathsBundle * pkibundle = 0;
+  QgsPkiPathsBundle * bundle = 0;
 
   // check if it is cached
   if ( mPkiPathsBundleCache.contains( authid ) )
   {
-    pkibundle = mPkiPathsBundleCache.value( authid );
-    if ( pkibundle )
+    bundle = mPkiPathsBundleCache.value( authid );
+    if ( bundle )
     {
-      emit messageOut( QString( "Retrieved PKI bundle for authid %1" ).arg( authid ) );
-      return pkibundle;
+      QgsDebugMsg( QString( "Retrieved PKI bundle for authid %1" ).arg( authid ) );
+      return bundle;
     }
   }
 
   // else build PKI bundle
-  QgsAuthConfigPkiPaths pkiconfig;
+  QgsAuthConfigPkiPaths config;
 
-  if ( !QgsAuthManager::instance()->loadAuthenticationConfig( authid, pkiconfig, true ) )
+  if ( !QgsAuthManager::instance()->loadAuthenticationConfig( authid, config, true ) )
   {
-    emit messageOut( QString( "PKI bundle for authid %1: "
-                              "FAILED to retrieve config" ).arg( authid ),
-                     authProviderTag(), CRITICAL );
-    return pkibundle;
+    QgsDebugMsg( QString( "PKI bundle for authid %1: FAILED to retrieve config" ).arg( authid ) );
+    return bundle;
   }
 
   // init client cert
   // Note: if this is not valid, no sense continuing
-  QSslCertificate clientcert = QSslCertificate( fileData_( pkiconfig.certId() ) );
+  QSslCertificate clientcert = QSslCertificate( fileData_( config.certId() ) );
   if ( !clientcert.isValid() )
   {
-    emit messageOut( QString( "PKI bundle for authid %1: "
-                              "insert FAILED, client cert is not valid" ).arg( authid ),
-                     authProviderTag(), CRITICAL );
-    return pkibundle;
+    QgsDebugMsg( QString( "PKI bundle for authid %1: insert FAILED, client cert is not valid" ).arg( authid ) );
+    return bundle;
   }
 
   // init key
   QSslKey clientkey;
-  QByteArray keydata = fileData_( pkiconfig.keyId() );
+  QByteArray keydata = fileData_( config.keyId() );
 
   if ( keydata.isNull() )
   {
-    emit messageOut( QString( "PKI bundle  for authid %1: "
-                              "insert FAILED, no key data read" ).arg( authid ),
-                     authProviderTag(), CRITICAL );
-    return pkibundle;
+    QgsDebugMsg( QString( "PKI bundle  for authid %1: insert FAILED, no key data read" ).arg( authid ) );
+    return bundle;
   }
 
-  if ( !pkiconfig.keyPassphrase().isNull() )
+  if ( !config.keyPassphrase().isNull() )
   {
     clientkey = QSslKey( keydata, keyAlgorithm_( keydata ),
-                         QSsl::Pem, QSsl::PrivateKey, pkiconfig.keyPassphrase().toLocal8Bit() );
+                         QSsl::Pem, QSsl::PrivateKey, config.keyPassphrase().toLocal8Bit() );
   }
   else
   {
@@ -338,38 +351,34 @@ QgsPkiPathsBundle *QgsAuthProviderPkiPaths::getPkiPathsBundle( const QString& au
 
   if ( clientkey.isNull() )
   {
-    emit messageOut( QString( "PKI bundle  for authid %1: "
-                              "insert FAILED, cert key could not be created" ).arg( authid ),
-                     authProviderTag(), CRITICAL );
-    return pkibundle;
+    QgsDebugMsg( QString( "PKI bundle  for authid %1: insert FAILED, cert key could not be created" ).arg( authid ) );
+    return bundle;
   }
 
   // init issuer cert
   QSslCertificate issuercert;
-  QByteArray issuerdata = fileData_( pkiconfig.issuerId() );
+  QByteArray issuerdata = fileData_( config.issuerId() );
   if ( !issuerdata.isNull() )
   {
     issuercert = QSslCertificate( issuerdata );
     if ( !issuercert.isValid() )
     {
-      emit messageOut( QString( "PKI bundle  for authid %1: "
-                                "insert FAILED, issuer cert is not valid" ).arg( authid ),
-                       authProviderTag(), CRITICAL );
-      return pkibundle;
+      QgsDebugMsg( QString( "PKI bundle  for authid %1: insert FAILED, issuer cert is not valid" ).arg( authid ) );
+      return bundle;
     }
   }
 
-  pkibundle = new QgsPkiPathsBundle( pkiconfig, clientcert, clientkey, issuercert );
+  bundle = new QgsPkiPathsBundle( config, clientcert, clientkey, issuercert );
 
   // cache bundle
-  putPkiPathsBundle( authid, pkibundle );
+  putPkiPathsBundle( authid, bundle );
 
-  return pkibundle;
+  return bundle;
 }
 
 void QgsAuthProviderPkiPaths::putPkiPathsBundle( const QString &authid, QgsPkiPathsBundle *pkibundle )
 {
-  emit messageOut( QString( "Putting PKI bundle for authid %1" ).arg( authid ) );
+  QgsDebugMsg( QString( "Putting PKI bundle for authid %1" ).arg( authid ) );
   mPkiPathsBundleCache.insert( authid, pkibundle );
 }
 
@@ -380,7 +389,7 @@ void QgsAuthProviderPkiPaths::removePkiPathsBundle( const QString& authid )
     QgsPkiPathsBundle * pkibundle = mPkiPathsBundleCache.take( authid );
     delete pkibundle;
     pkibundle = 0;
-    emit messageOut( QString( "Removed PKI bundle for authid: %1" ).arg( authid ) );
+    QgsDebugMsg( QString( "Removed PKI bundle for authid: %1" ).arg( authid ) );
   }
 }
 

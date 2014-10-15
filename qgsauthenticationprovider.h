@@ -13,20 +13,12 @@
 
 #include "qgsauthenticationconfig.h"
 
-class QgsAuthProvider : public QObject
+class QgsAuthProvider
 {
-    Q_OBJECT
-  public:
-    // TODO: switch to QgsMessageLog enum
-    enum MessageLevel
-    {
-      INFO = 0,
-      WARNING = 1,
-      CRITICAL = 2
-    };
 
-    explicit QgsAuthProvider( QObject *parent = 0 ,
-                              QgsAuthType::ProviderType providertype = QgsAuthType::None );
+  public:
+
+    explicit QgsAuthProvider( QgsAuthType::ProviderType providertype = QgsAuthType::None );
 
     virtual ~QgsAuthProvider();
 
@@ -40,25 +32,18 @@ class QgsAuthProvider : public QObject
 
     virtual void removeCachedConfig( const QString& authid ) = 0;
 
-  signals:
-    void messageOut( const QString& message, const QString& tag = authProviderTag(), MessageLevel level = INFO ) const;
-
-  protected slots:
-    void writeDebug( const QString& message, const QString& tag = QString(), MessageLevel level = INFO );
-
   protected:
-    static const QString authProviderTag() { return tr( "Authentication provider" ); }
+    static const QString authProviderTag() { return QObject::tr( "Authentication provider" ); }
 
   private:
-    Q_DISABLE_COPY( QgsAuthProvider )
-
     QgsAuthType::ProviderType mType;
 };
+
 
 class QgsAuthProviderBasic : public QgsAuthProvider
 {
   public:
-    QgsAuthProviderBasic( QObject *parent = 0 );
+    QgsAuthProviderBasic();
 
     ~QgsAuthProviderBasic();
 
@@ -68,8 +53,14 @@ class QgsAuthProviderBasic : public QgsAuthProvider
     void removeCachedConfig( const QString& authid );
 
   private:
-    Q_DISABLE_COPY( QgsAuthProviderBasic )
-    static QMap< QString, QPair<QString, QString> > mCredentialCache;
+
+    QgsAuthConfigBasic getAuthBasicConfig( const QString& authid );
+
+    void putAuthBasicConfig( const QString& authid, QgsAuthConfigBasic config );
+
+    void removeAuthBasicConfig( const QString& authid );
+
+    static QMap<QString, QgsAuthConfigBasic> mAuthBasicCache;
 };
 
 
@@ -115,7 +106,7 @@ class QgsPkiPathsBundle
 class QgsAuthProviderPkiPaths : public QgsAuthProvider
 {
   public:
-    QgsAuthProviderPkiPaths( QObject *parent = 0 );
+    QgsAuthProviderPkiPaths();
 
     ~QgsAuthProviderPkiPaths();
 
@@ -125,7 +116,6 @@ class QgsAuthProviderPkiPaths : public QgsAuthProvider
     void removeCachedConfig( const QString& authid );
 
   private:
-    Q_DISABLE_COPY( QgsAuthProviderPkiPaths )
 
     QgsPkiPathsBundle * getPkiPathsBundle( const QString &authid );
 

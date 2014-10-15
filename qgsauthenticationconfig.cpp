@@ -20,7 +20,7 @@ const QHash<QgsAuthType::ProviderType, QString> QgsAuthType::typeNameHash()
 
 QgsAuthType::ProviderType QgsAuthType::providerTypeFromInt( int itype )
 {
-  ProviderType ptype = Unknown;
+  QgsAuthType::ProviderType ptype = Unknown;
   switch ( itype )
   {
     case 0:

@@ -18,15 +18,15 @@ class QgsAuthType
       Unknown = 20 // padding for more standard auth types
     };
 
-    static const QHash<ProviderType, QString> typeNameHash();
+    static const QHash<QgsAuthType::ProviderType, QString> typeNameHash();
 
-    static ProviderType providerTypeFromInt( int itype );
+    static QgsAuthType::ProviderType providerTypeFromInt( int itype );
 
-    static const QString typeToString( ProviderType providertype = None );
+    static const QString typeToString( QgsAuthType::ProviderType providertype = None );
 
-    static ProviderType stringToType( const QString& name );
+    static QgsAuthType::ProviderType stringToType( const QString& name );
 
-    static const QString typeDescription( ProviderType providertype = None );
+    static const QString typeDescription( QgsAuthType::ProviderType providertype = None );
 };
 
 /**
@@ -58,8 +58,6 @@ class QgsAuthConfigBase
     void setVersion( int version ) { mVersion = version; }
 
     const QString typeToString() const;
-
-    const QgsAuthConfigBase& asBaseConfig();
 
     virtual bool isValid( bool validateid = false ) const;
 

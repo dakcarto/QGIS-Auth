@@ -10,11 +10,11 @@
 
 #include "qgsapplication.h"
 #include "qgsauthenticationcrypto.h"
+#include "qgsauthenticationprovider.h"
 #include "qgscredentials.h"
 
 
 QgsAuthManager *QgsAuthManager::smInstance = 0;
-//QMap<QString, QgsAuthPkiGroup *> QgsAuthManager::mAuthPkiGroupCache = QMap<QString, QgsAuthPkiGroup *>();
 const QString QgsAuthManager::smAuthConfigTable = "auth_configs";
 const QString QgsAuthManager::smAuthPassTable = "auth_pass";
 const QString QgsAuthManager::smAuthManTag = QObject::tr( "Authentication Manager" );
@@ -693,7 +693,7 @@ bool QgsAuthManager::masterPasswordInput()
   QgsCredentials * creds = QgsCredentials::instance();
   creds->lock();
   // TODO: validate in actual QgsCredentials input methods that password is not empty
-  bool ok = creds->getMasterPassword( &pass );
+  bool ok = creds->getMasterPassword( pass );
   creds->unlock();
 
   if ( ok && !pass.isEmpty() && !masterPasswordSame( pass ) )
@@ -706,19 +706,20 @@ bool QgsAuthManager::masterPasswordInput()
 
 bool QgsAuthManager::masterPasswordResetInput()
 {
-  QString pass;
-  QgsCredentials * creds = QgsCredentials::instance();
-  creds->lock();
-  // TODO: validate in actual QgsCredentials input methods that password is not empty
-  bool ok = creds->getMasterResetPassword( &pass );
-  creds->unlock();
+//  QString pass;
+//  QgsCredentials * creds = QgsCredentials::instance();
+//  creds->lock();
+//  // TODO: validate in actual QgsCredentials input methods that password is not empty
+//  bool ok = creds->getMasterResetPassword( &pass );
+//  creds->unlock();
 
-  if ( ok && !pass.isEmpty() && !masterPasswordSame( pass ) )
-  {
-    mMasterPassReset = pass;
-    return true;
-  }
-  return false;
+//  if ( ok && !pass.isEmpty() && !masterPasswordSame( pass ) )
+//  {
+//    mMasterPassReset = pass;
+//    return true;
+//  }
+//  return false;
+  return true;
 }
 
 bool QgsAuthManager::masterPasswordRowsInDb( int *rows ) const
