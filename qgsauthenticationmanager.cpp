@@ -681,10 +681,10 @@ QgsAuthManager::QgsAuthManager( QObject *parent )
 
 QgsAuthManager::~QgsAuthManager()
 {
+  authDbConnection().close();
   qDeleteAll( mProviders.values() );
   delete mQcaInitializer;
   mQcaInitializer = 0;
-
 }
 
 bool QgsAuthManager::masterPasswordInput()

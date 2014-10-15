@@ -10,30 +10,30 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = QGIS-Auth
 TEMPLATE = app
-mac {
-    QMAKE_MACOSX_DEPLOYMENT_TARGET = 10.7
-}
 
 DEPENDPATH += . src
 INCLUDEPATH += . src
-INCLUDEPATH += $(HOMEBREW_PREFIX)/include
+INCLUDEPATH += $(OSGEO4W_ROOT)/include
 
-INCLUDEPATH += $(HOMEBREW_PREFIX)/opt/qca/include/QtCrypto
 win32 {
-    LIBS += -L$$quote(qca-2.0.3/lib) -lqca2
+    #LIBS += -L$(OSGEO4W_ROOT)/lib -lqca
 }
-unix {
+mac {
+    QMAKE_MACOSX_DEPLOYMENT_TARGET = 10.7
+    INCLUDEPATH += $(HOMEBREW_PREFIX)/opt/qca/include/QtCrypto
     LIBS += -L$(HOMEBREW_PREFIX)/opt/qca/lib -lqca
+    QMAKE_CXXFLAGS += -isystem $(HOMEBREW_PREFIX)/include
+    #LIBS += -L$(HOMEBREW_PREFIX)/lib -lcryptopp
+    #LIBS += $(HOMEBREW_PREFIX)/lib/libcryptopp.a
+
+    # just for Mac, Homebrew shared lib build has CRYPTOPP_DISABLE_ASM defined
+    # build here has to define the same, or linking errors about missing vtables
+    #DEFINES += CRYPTOPP_DISABLE_ASM
 }
 
-QMAKE_CXXFLAGS += -isystem $(HOMEBREW_PREFIX)/include
+CONFIG += release
 
-LIBS += -L$(HOMEBREW_PREFIX)/lib -lcryptopp
-#LIBS += $(HOMEBREW_PREFIX)/lib/libcryptopp.a
-
-# just for Mac, Homebrew shared lib build has CRYPTOPP_DISABLE_ASM defined
-# build here has to define the same, or linking errors about missing vtables
-DEFINES += CRYPTOPP_DISABLE_ASM
+CONFIG += crypto
 
 SOURCES += \
     main.cpp \
@@ -70,4 +70,4 @@ FORMS += \
     qgsauthenticationconfigeditor.ui \
     qgsauthenticationconfigselect.ui
 
-RESOURCES += /Users/larrys/QGIS/github.com/QGIS/images/images.qrc
+#RESOURCES += /Users/larrys/QGIS/github.com/QGIS/images/images.qrc

@@ -167,7 +167,7 @@ void QgsAuthProviderPkiPaths::updateNetworkRequest( QNetworkRequest &request, co
   QSslConfiguration sslConfig = request.sslConfiguration();
   //QSslConfiguration sslConfig( QSslConfiguration::defaultConfiguration() );
 
-  sslConfig.setProtocol( QSsl::TlsV1SslV3 );
+  //sslConfig.setProtocol( QSsl::TlsV1SslV3 );
 
   QSslCertificate issuercert = pkibundle->issuerCert();
   if ( !issuercert.isNull() )
