@@ -8,18 +8,28 @@
 #include "qgsauthenticationmanager.h"
 #include "qgsauthenticationconfigwidget.h"
 
-QgsAuthConfigSelect::QgsAuthConfigSelect( QWidget *parent )
+QgsAuthConfigSelect::QgsAuthConfigSelect( QWidget *parent, bool keypasssupported )
     : QWidget( parent )
+    , mKeyPassSupported( keypasssupported )
     , mConfigId( QString() )
     , mConfigs( QHash<QString, QgsAuthConfigBase>() )
 {
   setupUi( this );
 
+  lblPassUnsupported->setVisible( !mKeyPassSupported );
+
+  clearConfig();
   populateConfigSelector();
 }
 
 QgsAuthConfigSelect::~QgsAuthConfigSelect()
 {
+}
+
+void QgsAuthConfigSelect::setKeyPassSupported( bool supported )
+{
+  mKeyPassSupported = supported;
+  lblPassUnsupported->setVisible( !mKeyPassSupported );
 }
 
 void QgsAuthConfigSelect::setConfigId( const QString& authid )
@@ -127,8 +137,10 @@ void QgsAuthConfigSelect::on_btnConfigEdit_clicked()
 void QgsAuthConfigSelect::on_btnConfigRemove_clicked()
 {
   if ( QMessageBox::warning( this, tr( "Remove Authentication" ),
-                             tr( "Are you sure that you want to permanently remove this configuration right now?" ),
-                             QMessageBox::Ok | QMessageBox::Cancel ) == QMessageBox::Cancel )
+                             tr( "Are you sure that you want to permanently remove this configuration right now?\n\n"
+                                 "Operation can NOT be undone!" ),
+                             QMessageBox::Ok | QMessageBox::Cancel,
+                             QMessageBox::Cancel ) == QMessageBox::Cancel )
   {
     return;
   }

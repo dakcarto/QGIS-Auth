@@ -11,8 +11,11 @@ class QgsAuthConfigSelect : public QWidget, private Ui::QgsAuthConfigSelect
     Q_OBJECT
 
   public:
-    explicit QgsAuthConfigSelect( QWidget *parent = 0 );
+    explicit QgsAuthConfigSelect( QWidget *parent = 0, bool keypasssupported = true );
     ~QgsAuthConfigSelect();
+
+    void setKeyPassSupported( bool supported );
+    bool keyPassSupported() const { return mKeyPassSupported; }
 
     void setConfigId( const QString& authid );
     const QString configId() const { return mConfigId; }
@@ -34,6 +37,7 @@ class QgsAuthConfigSelect : public QWidget, private Ui::QgsAuthConfigSelect
   private:
     void loadAvailableConfigs();
 
+    bool mKeyPassSupported;
     QString mConfigId;
     QHash<QString, QgsAuthConfigBase> mConfigs;
 };

@@ -33,6 +33,10 @@ QgsAuthConfigEditor::QgsAuthConfigEditor( QWidget *parent )
   tableViewConfigs->hideColumn( 4 );
   tableViewConfigs->hideColumn( 5 );
 
+  // sort by config 'name'
+  tableViewConfigs->sortByColumn( 1, Qt::AscendingOrder );
+  tableViewConfigs->setSortingEnabled( true );
+
   connect( tableViewConfigs->selectionModel(), SIGNAL( selectionChanged( const QItemSelection&, const QItemSelection& ) ),
            this, SLOT( selectionChanged( const QItemSelection&, const QItemSelection& ) ) );
 
@@ -44,6 +48,11 @@ QgsAuthConfigEditor::QgsAuthConfigEditor( QWidget *parent )
 
 QgsAuthConfigEditor::~QgsAuthConfigEditor()
 {
+}
+
+void QgsAuthConfigEditor::toggleTitleVisibility( bool visible )
+{
+  lblAuthConfigDb->setVisible( visible );
 }
 
 void QgsAuthConfigEditor::selectionChanged( const QItemSelection& selected , const QItemSelection& deselected )
@@ -102,8 +111,10 @@ void QgsAuthConfigEditor::on_btnRemoveConfig_clicked()
   QString name = indx.sibling( indx.row(), 1 ).data().toString();
 
   if ( QMessageBox::warning( this, tr( "Remove Configuration" ),
-                             tr( "Are you sure you want to remove '%1'? (no undo)" ).arg( name ),
-                             QMessageBox::Yes | QMessageBox::No ) == QMessageBox::Yes )
+                             tr( "Are you sure you want to remove '%1'?\n\n"
+                                 "Operation can NOT be undone!" ).arg( name ),
+                             QMessageBox::Ok | QMessageBox::Cancel,
+                             QMessageBox::Cancel ) == QMessageBox::Ok )
   {
     mConfigModel->removeRow( indx.row() );
   }

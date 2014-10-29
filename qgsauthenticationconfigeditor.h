@@ -14,6 +14,8 @@ class QgsAuthConfigEditor : public QWidget, private Ui::QgsAuthConfigEditor
     explicit QgsAuthConfigEditor( QWidget *parent = 0 );
     ~QgsAuthConfigEditor();
 
+    void toggleTitleVisibility( bool visible );
+
   private slots:
     void selectionChanged( const QItemSelection& selected, const QItemSelection& deselected );
 

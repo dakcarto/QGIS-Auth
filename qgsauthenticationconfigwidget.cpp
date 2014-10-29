@@ -407,9 +407,25 @@ bool QgsAuthConfigWidget::validatePkiPaths()
   // check for issue date validity, then notify status
   QSslCertificate cert;
   QFile file( certpath );
-  if ( file.open( QIODevice::ReadOnly | QIODevice::Text ) )
+  QFileInfo fileinfo( file );
+  QString ext( fileinfo.fileName().replace( fileinfo.completeBaseName(), "" ).toLower() );
+  if ( ext.isEmpty() )
   {
-    cert = QSslCertificate( file.readAll(), QSsl::Pem );
+    writePkiPathsMessage( tr( "Certificate file has no extension" ), Invalid );
+    return false;
+  }
+
+  QFile::OpenMode openflags( QIODevice::ReadOnly );
+  QSsl::EncodingFormat encformat( QSsl::Der );
+  if ( ext == ".pem" )
+  {
+    openflags |= QIODevice::Text;
+    encformat = QSsl::Pem;
+  }
+
+  if ( file.open( openflags ) )
+  {
+    cert = QSslCertificate( file.readAll(), encformat );
     file.close();
   }
   else
@@ -435,7 +451,7 @@ void QgsAuthConfigWidget::on_chkPkiPathsPassShow_stateChanged( int state )
 
 void QgsAuthConfigWidget::on_btnPkiPathsCert_clicked()
 {
-  const QString& fn = getOpenFileName( tr( "Open PEM File" ),  tr( "PEM (*.pem)" ) );
+  const QString& fn = getOpenFileName( tr( "Open Client Certificate File" ),  tr( "PEM (*.pem);;DER (*.cer *.crt *.der)" ) );
   if ( !fn.isEmpty() )
   {
     lePkiPathsCert->setText( fn );
@@ -445,7 +461,7 @@ void QgsAuthConfigWidget::on_btnPkiPathsCert_clicked()
 
 void QgsAuthConfigWidget::on_btnPkiPathsKey_clicked()
 {
-  const QString& fn = getOpenFileName( tr( "Open PEM File" ),  tr( "PEM (*.pem *.key)" ) );
+  const QString& fn = getOpenFileName( tr( "Open Private Key File" ),  tr( "PEM (*.pem);;DER (*.der)" ) );
   if ( !fn.isEmpty() )
   {
     lePkiPathsKey->setText( fn );
@@ -455,7 +471,7 @@ void QgsAuthConfigWidget::on_btnPkiPathsKey_clicked()
 
 void QgsAuthConfigWidget::on_btnPkiPathsIssuer_clicked()
 {
-  const QString& fn = getOpenFileName( tr( "Open PEM File" ),  tr( "PEM (*.pem)" ) );
+  const QString& fn = getOpenFileName( tr( "Open Certificate File" ),  tr( "PEM (*.pem);;DER (*.cer *.crt *.der)" ) );
   if ( !fn.isEmpty() )
   {
     lePkiPathsIssuer->setText( fn );

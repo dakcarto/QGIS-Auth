@@ -41,7 +41,8 @@ SOURCES += \
     qgsauthenticationprovider.cpp \
     qgsauthenticationconfigwidget.cpp \
     qgsauthenticationconfigeditor.cpp \
-    qgsauthenticationconfigselect.cpp
+    qgsauthenticationconfigselect.cpp \
+    qgsauthenticationutils.cpp
 
 HEADERS += \
     webpage.h \
@@ -54,13 +55,15 @@ HEADERS += \
     qgsauthenticationprovider.h \
     qgsauthenticationconfigwidget.h \
     qgsauthenticationconfigeditor.h \
-    qgsauthenticationconfigselect.h
+    qgsauthenticationconfigselect.h \
+    qgsauthenticationutils.h
 
 FORMS += \
     webpage.ui \
     testwidget.ui \
     qgsauthenticationconfigwidget.ui \
     qgsauthenticationconfigeditor.ui \
-    qgsauthenticationconfigselect.ui
+    qgsauthenticationconfigselect.ui \
+    qgsmasterpasswordresetdialog.ui
 
 #RESOURCES += /Users/larrys/QGIS/github.com/QGIS/images/images.qrc

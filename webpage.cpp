@@ -289,7 +289,7 @@ void WebPage::on_btnTests_clicked()
 void WebPage::on_btnAuthClearCached_clicked()
 {
   if ( !leAuthId->text().isEmpty() )
-    QgsAuthManager::instance()->removeCachedConfig( leAuthId->text() );
+    QgsAuthManager::instance()->clearCachedConfig( leAuthId->text() );
 }
 
 void WebPage::writeDebug( const QString& message, const QString& tag, WebPage::MessageLevel level )

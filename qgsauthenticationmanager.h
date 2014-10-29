@@ -4,7 +4,6 @@
 #include <QObject>
 #include <QNetworkReply>
 #include <QNetworkRequest>
-#include <QtCrypto>
 #include <QSqlDatabase>
 #include <QSqlError>
 #include <QSqlQuery>
@@ -12,14 +11,19 @@
 
 #include "qgsauthenticationconfig.h"
 
+namespace QCA
+{
+  class Initializer;
+}
 class QgsAuthProvider;
 
 class QgsAuthManager : public QObject
 {
     Q_OBJECT
+    Q_ENUMS( MessageLevel )
+
   public:
 
-    // TODO: switch to QgsMessageLog enum
     enum MessageLevel
     {
       INFO = 0,
@@ -37,13 +41,21 @@ class QgsAuthManager : public QObject
 
     bool setMasterPassword( bool verify = false );
 
+    bool setMasterPassword( const QString& pass, bool verify = false );
+
+    bool verifyMasterPassword();
+
     bool masterPasswordIsSet() const;
+
+    bool masterPasswordHashInDb() const;
 
     void clearMasterPassword() { mMasterPass = QString(); }
 
     bool masterPasswordSame( const QString& pass ) const;
 
-    bool resetMasterPassword();
+    bool resetMasterPassword( const QString& newpassword, bool keepbackup, QString *backuppath = 0 );
+
+    const QString authManTag() const { return smAuthManTag; }
 
 
     void registerProviders();
@@ -69,21 +81,27 @@ class QgsAuthManager : public QObject
 
     bool removeAuthenticationConfig( const QString& authid );
 
+    bool removeAllAuthenticationConfigs();
+
+    bool eraseAuthenticationDatabase();
+
 
     void updateNetworkRequest( QNetworkRequest &request, const QString& authid );
 
     void updateNetworkReply( QNetworkReply *reply, const QString& authid );
 
   signals:
-    void messageOut( const QString& message, const QString& tag = smAuthManTag, MessageLevel level = INFO ) const;
+    void messageOut( const QString& message, const QString& tag = smAuthManTag, QgsAuthManager::MessageLevel level = INFO ) const;
 
     void masterPasswordVerified( bool verified ) const;
 
   public slots:
-    void removeCachedConfig( const QString& authid );
+    void clearAllCachedConfigs();
+
+    void clearCachedConfig( const QString& authid );
 
   private slots:
-    void writeDebug( const QString& message, const QString& tag = QString(), MessageLevel level = INFO );
+    void writeToConsole( const QString& message, const QString& tag = QString(), QgsAuthManager::MessageLevel level = INFO );
 
   protected:
     explicit QgsAuthManager( QObject *parent = 0 );
@@ -93,20 +111,23 @@ class QgsAuthManager : public QObject
 
     bool masterPasswordInput();
 
-    bool masterPasswordResetInput();
-
     bool masterPasswordRowsInDb( int *rows ) const;
 
     bool masterPasswordCheckAgainstDb() const;
 
     bool masterPasswordStoreInDb() const;
 
-    bool masterPasswordClearDb() const;
+    bool masterPasswordClearDb();
 
     const QString masterPasswordCiv() const;
 
     QStringList configIds() const;
 
+    bool verifyPasswordCanDecryptConfigs() const;
+
+    bool reencryptAllAuthenticationConfigs( const QString& prevpass, const QString& prevciv );
+
+    bool reencryptAuthenticationConfig( const QString& authid, const QString& prevpass, const QString& prevciv );
 
     bool authDbOpen() const;
 
@@ -119,7 +140,6 @@ class QgsAuthManager : public QObject
     bool authDbTransactionQuery( QSqlQuery *query ) const;
 
     const QString authDbPassTable() const { return smAuthPassTable; }
-    const QString authManTag() const { return smAuthManTag; }
 
     static QgsAuthManager* smInstance;
     static const QString smAuthConfigTable;

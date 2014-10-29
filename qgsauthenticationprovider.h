@@ -30,7 +30,7 @@ class QgsAuthProvider
 
     virtual void updateNetworkReply( QNetworkReply *reply, const QString& authid ) = 0;
 
-    virtual void removeCachedConfig( const QString& authid ) = 0;
+    virtual void clearCachedConfig( const QString& authid ) = 0;
 
   protected:
     static const QString authProviderTag() { return QObject::tr( "Authentication provider" ); }
@@ -50,7 +50,7 @@ class QgsAuthProviderBasic : public QgsAuthProvider
     // QgsAuthProvider interface
     void updateNetworkRequest( QNetworkRequest &request, const QString &authid );
     void updateNetworkReply( QNetworkReply *reply, const QString &authid );
-    void removeCachedConfig( const QString& authid );
+    void clearCachedConfig( const QString& authid );
 
   private:
 
@@ -113,7 +113,7 @@ class QgsAuthProviderPkiPaths : public QgsAuthProvider
     // QgsAuthProvider interface
     void updateNetworkRequest( QNetworkRequest &request, const QString &authid );
     void updateNetworkReply( QNetworkReply *reply, const QString &authid );
-    void removeCachedConfig( const QString& authid );
+    void clearCachedConfig( const QString& authid );
 
   private:
 

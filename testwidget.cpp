@@ -104,7 +104,7 @@ void TestWidget::on_btnThree_clicked()
 //  teOut->appendPlainText( QString( "Hash verified (bad pass): %1" ).arg( ok ? "yes" : "no" ) );
 //  teOut->appendPlainText( QString( "Derived hash (bad pass): %1" ).arg( derived ) );
 
-  QgsAuthManager::instance()->resetMasterPassword();
+//  QgsAuthManager::instance()->resetMasterPassword();
 }
 
 void TestWidget::on_btnFour_clicked()
