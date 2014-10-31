@@ -3,6 +3,7 @@
 #include "qgsauthenticationmanager.h"
 #include "qgsauthenticationprovider.h"
 
+#include <QFile>
 #include <QObject>
 
 
@@ -13,6 +14,7 @@ const QHash<QgsAuthType::ProviderType, QString> QgsAuthType::typeNameHash()
   typeNames.insert( QgsAuthType::Basic, QObject::tr( "Basic" ) );
 #ifndef QT_NO_OPENSSL
   typeNames.insert( QgsAuthType::PkiPaths, QObject::tr( "PKI-Paths" ) );
+  typeNames.insert( QgsAuthType::PkiPkcs12, QObject::tr( "PKI-PKCS#12" ) );
 #endif
   typeNames.insert( QgsAuthType::Unknown, QObject::tr( "Unknown" ) );
   return typeNames;
@@ -32,6 +34,9 @@ QgsAuthType::ProviderType QgsAuthType::providerTypeFromInt( int itype )
 #ifndef QT_NO_OPENSSL
     case 2:
       ptype = PkiPaths;
+      break;
+    case 3:
+      ptype = PkiPkcs12;
       break;
 #endif
     case 20:
@@ -68,6 +73,9 @@ const QString QgsAuthType::typeDescription( QgsAuthType::ProviderType providerty
 #ifndef QT_NO_OPENSSL
     case PkiPaths:
       s = QObject::tr( "PKI paths authentication" );
+      break;
+    case PkiPkcs12:
+      s = QObject::tr( "PKI PKCS#12 authentication" );
       break;
 #endif
     case Unknown:
@@ -145,7 +153,6 @@ bool QgsAuthConfigBasic::isValid( bool validateid ) const
   return (
            QgsAuthConfigBase::isValid( validateid )
            && mVersion != 0
-           && !mRealm.isEmpty()
            && !mUsername.isEmpty()
          );
 }
@@ -169,7 +176,7 @@ void QgsAuthConfigBasic::loadConfigString( const QString& config )
 }
 
 //////////////////////////////////////////////
-// QgsAuthConfigPki
+// QgsAuthConfigPkiPaths
 //////////////////////////////////////////////
 
 QgsAuthConfigPkiPaths::QgsAuthConfigPkiPaths()
@@ -180,6 +187,32 @@ QgsAuthConfigPkiPaths::QgsAuthConfigPkiPaths()
     , mIssuerId( QString() )
     , mIssuerSelf( false )
 {
+}
+
+const QString QgsAuthConfigPkiPaths::certAsPem() const
+{
+  if ( !isValid() )
+    return QString();
+
+  return QString( QgsAuthProviderPkiPaths::certAsPem( certId() ) );
+}
+
+const QStringList QgsAuthConfigPkiPaths::keyAsPem( bool reencrypt ) const
+{
+  if ( !isValid() )
+    return QStringList() << QString() << QString();
+
+  QString algtype;
+  QByteArray keydata( QgsAuthProviderPkiPaths::keyAsPem( keyId(), keyPassphrase(), &algtype, reencrypt ) );
+  return QStringList() << QString( keydata ) << algtype;
+}
+
+const QString QgsAuthConfigPkiPaths::issuerAsPem() const
+{
+  if ( !isValid() )
+    return QString();
+
+  return QString( QgsAuthProviderPkiPaths::issuerAsPem( issuerId() ) );
 }
 
 bool QgsAuthConfigPkiPaths::isValid( bool validateid ) const
@@ -211,4 +244,74 @@ void QgsAuthConfigPkiPaths::loadConfigString( const QString& config )
   mKeyPass = configlist.at( 2 );
   mIssuerId = configlist.at( 3 );
   mIssuerSelf = ( bool ) configlist.at( 4 ).toInt();
+}
+
+//////////////////////////////////////////////
+// QgsAuthConfigPkiPkcs12
+//////////////////////////////////////////////
+
+QgsAuthConfigPkiPkcs12::QgsAuthConfigPkiPkcs12()
+    : QgsAuthConfigBase( QgsAuthType::PkiPkcs12, 1 )
+    , mBundlePath( QString() )
+    , mBundlePass( QString() )
+    , mIssuerPath( QString() )
+    , mIssuerSelf( false )
+{
+}
+
+const QString QgsAuthConfigPkiPkcs12::certAsPem() const
+{
+  if ( !isValid() )
+    return QString();
+
+  return QgsAuthProviderPkiPkcs12::certAsPem( bundlePath(), bundlePassphrase() );
+}
+
+const QStringList QgsAuthConfigPkiPkcs12::keyAsPem( bool reencrypt ) const
+{
+  if ( !isValid() )
+    return QStringList();
+
+  QStringList keylist;
+  keylist << QgsAuthProviderPkiPkcs12::keyAsPem( bundlePath(), bundlePassphrase(), reencrypt );
+  keylist << QString( "rsa" );
+  return keylist;
+}
+
+const QString QgsAuthConfigPkiPkcs12::issuerAsPem() const
+{
+  if ( !isValid() )
+    return QString();
+
+  return QgsAuthProviderPkiPkcs12::issuerAsPem( bundlePath(), bundlePassphrase(), issuerPath() );
+}
+
+bool QgsAuthConfigPkiPkcs12::isValid( bool validateid ) const
+{
+  // TODO: add more robust validation via QCA (primary cert, key and issuer chain)?
+  return (
+           QgsAuthConfigBase::isValid( validateid )
+           && version() != 0
+           && !bundlePath().isEmpty()
+           && QFile::exists( bundlePath() )
+         );
+}
+
+const QString QgsAuthConfigPkiPkcs12::configString() const
+{
+  QStringList configlist = QStringList();
+  configlist << bundlePath() << bundlePassphrase() << issuerPath() << QString::number( issuerSelfSigned() );
+  return configlist.join( mConfSep );
+}
+
+void QgsAuthConfigPkiPkcs12::loadConfigString( const QString &config )
+{
+  if ( config.isEmpty() )
+    return;
+
+  QStringList configlist = config.split( mConfSep );
+  setBundlePath( configlist.at( 0 ) );
+  setBundlePassphrase( configlist.at( 1 ) );
+  setIssuerPath( configlist.at( 2 ) );
+  setIssuerSelfSigned(( bool ) configlist.at( 3 ).toInt() );
 }

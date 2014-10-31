@@ -12,7 +12,7 @@ class QgsCredentials : public QObject
 
     static QgsCredentials *instance();
 
-    bool getMasterPassword( QString *password, bool stored = false );
+    bool getMasterPassword( QString &password, bool stored = false );
 
     void lock();
     void unlock();

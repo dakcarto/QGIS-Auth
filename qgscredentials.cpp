@@ -20,7 +20,7 @@ QgsCredentials *QgsCredentials::instance()
   return smInstance;
 }
 
-bool QgsCredentials::getMasterPassword( QString *password , bool stored )
+bool QgsCredentials::getMasterPassword( QString &password , bool stored )
 {
   Q_UNUSED( stored );
   bool ok = false;
@@ -29,7 +29,7 @@ bool QgsCredentials::getMasterPassword( QString *password , bool stored )
                                         "", &ok );
   if ( ok && !text.isEmpty() )
   {
-    *password = text;
+    password = text;
   }
   return ok;
 }

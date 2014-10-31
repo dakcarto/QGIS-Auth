@@ -31,6 +31,8 @@ class QgsAuthManager : public QObject
       CRITICAL = 2
     };
 
+    void QgsDebugMsg( const char* msg ) const {  qDebug( msg ); }
+
     static QgsAuthManager *instance();
 
     QSqlDatabase authDbConnection() const;

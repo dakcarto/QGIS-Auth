@@ -3,6 +3,8 @@
 
 #include <QFileInfo>
 
+#include <QtCrypto>
+
 #include "qgsapplication.h"
 #include "qgsauthenticationconfig.h"
 #include "qgsauthenticationcrypto.h"

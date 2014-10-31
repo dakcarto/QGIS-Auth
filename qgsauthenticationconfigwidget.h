@@ -39,13 +39,17 @@ class QgsAuthConfigWidget : public QDialog, private Ui::QgsAuthConfigWidget
     void validateAuth();
 
     void on_leName_textChanged( const QString& txt );
+
+    // Auth Basic
+    void clearAuthBasic();
     void on_leBasicUsername_textChanged( const QString& txt );
     void on_chkBasicPasswordShow_stateChanged( int state );
 
 #ifndef QT_NO_OPENSSL
-    void clearPkiPathsMessage();
-    void writePkiPathsMessage( const QString& msg, Validity valid = Unknown );
+    void clearPkiMessage( QLineEdit *lineedit );
+    void writePkiMessage( QLineEdit *lineedit, const QString& msg, Validity valid = Unknown );
 
+    // Auth PkiPaths
     void clearPkiPathsCert();
 
     void clearPkiPathsCertId();
@@ -61,6 +65,21 @@ class QgsAuthConfigWidget : public QDialog, private Ui::QgsAuthConfigWidget
     void on_btnPkiPathsKey_clicked();
 
     void on_btnPkiPathsIssuer_clicked();
+
+    // Auth PkiPkcs#12
+    void clearPkiPkcs12Bundle();
+
+    void clearPkiPkcs12BundlePath();
+    void clearPkiPkcs12KeyPassphrase();
+    void clearPkiPkcs12IssuerPath();
+    void clearPkiPkcs12IssuerSelfSigned();
+
+    void on_lePkiPkcs12KeyPass_textChanged( const QString &pass );
+    void on_chkPkiPkcs12PassShow_stateChanged( int state );
+
+    void on_btnPkiPkcs12Bundle_clicked();
+
+    void on_btnPkiPkcs12Issuer_clicked();
 #endif
 
   private:
@@ -73,6 +92,8 @@ class QgsAuthConfigWidget : public QDialog, private Ui::QgsAuthConfigWidget
      * @see QSslCertificate.isValid()
      */
     bool validatePkiPaths();
+
+    bool validatePkiPkcs12();
 #endif
 
     int providerIndexByType( QgsAuthType::ProviderType ptype );

@@ -22,7 +22,10 @@ class QgsAuthProvider
 
     virtual ~QgsAuthProvider();
 
+    void QgsDebugMsg( const char* msg ) {  qDebug( msg ); }
+
     QgsAuthType::ProviderType providerType() const { return mType; }
+    void setProviderType( QgsAuthType::ProviderType ptype ) { mType = ptype; }
 
     static bool urlToResource( const QString& accessurl, QString *resource, bool withpath = false );
 
@@ -72,14 +75,15 @@ class QgsAuthProviderBasic : public QgsAuthProvider
  * @since 2.6
  */
 
-class QgsPkiPathsBundle
+class QgsPkiBundle
 {
   public:
-    QgsPkiPathsBundle( const QgsAuthConfigPkiPaths& config,
-                       const QSslCertificate& cert,
-                       const QSslKey& certkey,
-                       const QSslCertificate& issuer = QSslCertificate() );
-    ~QgsPkiPathsBundle();
+    QgsPkiBundle( const QgsAuthConfigPkiPaths& config,
+                  const QSslCertificate& cert,
+                  const QSslKey& certkey,
+                  const QSslCertificate& issuer = QSslCertificate(),
+                  bool issuerSeflSigned = false );
+    ~QgsPkiBundle();
 
     bool isValid();
 
@@ -95,11 +99,15 @@ class QgsPkiPathsBundle
     const QSslCertificate issuerCert() const { return mIssuer; }
     void setIssuerCert( const QSslCertificate& issuer ) { mIssuer = issuer; }
 
+    bool issuerSelfSigned() const { return mIssuerSelf; }
+    void setIssuerSelfSigned( bool selfsigned ) { mIssuerSelf = selfsigned; }
+
   private:
-    QgsAuthConfigPkiPaths mConfig;
+    QgsAuthConfigBase mConfig;
     QSslCertificate mCert;
     QSslKey mCertKey;
     QSslCertificate mIssuer;
+    bool mIssuerSelf;
 };
 
 
@@ -108,22 +116,55 @@ class QgsAuthProviderPkiPaths : public QgsAuthProvider
   public:
     QgsAuthProviderPkiPaths();
 
-    ~QgsAuthProviderPkiPaths();
+    virtual ~QgsAuthProviderPkiPaths();
 
     // QgsAuthProvider interface
     void updateNetworkRequest( QNetworkRequest &request, const QString &authid );
     void updateNetworkReply( QNetworkReply *reply, const QString &authid );
     void clearCachedConfig( const QString& authid );
 
+    static const QByteArray certAsPem( const QString &certpath );
+
+    static const QByteArray keyAsPem( const QString &keypath,
+                                      const QString &keypass = QString(),
+                                      QString *algtype = 0,
+                                      bool reencrypt = true );
+
+    static const QByteArray issuerAsPem( const QString &issuerpath );
+
+  protected:
+
+    virtual QgsPkiBundle * getPkiBundle( const QString &authid );
+
+    virtual void putPkiBundle( const QString &authid, QgsPkiBundle * pkibundle );
+
+    virtual void removePkiBundle( const QString &authid );
+
   private:
 
-    QgsPkiPathsBundle * getPkiPathsBundle( const QString &authid );
+    static QMap<QString, QgsPkiBundle *> mPkiBundleCache;
+};
 
-    void putPkiPathsBundle( const QString &authid, QgsPkiPathsBundle * pkibundle );
+class QgsAuthProviderPkiPkcs12 : public QgsAuthProviderPkiPaths
+{
+  public:
+    QgsAuthProviderPkiPkcs12();
 
-    void removePkiPathsBundle( const QString &authid );
+    ~QgsAuthProviderPkiPkcs12();
 
-    static QMap<QString, QgsPkiPathsBundle *> mPkiPathsBundleCache;
+    static const QString certAsPem( const QString &bundlepath, const QString &bundlepass );
+
+    static const QString keyAsPem( const QString &bundlepath, const QString &bundlepass, bool reencrypt = true );
+
+    static const QString issuerAsPem( const QString &bundlepath, const QString &bundlepass, const QString &issuerpath );
+
+  protected:
+
+    QgsPkiBundle * getPkiBundle( const QString &authid );
+
+  private:
+
+    static QMap<QString, QgsPkiBundle *> mPkiBundleCache;
 };
 #endif
 

@@ -25,6 +25,7 @@ mac {
     INCLUDEPATH += $(HOMEBREW_PREFIX)/opt/qca/include/QtCrypto
     LIBS += -L$(HOMEBREW_PREFIX)/opt/qca/lib -lqca
     QMAKE_CXXFLAGS += -isystem $(HOMEBREW_PREFIX)/include
+    QMAKE_CFLAGS += -Wno-error=format-security
 }
 
 CONFIG += release

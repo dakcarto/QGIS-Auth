@@ -22,8 +22,6 @@ const QString QgsAuthManager::smAuthConfigTable = "auth_configs";
 const QString QgsAuthManager::smAuthPassTable = "auth_pass";
 const QString QgsAuthManager::smAuthManTag = QObject::tr( "Authentication Manager" );
 
-void QgsDebugMsg( const char* msg ) {  qDebug( msg ); }
-
 QgsAuthManager *QgsAuthManager::instance()
 {
   if ( !smInstance )
@@ -400,6 +398,7 @@ void QgsAuthManager::registerProviders()
     mProviders.insert( QgsAuthType::Basic, new QgsAuthProviderBasic() );
 #ifndef QT_NO_OPENSSL
     mProviders.insert( QgsAuthType::PkiPaths, new QgsAuthProviderPkiPaths() );
+    mProviders.insert( QgsAuthType::PkiPkcs12, new QgsAuthProviderPkiPkcs12() );
 #endif
   }
   mProvidersRegistered = true;
@@ -853,7 +852,7 @@ bool QgsAuthManager::masterPasswordInput()
   QString pass;
   QgsCredentials * creds = QgsCredentials::instance();
   creds->lock();
-  bool ok = creds->getMasterPassword( &pass, masterPasswordHashInDb() );
+  bool ok = creds->getMasterPassword( pass, masterPasswordHashInDb() );
   creds->unlock();
 
   if ( ok && !pass.isEmpty() && !masterPasswordSame( pass ) )
