@@ -1,3 +1,19 @@
+/***************************************************************************
+    qgsauthenticationcrypto.cpp
+    ---------------------
+    begin                : October 5, 2014
+    copyright            : (C) 2014 by Boundless Spatial, Inc. USA
+    author               : Larry Shaffer
+    email                : lshaffer at boundlessgeo dot com
+ ***************************************************************************
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ ***************************************************************************/
+
 #include "qgsauthenticationcrypto.h"
 
 #include <QObject>
@@ -17,14 +33,29 @@
 #define KEY_GEN_LENGTH 16
 #define KEY_GEN_IV_LENGTH 16
 
+bool QgsAuthCrypto::isDisabled()
+{
+  if ( !QCA::isSupported( CIPHER_SIGNATURE, CIPHER_PROVIDER ) )
+  {
+    qDebug( "Authentication system DISABLED: QCA's qca-ossl (OpenSSL) plugin is missing" );
+    return true;
+  }
+  return false;
+}
 
 const QString QgsAuthCrypto::encrypt( QString pass, QString cipheriv, QString text )
 {
+  if ( QgsAuthCrypto::isDisabled() )
+    return QString();
+
   return encryptdecrypt( pass, cipheriv, text, true );
 }
 
 const QString QgsAuthCrypto::decrypt( QString pass, QString cipheriv, QString text )
 {
+  if ( QgsAuthCrypto::isDisabled() )
+    return QString();
+
   return encryptdecrypt( pass, cipheriv, text, false );
 }
 
@@ -37,6 +68,9 @@ static QCA::SymmetricKey passwordKey_( const QString& pass, const QCA::Initializ
 
 void QgsAuthCrypto::passwordKeyHash( const QString& pass, QString *salt, QString *hash, QString *cipheriv )
 {
+  if ( QgsAuthCrypto::isDisabled() )
+    return;
+
   QCA::InitializationVector saltiv = QCA::InitializationVector( KEY_GEN_IV_LENGTH );
   QCA::SymmetricKey key = passwordKey_( pass, saltiv );
 
@@ -61,6 +95,9 @@ bool QgsAuthCrypto::verifyPasswordKeyHash( const QString& pass,
     const QString& hash,
     QString *hashderived )
 {
+  if ( QgsAuthCrypto::isDisabled() )
+    return false;
+
   QCA::InitializationVector saltiv( QCA::hexToArray( salt ) );
   QString derived( QCA::arrayToHex( passwordKey_( pass, saltiv ).toByteArray() ) );
 
@@ -78,15 +115,10 @@ QString QgsAuthCrypto::encryptdecrypt( QString passstr,
                                        bool encrypt )
 {
   QString outtxt = QString();
-  QCA::InitializationVector iv( QCA::hexToArray( cipheriv ) );
-
-  // TODO: add this and other checks to a separate routine, returning bool
-  if ( !QCA::isSupported( CIPHER_SIGNATURE ) )
-  {
-    qDebug( "'%s' not supported: check if qca-ossl plugin is installed",
-            CIPHER_SIGNATURE );
+  if ( QgsAuthCrypto::isDisabled() )
     return outtxt;
-  }
+
+  QCA::InitializationVector iv( QCA::hexToArray( cipheriv ) );
 
   QCA::SymmetricKey key( QCA::SecureArray( QByteArray( passstr.toUtf8().constData() ) ) );
 

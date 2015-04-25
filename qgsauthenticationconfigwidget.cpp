@@ -1,3 +1,19 @@
+/***************************************************************************
+    qgsauthenticationconfigwidget.cpp
+    ---------------------
+    begin                : October 5, 2014
+    copyright            : (C) 2014 by Boundless Spatial, Inc. USA
+    author               : Larry Shaffer
+    email                : lshaffer at boundlessgeo dot com
+ ***************************************************************************
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ ***************************************************************************/
+
 #include "qgsauthenticationconfigwidget.h"
 #include "ui_qgsauthenticationconfigwidget.h"
 
@@ -24,43 +40,60 @@ static QString validRed_( const QString& selector = "*" )
   return QString( "%1{color: rgb(200, 0, 0);}" ).arg( selector );
 }
 
-QgsAuthConfigWidget::QgsAuthConfigWidget( QWidget *parent , const QString& authid )
+QgsAuthConfigWidget::QgsAuthConfigWidget( QWidget *parent , const QString& authcfg )
     : QDialog( parent )
-    , mAuthId( authid )
+    , mAuthCfg( authcfg )
+    , mAuthNotifyLayout( 0 )
+    , mAuthNotify( 0 )
 {
+  if ( QgsAuthManager::instance()->isDisabled() )
+  {
+    mAuthNotifyLayout = new QVBoxLayout;
+    this->setLayout( mAuthNotifyLayout );
+    QString msg( QgsAuthManager::instance()->disabledMessage() );
+    if ( !authcfg.isEmpty() )
+    {
+      msg += "\n\n" + tr( "Authentication config id not loaded: %1" ).arg( authcfg );
+    }
+    mAuthNotify = new QLabel( msg, this );
+    mAuthNotifyLayout->addWidget( mAuthNotify );
 
-  setupUi( this );
+    mAuthCfg.clear(); // otherwise will contiue to try authenticate (and fail) after save
+  }
+  else
+  {
+    setupUi( this );
+    connect( buttonBox, SIGNAL( rejected() ), this, SLOT( close() ) );
+    connect( buttonBox, SIGNAL( accepted() ), this, SLOT( saveConfig() ) );
+    connect( buttonBox->button( QDialogButtonBox::Reset ), SIGNAL( clicked() ), this, SLOT( resetConfig() ) );
 
-  connect( buttonBox, SIGNAL( rejected() ), this, SLOT( close() ) );
-  connect( buttonBox, SIGNAL( accepted() ), this, SLOT( saveConfig() ) );
-  connect( buttonBox->button( QDialogButtonBox::Reset ), SIGNAL( clicked() ), this, SLOT( resetConfig() ) );
-
-  cmbAuthProviderType->addItem( tr( "Username/Password" ), QVariant( QgsAuthType::Basic ) );
+    cmbAuthProviderType->addItem( tr( "Username/Password" ), QVariant( QgsAuthType::Basic ) );
 
 #ifdef QT_NO_OPENSSL
-  stkwProviderType->removeWidget( pagePkiPaths );
+    stkwProviderType->removeWidget( pagePkiPaths );
 #else
-  cmbAuthProviderType->addItem( tr( "PKI PEM/DER Certificate Paths" ), QVariant( QgsAuthType::PkiPaths ) );
-  cmbAuthProviderType->addItem( tr( "PKI PKCS#12 Certificate Bundle" ), QVariant( QgsAuthType::PkiPkcs12 ) );
+    cmbAuthProviderType->addItem( tr( "PKI PEM/DER Certificate Paths" ), QVariant( QgsAuthType::PkiPaths ) );
+    cmbAuthProviderType->addItem( tr( "PKI PKCS#12 Certificate Bundle" ), QVariant( QgsAuthType::PkiPkcs12 ) );
 #endif
 
-  connect( cmbAuthProviderType, SIGNAL( currentIndexChanged( int ) ),
-           stkwProviderType, SLOT( setCurrentIndex( int ) ) );
-  connect( stkwProviderType, SIGNAL( currentChanged( int ) ),
-           cmbAuthProviderType, SLOT( setCurrentIndex( int ) ) );
+    connect( cmbAuthProviderType, SIGNAL( currentIndexChanged( int ) ),
+             stkwProviderType, SLOT( setCurrentIndex( int ) ) );
+    connect( stkwProviderType, SIGNAL( currentChanged( int ) ),
+             cmbAuthProviderType, SLOT( setCurrentIndex( int ) ) );
 
-  connect( cmbAuthProviderType, SIGNAL( currentIndexChanged( int ) ),
-           this, SLOT( validateAuth() ) );
-  connect( stkwProviderType, SIGNAL( currentChanged( int ) ),
-           this, SLOT( validateAuth() ) );
+    connect( cmbAuthProviderType, SIGNAL( currentIndexChanged( int ) ),
+             this, SLOT( validateAuth() ) );
+    connect( stkwProviderType, SIGNAL( currentChanged( int ) ),
+             this, SLOT( validateAuth() ) );
 
-  cmbAuthProviderType->setCurrentIndex( 0 );
-  stkwProviderType->setCurrentIndex( 0 );
+    cmbAuthProviderType->setCurrentIndex( 0 );
+    stkwProviderType->setCurrentIndex( 0 );
 
-  loadConfig();
-  validateAuth();
+    loadConfig();
+    validateAuth();
 
-  leName->setFocus();
+    leName->setFocus();
+  }
 }
 
 QgsAuthConfigWidget::~QgsAuthConfigWidget()
@@ -69,12 +102,12 @@ QgsAuthConfigWidget::~QgsAuthConfigWidget()
 
 void QgsAuthConfigWidget::loadConfig()
 {
-  if ( mAuthId.isEmpty() )
+  if ( mAuthCfg.isEmpty() )
     return;
 
-  QgsAuthType::ProviderType authtype = QgsAuthManager::instance()->configProviderType( mAuthId );
+  QgsAuthType::ProviderType authtype = QgsAuthManager::instance()->configProviderType( mAuthCfg );
 
-  qDebug( "Loading auth id: %s", mAuthId.toAscii().constData() );
+  qDebug( "Loading auth id: %s", mAuthCfg.toAscii().constData() );
   qDebug( "Loading auth type: %s", QgsAuthType::typeToString( authtype ).toAscii().constData() );
 
   if ( authtype == QgsAuthType::None || authtype == QgsAuthType::Unknown )
@@ -93,13 +126,13 @@ void QgsAuthConfigWidget::loadConfig()
   if ( authtype == QgsAuthType::Basic )
   {
     QgsAuthConfigBasic configbasic;
-    if ( QgsAuthManager::instance()->loadAuthenticationConfig( mAuthId, configbasic, true ) )
+    if ( QgsAuthManager::instance()->loadAuthenticationConfig( mAuthCfg, configbasic, true ) )
     {
       if ( configbasic.isValid() && configbasic.type() != QgsAuthType::Unknown )
       {
         leName->setText( configbasic.name() );
         leResource->setText( configbasic.uri() );
-        leAuthId->setText( configbasic.id() );
+        leAuthCfg->setText( configbasic.id() );
 
         leBasicUsername->setText( configbasic.username() );
         leBasicPassword->setText( configbasic.password() );
@@ -112,47 +145,47 @@ void QgsAuthConfigWidget::loadConfig()
   {
     stkwProviderType->setCurrentIndex( stkwProviderType->indexOf( pagePkiPaths ) );
     QgsAuthConfigPkiPaths configpki;
-    if ( QgsAuthManager::instance()->loadAuthenticationConfig( mAuthId, configpki, true ) )
+    if ( QgsAuthManager::instance()->loadAuthenticationConfig( mAuthCfg, configpki, true ) )
     {
       if ( configpki.isValid() && configpki.type() != QgsAuthType::Unknown )
       {
         leName->setText( configpki.name() );
         leResource->setText( configpki.uri() );
-        leAuthId->setText( configpki.id() );
+        leAuthCfg->setText( configpki.id() );
 
         lePkiPathsCert->setText( configpki.certId() );
         lePkiPathsKey->setText( configpki.keyId() );
         lePkiPathsKeyPass->setText( configpki.keyPassphrase() );
-        lePkiPathsIssuer->setText( configpki.issuerId() );
-        chkPkiPathsIssuerSelf->setChecked( configpki.issuerSelfSigned() );
+        lePkiPathsCaCerts->setText( configpki.caCertsId() );
+        chkPkiPathsIgnoreSelf->setChecked( configpki.ignoreSelfSigned() );
       }
       //qDebug( configpki.certAsPem().toAscii().constData() );
       //qDebug( configpki.keyAsPem( false ).first().toAscii().constData() );
       //qDebug( configpki.keyAsPem( true ).first().toAscii().constData() );
-      //qDebug( configpki.issuerAsPem().toAscii().constData() );
+      //qDebug( configpki.caCertsAsPem().toAscii().constData() );
     }
   }
   else if ( authtype == QgsAuthType::PkiPkcs12 )
   {
     stkwProviderType->setCurrentIndex( stkwProviderType->indexOf( pagePkiPkcs12 ) );
     QgsAuthConfigPkiPkcs12 configpkcs;
-    if ( QgsAuthManager::instance()->loadAuthenticationConfig( mAuthId, configpkcs, true ) )
+    if ( QgsAuthManager::instance()->loadAuthenticationConfig( mAuthCfg, configpkcs, true ) )
     {
       if ( configpkcs.isValid() && configpkcs.type() != QgsAuthType::Unknown )
       {
         leName->setText( configpkcs.name() );
         leResource->setText( configpkcs.uri() );
-        leAuthId->setText( configpkcs.id() );
+        leAuthCfg->setText( configpkcs.id() );
 
         lePkiPkcs12Bundle->setText( configpkcs.bundlePath() );
         lePkiPkcs12KeyPass->setText( configpkcs.bundlePassphrase() );
-        lePkiPkcs12Issuer->setText( configpkcs.issuerPath() );
-        chkPkiPkcs12IssuerSelf->setChecked( configpkcs.issuerSelfSigned() );
+        lePkiPkcs12CaCerts->setText( configpkcs.caCertsPath() );
+        chkPkiPkcs12IgnoreSelf->setChecked( configpkcs.ignoreSelfSigned() );
       }
       //qDebug( configpkcs.certAsPem().toAscii().constData() );
       //qDebug( configpkcs.keyAsPem( false ).first().toAscii().constData() );
       //qDebug( configpkcs.keyAsPem( true ).first().toAscii().constData() );
-      //qDebug( configpkcs.issuerAsPem().toAscii().constData() );
+      //qDebug( configpkcs.caCertsAsPem().toAscii().constData() );
     }
   }
 #endif
@@ -181,20 +214,20 @@ void QgsAuthConfigWidget::saveConfig()
     configbasic.setPassword( leBasicPassword->text() );
     configbasic.setRealm( leBasicRealm->text() );
 
-    if ( !mAuthId.isEmpty() ) // update
+    if ( !mAuthCfg.isEmpty() ) // update
     {
-      configbasic.setId( mAuthId );
+      configbasic.setId( mAuthCfg );
       if ( QgsAuthManager::instance()->updateAuthenticationConfig( configbasic ) )
       {
-        emit authenticationConfigUpdated( mAuthId );
+        emit authenticationConfigUpdated( mAuthCfg );
       }
     }
     else // create new
     {
       if ( QgsAuthManager::instance()->storeAuthenticationConfig( configbasic ) )
       {
-        mAuthId = configbasic.id();
-        emit authenticationConfigStored( mAuthId );
+        mAuthCfg = configbasic.id();
+        emit authenticationConfigStored( mAuthCfg );
       }
     }
   }
@@ -208,23 +241,23 @@ void QgsAuthConfigWidget::saveConfig()
     configpki.setCertId( lePkiPathsCert->text() );
     configpki.setKeyId( lePkiPathsKey->text() );
     configpki.setKeyPassphrase( lePkiPathsKeyPass->text() );
-    configpki.setIssuerId( lePkiPathsIssuer->text() );
-    configpki.setIssuerSelfSigned( chkPkiPathsIssuerSelf->isChecked() );
+    configpki.setCaCertsId( lePkiPathsCaCerts->text() );
+    configpki.setIgnoreSelfSigned( chkPkiPathsIgnoreSelf->isChecked() );
 
-    if ( !mAuthId.isEmpty() ) // update
+    if ( !mAuthCfg.isEmpty() ) // update
     {
-      configpki.setId( mAuthId );
+      configpki.setId( mAuthCfg );
       if ( QgsAuthManager::instance()->updateAuthenticationConfig( configpki ) )
       {
-        emit authenticationConfigUpdated( mAuthId );
+        emit authenticationConfigUpdated( mAuthCfg );
       }
     }
     else // create new
     {
       if ( QgsAuthManager::instance()->storeAuthenticationConfig( configpki ) )
       {
-        mAuthId = configpki.id();
-        emit authenticationConfigStored( mAuthId );
+        mAuthCfg = configpki.id();
+        emit authenticationConfigStored( mAuthCfg );
       }
     }
   }
@@ -236,23 +269,23 @@ void QgsAuthConfigWidget::saveConfig()
 
     configpkcs.setBundlePath( lePkiPkcs12Bundle->text() );
     configpkcs.setBundlePassphrase( lePkiPkcs12KeyPass->text() );
-    configpkcs.setIssuerPath( lePkiPkcs12Issuer->text() );
-    configpkcs.setIssuerSelfSigned( chkPkiPkcs12IssuerSelf->isChecked() );
+    configpkcs.setCaCertsPath( lePkiPkcs12CaCerts->text() );
+    configpkcs.setIgnoreSelfSigned( chkPkiPkcs12IgnoreSelf->isChecked() );
 
-    if ( !mAuthId.isEmpty() ) // update
+    if ( !mAuthCfg.isEmpty() ) // update
     {
-      configpkcs.setId( mAuthId );
+      configpkcs.setId( mAuthCfg );
       if ( QgsAuthManager::instance()->updateAuthenticationConfig( configpkcs ) )
       {
-        emit authenticationConfigUpdated( mAuthId );
+        emit authenticationConfigUpdated( mAuthCfg );
       }
     }
     else // create new
     {
       if ( QgsAuthManager::instance()->storeAuthenticationConfig( configpkcs ) )
       {
-        mAuthId = configpkcs.id();
-        emit authenticationConfigStored( mAuthId );
+        mAuthCfg = configpkcs.id();
+        emit authenticationConfigStored( mAuthCfg );
       }
     }
   }
@@ -285,7 +318,7 @@ void QgsAuthConfigWidget::clearAll()
 {
   leName->clear();
   leResource->clear();
-  leAuthId->clear();
+  leAuthCfg->clear();
 
   // basic
   clearAuthBasic();
@@ -434,8 +467,8 @@ void QgsAuthConfigWidget::clearPkiPathsCert()
   clearPkiPathsCertId();
   clearPkiPathsKeyId();
   clearPkiPathsKeyPassphrase();
-  clearPkiPathsIssuerId();
-  clearPkiPathsIssuerSelfSigned();
+  clearPkiPathsCaCertsId();
+  clearPkiPathsIgnoreSelfSigned();
 
   clearPkiMessage( lePkiPathsMsg );
   validateAuth();
@@ -459,15 +492,15 @@ void QgsAuthConfigWidget::clearPkiPathsKeyPassphrase()
   lePkiPathsKeyPass->setStyleSheet( "" );
 }
 
-void QgsAuthConfigWidget::clearPkiPathsIssuerId()
+void QgsAuthConfigWidget::clearPkiPathsCaCertsId()
 {
-  lePkiPathsIssuer->clear();
-  lePkiPathsIssuer->setStyleSheet( "" );
+  lePkiPathsCaCerts->clear();
+  lePkiPathsCaCerts->setStyleSheet( "" );
 }
 
-void QgsAuthConfigWidget::clearPkiPathsIssuerSelfSigned()
+void QgsAuthConfigWidget::clearPkiPathsIgnoreSelfSigned()
 {
-  chkPkiPathsIssuerSelf->setChecked( false );
+  chkPkiPathsIgnoreSelf->setChecked( false );
 }
 
 bool QgsAuthConfigWidget::validatePkiPaths()
@@ -482,16 +515,16 @@ bool QgsAuthConfigWidget::validatePkiPaths()
   bool keyfound = QFile::exists( keypath );
 
   // optional, but if set and missing, flag it
-  QString issuerpath( lePkiPathsIssuer->text() );
-  bool issuerfound = true;
-  if ( !issuerpath.isEmpty() )
-    issuerfound = QFile::exists( issuerpath );
+  QString cacertspath( lePkiPathsCaCerts->text() );
+  bool cacertsfound = true;
+  if ( !cacertspath.isEmpty() )
+    cacertsfound = QFile::exists( cacertspath );
 
   fileFound( certpath.isEmpty() || certfound, lePkiPathsCert );
   fileFound( keypath.isEmpty() || keyfound, lePkiPathsKey );
-  fileFound( issuerpath.isEmpty() || issuerfound, lePkiPathsIssuer );
+  fileFound( cacertspath.isEmpty() || cacertsfound, lePkiPathsCaCerts );
 
-  if ( !certfound || !keyfound || !issuerfound )
+  if ( !certfound || !keyfound || !cacertsfound )
   {
     writePkiMessage( lePkiPathsMsg, tr( "Missing components" ), Invalid );
     return false;
@@ -527,6 +560,12 @@ bool QgsAuthConfigWidget::validatePkiPaths()
     return false;
   }
 
+  if ( cert.isNull() )
+  {
+    writePkiMessage( lePkiPathsMsg, tr( "Failed to load certificate from file" ), Invalid );
+    return false;
+  }
+
   certvalid = cert.isValid();
   QDateTime startdate( cert.effectiveDate() );
   QDateTime enddate( cert.expiryDate() );
@@ -545,7 +584,7 @@ void QgsAuthConfigWidget::on_chkPkiPathsPassShow_stateChanged( int state )
 
 void QgsAuthConfigWidget::on_btnPkiPathsCert_clicked()
 {
-  const QString& fn = getOpenFileName( tr( "Open Client Certificate File" ),  tr( "PEM (*.pem);;DER (*.cer *.crt *.der)" ) );
+  const QString& fn = getOpenFileName( tr( "Open Client Certificate File" ),  tr( "PEM (*.pem);;DER (*.der)" ) );
   if ( !fn.isEmpty() )
   {
     lePkiPathsCert->setText( fn );
@@ -563,12 +602,12 @@ void QgsAuthConfigWidget::on_btnPkiPathsKey_clicked()
   }
 }
 
-void QgsAuthConfigWidget::on_btnPkiPathsIssuer_clicked()
+void QgsAuthConfigWidget::on_btnPkiPathsCaCerts_clicked()
 {
-  const QString& fn = getOpenFileName( tr( "Open Issuer Certificate File" ),  tr( "PEM (*.pem);;DER (*.cer *.crt *.der)" ) );
+  const QString& fn = getOpenFileName( tr( "Open CA Certificate(s) File" ),  tr( "PEM (*.pem);;DER (*.der)" ) );
   if ( !fn.isEmpty() )
   {
-    lePkiPathsIssuer->setText( fn );
+    lePkiPathsCaCerts->setText( fn );
     validateAuth();
   }
 }
@@ -581,8 +620,8 @@ void QgsAuthConfigWidget::clearPkiPkcs12Bundle()
 {
   clearPkiPkcs12BundlePath();
   clearPkiPkcs12KeyPassphrase();
-  clearPkiPkcs12IssuerPath();
-  clearPkiPkcs12IssuerSelfSigned();
+  clearPkiPkcs12CaCertsPath();
+  clearPkiPkcs12IgnoreSelfSigned();
 
   clearPkiMessage( lePkiPkcs12Msg );
   validateAuth();
@@ -601,15 +640,15 @@ void QgsAuthConfigWidget::clearPkiPkcs12KeyPassphrase()
   lePkiPkcs12KeyPass->setPlaceholderText( QString( "Optional passphrase" ) );
 }
 
-void QgsAuthConfigWidget::clearPkiPkcs12IssuerPath()
+void QgsAuthConfigWidget::clearPkiPkcs12CaCertsPath()
 {
-  lePkiPkcs12Issuer->clear();
-  lePkiPkcs12Issuer->setStyleSheet( "" );
+  lePkiPkcs12CaCerts->clear();
+  lePkiPkcs12CaCerts->setStyleSheet( "" );
 }
 
-void QgsAuthConfigWidget::clearPkiPkcs12IssuerSelfSigned()
+void QgsAuthConfigWidget::clearPkiPkcs12IgnoreSelfSigned()
 {
-  chkPkiPkcs12IssuerSelf->setChecked( false );
+  chkPkiPkcs12IgnoreSelf->setChecked( false );
 }
 
 bool QgsAuthConfigWidget::validatePkiPkcs12()
@@ -620,15 +659,15 @@ bool QgsAuthConfigWidget::validatePkiPkcs12()
   bool bundlefound = QFile::exists( bundlepath );
 
   // optional, but if set and missing, flag it
-  QString issuerpath( lePkiPkcs12Issuer->text() );
-  bool issuerfound = true;
-  if ( !issuerpath.isEmpty() )
-    issuerfound = QFile::exists( issuerpath );
+  QString cacertspath( lePkiPkcs12CaCerts->text() );
+  bool cacertsfound = true;
+  if ( !cacertspath.isEmpty() )
+    cacertsfound = QFile::exists( cacertspath );
 
   fileFound( bundlepath.isEmpty() || bundlefound, lePkiPkcs12Bundle );
-  fileFound( issuerpath.isEmpty() || issuerfound, lePkiPkcs12Issuer );
+  fileFound( cacertspath.isEmpty() || cacertsfound, lePkiPkcs12CaCerts );
 
-  if ( !bundlefound || !issuerfound )
+  if ( !bundlefound || !cacertsfound )
   {
     writePkiMessage( lePkiPkcs12Msg, tr( "Missing components" ), Invalid );
     return false;
@@ -713,12 +752,12 @@ void QgsAuthConfigWidget::on_btnPkiPkcs12Bundle_clicked()
   }
 }
 
-void QgsAuthConfigWidget::on_btnPkiPkcs12Issuer_clicked()
+void QgsAuthConfigWidget::on_btnPkiPkcs12CaCerts_clicked()
 {
-  const QString& fn = getOpenFileName( tr( "Open Issuer Certificate File" ),  tr( "PEM (*.pem);;DER (*.cer *.crt *.der)" ) );
+  const QString& fn = getOpenFileName( tr( "Open CA Certificate(s) File" ),  tr( "PEM (*.pem);;DER (*.der)" ) );
   if ( !fn.isEmpty() )
   {
-    lePkiPkcs12Issuer->setText( fn );
+    lePkiPkcs12CaCerts->setText( fn );
     validateAuth();
   }
 }

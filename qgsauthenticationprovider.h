@@ -1,3 +1,19 @@
+/***************************************************************************
+    qgsauthenticationprovider.h
+    ---------------------
+    begin                : October 5, 2014
+    copyright            : (C) 2014 by Boundless Spatial, Inc. USA
+    author               : Larry Shaffer
+    email                : lshaffer at boundlessgeo dot com
+ ***************************************************************************
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ ***************************************************************************/
+
 #ifndef QGSAUTHENTICATIONPROVIDER_H
 #define QGSAUTHENTICATIONPROVIDER_H
 
@@ -13,7 +29,11 @@
 
 #include "qgsauthenticationconfig.h"
 
-class QgsAuthProvider
+/** \ingroup core
+ * \brief Base authentication provider class (not meant to be directly used)
+ * \since 2.8
+ */
+class CORE_EXPORT QgsAuthProvider
 {
 
   public:
@@ -22,18 +42,16 @@ class QgsAuthProvider
 
     virtual ~QgsAuthProvider();
 
-    void QgsDebugMsg( const char* msg ) {  qDebug( msg ); }
-
     QgsAuthType::ProviderType providerType() const { return mType; }
     void setProviderType( QgsAuthType::ProviderType ptype ) { mType = ptype; }
 
     static bool urlToResource( const QString& accessurl, QString *resource, bool withpath = false );
 
-    virtual void updateNetworkRequest( QNetworkRequest &request, const QString& authid ) = 0;
+    virtual bool updateNetworkRequest( QNetworkRequest &request, const QString& authcfg ) = 0;
 
-    virtual void updateNetworkReply( QNetworkReply *reply, const QString& authid ) = 0;
+    virtual bool updateNetworkReply( QNetworkReply *reply, const QString& authcfg ) = 0;
 
-    virtual void clearCachedConfig( const QString& authid ) = 0;
+    virtual void clearCachedConfig( const QString& authcfg ) = 0;
 
   protected:
     static const QString authProviderTag() { return QObject::tr( "Authentication provider" ); }
@@ -42,8 +60,11 @@ class QgsAuthProvider
     QgsAuthType::ProviderType mType;
 };
 
-
-class QgsAuthProviderBasic : public QgsAuthProvider
+/** \ingroup core
+ * \brief Basic username/password authentication provider class
+ * \since 2.8
+ */
+class CORE_EXPORT QgsAuthProviderBasic : public QgsAuthProvider
 {
   public:
     QgsAuthProviderBasic();
@@ -51,38 +72,35 @@ class QgsAuthProviderBasic : public QgsAuthProvider
     ~QgsAuthProviderBasic();
 
     // QgsAuthProvider interface
-    void updateNetworkRequest( QNetworkRequest &request, const QString &authid );
-    void updateNetworkReply( QNetworkReply *reply, const QString &authid );
-    void clearCachedConfig( const QString& authid );
+    bool updateNetworkRequest( QNetworkRequest &request, const QString &authcfg );
+    bool updateNetworkReply( QNetworkReply *reply, const QString &authcfg );
+    void clearCachedConfig( const QString& authcfg );
 
   private:
 
-    QgsAuthConfigBasic getAuthBasicConfig( const QString& authid );
+    QgsAuthConfigBasic getAuthBasicConfig( const QString& authcfg );
 
-    void putAuthBasicConfig( const QString& authid, QgsAuthConfigBasic config );
+    void putAuthBasicConfig( const QString& authcfg, QgsAuthConfigBasic config );
 
-    void removeAuthBasicConfig( const QString& authid );
+    void removeAuthBasicConfig( const QString& authcfg );
 
     static QMap<QString, QgsAuthConfigBasic> mAuthBasicCache;
 };
 
 
 #ifndef QT_NO_OPENSSL
-/**
- * @class QgsPkiBundle
- * @ingroup core
- * @brief Storage set for constructed SSL certificate, key and optional certificate issuer
- * @since 2.6
+/** \ingroup core
+ * \brief Storage set for constructed SSL certificate, key and optional CA certificates
+ * \since 2.6
  */
-
-class QgsPkiBundle
+class CORE_EXPORT QgsPkiBundle
 {
   public:
     QgsPkiBundle( const QgsAuthConfigPkiPaths& config,
                   const QSslCertificate& cert,
                   const QSslKey& certkey,
-                  const QSslCertificate& issuer = QSslCertificate(),
-                  bool issuerSeflSigned = false );
+                  const QList<QSslCertificate>& cacerts = QList<QSslCertificate>(),
+                  bool ignoreSeflSigned = false );
     ~QgsPkiBundle();
 
     bool isValid();
@@ -96,22 +114,25 @@ class QgsPkiBundle
     const QSslKey clientCertKey() const { return mCertKey; }
     void setClientCertKey( const QSslKey& certkey ) { mCertKey = certkey; }
 
-    const QSslCertificate issuerCert() const { return mIssuer; }
-    void setIssuerCert( const QSslCertificate& issuer ) { mIssuer = issuer; }
+    const QList<QSslCertificate> caCerts() const { return mCaCerts; }
+    void setCaCerts( const QList<QSslCertificate>& cacerts ) { mCaCerts = cacerts; }
 
-    bool issuerSelfSigned() const { return mIssuerSelf; }
-    void setIssuerSelfSigned( bool selfsigned ) { mIssuerSelf = selfsigned; }
+    bool ignoreSelfSigned() const { return mIgnoreSelf; }
+    void setIgnoreSelfSigned( bool selfsigned ) { mIgnoreSelf = selfsigned; }
 
   private:
     QgsAuthConfigBase mConfig;
     QSslCertificate mCert;
     QSslKey mCertKey;
-    QSslCertificate mIssuer;
-    bool mIssuerSelf;
+    QList<QSslCertificate> mCaCerts;
+    bool mIgnoreSelf;
 };
 
-
-class QgsAuthProviderPkiPaths : public QgsAuthProvider
+/** \ingroup core
+ * \brief PKI (PEM/DER paths only) authentication provider class
+ * \since 2.8
+ */
+class CORE_EXPORT QgsAuthProviderPkiPaths : public QgsAuthProvider
 {
   public:
     QgsAuthProviderPkiPaths();
@@ -119,9 +140,9 @@ class QgsAuthProviderPkiPaths : public QgsAuthProvider
     virtual ~QgsAuthProviderPkiPaths();
 
     // QgsAuthProvider interface
-    void updateNetworkRequest( QNetworkRequest &request, const QString &authid );
-    void updateNetworkReply( QNetworkReply *reply, const QString &authid );
-    void clearCachedConfig( const QString& authid );
+    bool updateNetworkRequest( QNetworkRequest &request, const QString &authcfg );
+    bool updateNetworkReply( QNetworkReply *reply, const QString &authcfg );
+    void clearCachedConfig( const QString& authcfg );
 
     static const QByteArray certAsPem( const QString &certpath );
 
@@ -130,22 +151,29 @@ class QgsAuthProviderPkiPaths : public QgsAuthProvider
                                       QString *algtype = 0,
                                       bool reencrypt = true );
 
-    static const QByteArray issuerAsPem( const QString &issuerpath );
+    static const QList<QSslCertificate> caCerts( const QString &cacertspath );
+
+    static const QByteArray caCertsAsPem( const QString &cacertspath );
 
   protected:
 
-    virtual QgsPkiBundle * getPkiBundle( const QString &authid );
+    virtual QgsPkiBundle * getPkiBundle( const QString &authcfg );
 
-    virtual void putPkiBundle( const QString &authid, QgsPkiBundle * pkibundle );
+    virtual void putPkiBundle( const QString &authcfg, QgsPkiBundle * pkibundle );
 
-    virtual void removePkiBundle( const QString &authid );
+    virtual void removePkiBundle( const QString &authcfg );
 
   private:
 
     static QMap<QString, QgsPkiBundle *> mPkiBundleCache;
 };
 
-class QgsAuthProviderPkiPkcs12 : public QgsAuthProviderPkiPaths
+/** \ingroup core
+ * \brief PKI (.p12/.pfx and CA paths only) authentication provider class
+ * \note Since this uses QCA's PKCS#12 support, signing CAs in the user's root OS cert store will also be queried.
+ * \since 2.8
+ */
+class CORE_EXPORT QgsAuthProviderPkiPkcs12 : public QgsAuthProviderPkiPaths
 {
   public:
     QgsAuthProviderPkiPkcs12();
@@ -156,11 +184,11 @@ class QgsAuthProviderPkiPkcs12 : public QgsAuthProviderPkiPaths
 
     static const QString keyAsPem( const QString &bundlepath, const QString &bundlepass, bool reencrypt = true );
 
-    static const QString issuerAsPem( const QString &bundlepath, const QString &bundlepass, const QString &issuerpath );
+    static const QString caCertsAsPem( const QString &bundlepath, const QString &bundlepass, const QString &cacertspath );
 
   protected:
 
-    QgsPkiBundle * getPkiBundle( const QString &authid );
+    QgsPkiBundle * getPkiBundle( const QString &authcfg );
 
   private:
 

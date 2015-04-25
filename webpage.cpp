@@ -42,6 +42,7 @@
 
 WebPage::WebPage( QWidget *parent )
     : QDialog( parent )
+    , mPage( 0 )
     , mNaMan( 0 )
     , mReply( 0 )
     , mLoaded( false )
@@ -55,6 +56,7 @@ WebPage::WebPage( QWidget *parent )
   urlList << "http://localhost"
   << QString( "http://localhost:8080" )
   << QString( "https://localhost:8443" )
+  << QString( "https://localhost:8443/geoserver/web/" )
   << QString( "http://www.google.com" )
   << QString( "https://localhost:8443/geoserver/opengeo/wms?service=WMS&version=1.1.0"
               "&request=GetMap&layers=opengeo:countries&styles=&bbox=-180.0,-90.0,180.0,90.0"
@@ -62,13 +64,7 @@ WebPage::WebPage( QWidget *parent )
 
   comboBox->addItems( urlList );
 
-  mNaMan = webView->page()->networkAccessManager();
-
-  connect( mNaMan, SIGNAL( finished( QNetworkReply* ) ), this, SLOT( requestReply( QNetworkReply* ) ) );
-  connect(
-    mNaMan, SIGNAL( sslErrors( QNetworkReply*, const QList<QSslError>& ) ),
-    this, SLOT( onSslErrors( QNetworkReply*, const QList<QSslError>& ) )
-  );
+  setWebPage();
 
   connect( webView, SIGNAL( linkClicked( QUrl ) ), this, SLOT( loadUrl( QUrl ) ) );
   connect( webView, SIGNAL( urlChanged( QUrl ) ), this, SLOT( setLocation( QUrl ) ) );
@@ -152,7 +148,8 @@ void WebPage::loadUrl( const QUrl& url )
 
   //webView->load( req ); // hey, why doesn't this work? doesn't pass ssl cert/key
 
-  delete mReply;
+  if ( mReply )
+    mReply->deleteLater();
   mReply = 0;
 
   mReply = mNaMan->get( req );
@@ -170,6 +167,21 @@ void WebPage::loadReply()
 {
   QUrl url( mReply->url() );
   webView->setContent( mReply->readAll(), QString(), url );
+}
+
+void WebPage::setWebPage()
+{
+  mNaMan->deleteLater();
+  mPage = new QWebPage( this );
+  webView->setPage( mPage );
+
+  mNaMan = mPage->networkAccessManager();
+
+  connect( mNaMan, SIGNAL( finished( QNetworkReply* ) ), this, SLOT( requestReply( QNetworkReply* ) ) );
+  connect(
+    mNaMan, SIGNAL( sslErrors( QNetworkReply*, const QList<QSslError>& ) ),
+    this, SLOT( onSslErrors( QNetworkReply*, const QList<QSslError>& ) )
+  );
 }
 
 void WebPage::clearWebView()
@@ -202,6 +214,12 @@ void WebPage::onSslErrors( QNetworkReply* reply, const QList<QSslError>& errors 
   appendLog( msg );
 }
 
+void WebPage::on_btnResetWebView_clicked()
+{
+  setWebPage();
+  loadUrl();
+}
+
 void WebPage::on_btnAuthEditor_clicked()
 {
   QDialog * dlg = new QDialog( 0 );
@@ -219,6 +237,7 @@ void WebPage::on_btnAuthEditor_clicked()
 
   dlg->setLayout( layout );
   dlg->setWindowModality( Qt::WindowModal );
+  dlg->resize(700, 500);
   dlg->exec();
 
 }

@@ -69,6 +69,13 @@
        </property>
       </widget>
      </item>
+     <item>
+      <widget class="QToolButton" name="btnResetWebView">
+       <property name="text">
+        <string>Reset WebView</string>
+       </property>
+      </widget>
+     </item>
     </layout>
    </item>
    <item>

@@ -1,3 +1,19 @@
+/***************************************************************************
+    qgsauthenticationconfigselect.cpp
+    ---------------------
+    begin                : October 5, 2014
+    copyright            : (C) 2014 by Boundless Spatial, Inc. USA
+    author               : Larry Shaffer
+    email                : lshaffer at boundlessgeo dot com
+ ***************************************************************************
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ ***************************************************************************/
+
 #include "qgsauthenticationconfigselect.h"
 #include "ui_qgsauthenticationconfigselect.h"
 
@@ -8,18 +24,30 @@
 #include "qgsauthenticationmanager.h"
 #include "qgsauthenticationconfigwidget.h"
 
+
 QgsAuthConfigSelect::QgsAuthConfigSelect( QWidget *parent, bool keypasssupported )
     : QWidget( parent )
     , mKeyPassSupported( keypasssupported )
     , mConfigId( QString() )
     , mConfigs( QHash<QString, QgsAuthConfigBase>() )
+    , mAuthNotifyLayout( 0 )
+    , mAuthNotify( 0 )
 {
-  setupUi( this );
+  if ( QgsAuthManager::instance()->isDisabled() )
+  {
+    mAuthNotifyLayout = new QVBoxLayout;
+    this->setLayout( mAuthNotifyLayout );
+    mAuthNotify = new QLabel( QgsAuthManager::instance()->disabledMessage(), this );
+    mAuthNotifyLayout->addWidget( mAuthNotify );
+  }
+  else
+  {
+    setupUi( this );
+    lblPassUnsupported->setVisible( !mKeyPassSupported );
 
-  lblPassUnsupported->setVisible( !mKeyPassSupported );
-
-  clearConfig();
-  populateConfigSelector();
+    clearConfig();
+    populateConfigSelector();
+  }
 }
 
 QgsAuthConfigSelect::~QgsAuthConfigSelect()
@@ -28,16 +56,27 @@ QgsAuthConfigSelect::~QgsAuthConfigSelect()
 
 void QgsAuthConfigSelect::setKeyPassSupported( bool supported )
 {
-  mKeyPassSupported = supported;
-  lblPassUnsupported->setVisible( !mKeyPassSupported );
+  if ( !QgsAuthManager::instance()->isDisabled() )
+  {
+    mKeyPassSupported = supported;
+    lblPassUnsupported->setVisible( !mKeyPassSupported );
+  }
 }
 
-void QgsAuthConfigSelect::setConfigId( const QString& authid )
+void QgsAuthConfigSelect::setConfigId( const QString& authcfg )
 {
-  if ( mConfigId != authid )
-    mConfigId = authid;
-  populateConfigSelector();
-  loadConfig();
+  if ( QgsAuthManager::instance()->isDisabled() && mAuthNotify )
+  {
+    mAuthNotify->setText( QgsAuthManager::instance()->disabledMessage() + "\n\n" +
+                          tr( "Authentication config id not loaded: %1" ).arg( authcfg ) );
+  }
+  else
+  {
+    if ( mConfigId != authcfg )
+      mConfigId = authcfg;
+    populateConfigSelector();
+    loadConfig();
+  }
 }
 
 void QgsAuthConfigSelect::loadConfig()
@@ -103,8 +142,8 @@ void QgsAuthConfigSelect::loadAvailableConfigs()
 
 void QgsAuthConfigSelect::on_cmbConfigSelect_currentIndexChanged( int index )
 {
-  QString authid = cmbConfigSelect->itemData( index ).toString();
-  mConfigId = ( !authid.isEmpty() && authid != QString( "0" ) ) ? authid : QString();
+  QString authcfg = cmbConfigSelect->itemData( index ).toString();
+  mConfigId = ( !authcfg.isEmpty() && authcfg != QString( "0" ) ) ? authcfg : QString();
   loadConfig();
 }
 

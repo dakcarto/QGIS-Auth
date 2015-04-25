@@ -1,3 +1,19 @@
+/***************************************************************************
+    qgsauthenticationconfigselect.h
+    ---------------------
+    begin                : October 5, 2014
+    copyright            : (C) 2014 by Boundless Spatial, Inc. USA
+    author               : Larry Shaffer
+    email                : lshaffer at boundlessgeo dot com
+ ***************************************************************************
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ ***************************************************************************/
+
 #ifndef QGSAUTHENTICATIONCONFIGSELECT_H
 #define QGSAUTHENTICATIONCONFIGSELECT_H
 
@@ -6,18 +22,34 @@
 #include "ui_qgsauthenticationconfigselect.h"
 #include "qgsauthenticationconfig.h"
 
-class QgsAuthConfigSelect : public QWidget, private Ui::QgsAuthConfigSelect
+/** \ingroup gui
+ * Selector widget for authentication configs
+ * \since 2.8
+ */
+class GUI_EXPORT QgsAuthConfigSelect : public QWidget, private Ui::QgsAuthConfigSelect
 {
     Q_OBJECT
 
   public:
+    /**
+     * Create a dialog for setting an associated authentication config, either
+     * from existing configs, or creating/removing them from auth database
+     *
+     * @param keypasssupported  Whether the auth connection is capable of supporting PKI private key passphrases
+     */
     explicit QgsAuthConfigSelect( QWidget *parent = 0, bool keypasssupported = true );
     ~QgsAuthConfigSelect();
 
+    /** Set whether PKI private key passphrases are supported */
     void setKeyPassSupported( bool supported );
+
+    /** Get whether PKI private key passphrases are supported */
     bool keyPassSupported() const { return mKeyPassSupported; }
 
-    void setConfigId( const QString& authid );
+    /** Set the authentication config id for the resource */
+    void setConfigId( const QString& authcfg );
+
+    /** Get the authentication config id for the resource */
     const QString configId() const { return mConfigId; }
 
   private slots:
@@ -40,6 +72,9 @@ class QgsAuthConfigSelect : public QWidget, private Ui::QgsAuthConfigSelect
     bool mKeyPassSupported;
     QString mConfigId;
     QHash<QString, QgsAuthConfigBase> mConfigs;
+
+    QVBoxLayout *mAuthNotifyLayout;
+    QLabel *mAuthNotify;
 };
 
 #endif // QGSAUTHENTICATIONCONFIGSELECT_H

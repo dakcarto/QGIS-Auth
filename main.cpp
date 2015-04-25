@@ -11,6 +11,7 @@ int main( int argc, char *argv[] )
   mWebPage->show();
   mWebPage->raise();
   mWebPage->activateWindow();
+  mWebPage->resize(1000, 800);
 
   return a.exec();
 }

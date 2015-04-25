@@ -14,6 +14,10 @@ TEMPLATE = app
 DEPENDPATH += . src
 INCLUDEPATH += . src
 
+DEFINES += CORE_EXPORT=""
+DEFINES += GUI_EXPORT=""
+DEFINES += QGISDEBUG
+
 win32 {
     INCLUDEPATH += $(OSGEO4W_ROOT)/include
     #LIBS += -L$(OSGEO4W_ROOT)/lib -lqca
@@ -22,22 +26,25 @@ win32 {
 mac {
     QMAKE_MACOSX_DEPLOYMENT_TARGET = 10.7
     INCLUDEPATH += $(HOMEBREW_PREFIX)/include
-    INCLUDEPATH += $(HOMEBREW_PREFIX)/opt/qca/include/QtCrypto
-    LIBS += -L$(HOMEBREW_PREFIX)/opt/qca/lib -lqca
+    INCLUDEPATH += $(HOMEBREW_PREFIX)/opt/qca/lib/qca.framework/Headers
+    LIBS += -F$(HOMEBREW_PREFIX)/opt/qca/lib -framework qca
     QMAKE_CXXFLAGS += -isystem $(HOMEBREW_PREFIX)/include
     QMAKE_CFLAGS += -Wno-error=format-security
 }
 
-CONFIG += release
+CONFIG += debug
 
 SOURCES += \
     main.cpp \
     webpage.cpp \
     testwidget.cpp \
-    qgsauthenticationmanager.cpp \
     qgsapplication.cpp \
-    qgsauthenticationconfig.cpp \
     qgscredentials.cpp \
+    qgslogger.cpp \
+    qgsmessagebar.cpp \
+    qgsmessagebaritem.cpp \
+    qgsauthenticationmanager.cpp \
+    qgsauthenticationconfig.cpp \
     qgsauthenticationcrypto.cpp \
     qgsauthenticationprovider.cpp \
     qgsauthenticationconfigwidget.cpp \
@@ -48,10 +55,15 @@ SOURCES += \
 HEADERS += \
     webpage.h \
     testwidget.h \
-    qgsauthenticationmanager.h \
+    qgsconfig.h \
+    qgssingleton.h \
     qgsapplication.h \
-    qgsauthenticationconfig.h \
     qgscredentials.h \
+    qgslogger.h \
+    qgsmessagebar.h \
+    qgsmessagebaritem.h \
+    qgsauthenticationmanager.h \
+    qgsauthenticationconfig.h \
     qgsauthenticationcrypto.h \
     qgsauthenticationprovider.h \
     qgsauthenticationconfigwidget.h \

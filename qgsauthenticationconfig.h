@@ -1,3 +1,19 @@
+/***************************************************************************
+    qgsauthenticationconfig.h
+    ---------------------
+    begin                : October 5, 2014
+    copyright            : (C) 2014 by Boundless Spatial, Inc. USA
+    author               : Larry Shaffer
+    email                : lshaffer at boundlessgeo dot com
+ ***************************************************************************
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ ***************************************************************************/
+
 #ifndef QGSAUTHENTICATIONCONFIG_H
 #define QGSAUTHENTICATIONCONFIG_H
 
@@ -5,7 +21,7 @@
 #include <QString>
 
 
-class QgsAuthType
+class CORE_EXPORT QgsAuthType
 {
   public:
     enum ProviderType
@@ -33,7 +49,7 @@ class QgsAuthType
 /**
  * @brief Base class for configs
  */
-class QgsAuthConfigBase
+class CORE_EXPORT QgsAuthConfigBase
 {
   public:
 
@@ -78,7 +94,7 @@ class QgsAuthConfigBase
 };
 
 
-class QgsAuthConfigBasic: public QgsAuthConfigBase
+class CORE_EXPORT QgsAuthConfigBasic: public QgsAuthConfigBase
 {
   public:
     QgsAuthConfigBasic();
@@ -108,7 +124,7 @@ class QgsAuthConfigBasic: public QgsAuthConfigBase
     QString mPassword;
 };
 
-class QgsAuthConfigPkiPaths: public QgsAuthConfigBase
+class CORE_EXPORT QgsAuthConfigPkiPaths: public QgsAuthConfigBase
 {
   public:
     QgsAuthConfigPkiPaths();
@@ -127,17 +143,17 @@ class QgsAuthConfigPkiPaths: public QgsAuthConfigBase
     const QString keyPassphrase() const { return mKeyPass; }
     void setKeyPassphrase( const QString& passphrase ) { mKeyPass = passphrase; }
 
-    const QString issuerId() const { return mIssuerId; }
-    void setIssuerId( const QString& id ) { mIssuerId = id; }
+    const QString caCertsId() const { return mCaCertsId; }
+    void setCaCertsId( const QString& id ) { mCaCertsId = id; }
 
-    bool issuerSelfSigned() const { return mIssuerSelf; }
-    void setIssuerSelfSigned( bool selfsigned ) { mIssuerSelf = selfsigned; }
+    bool ignoreSelfSigned() const { return mIgnoreSelf; }
+    void setIgnoreSelfSigned( bool selfsigned ) { mIgnoreSelf = selfsigned; }
 
     const QString certAsPem() const;
 
     const QStringList keyAsPem( bool reencrypt = true ) const;
 
-    const QString issuerAsPem() const;
+    const QString caCertsAsPem() const;
 
     bool isValid( bool validateid = false ) const;
 
@@ -148,11 +164,11 @@ class QgsAuthConfigPkiPaths: public QgsAuthConfigBase
     QString mCertId;
     QString mKeyId;
     QString mKeyPass;
-    QString mIssuerId;
-    bool mIssuerSelf;
+    QString mCaCertsId;
+    bool mIgnoreSelf;
 };
 
-class QgsAuthConfigPkiPkcs12: public QgsAuthConfigBase
+class CORE_EXPORT QgsAuthConfigPkiPkcs12: public QgsAuthConfigBase
 {
   public:
     QgsAuthConfigPkiPkcs12();
@@ -168,17 +184,17 @@ class QgsAuthConfigPkiPkcs12: public QgsAuthConfigBase
     const QString bundlePassphrase() const { return mBundlePass; }
     void setBundlePassphrase( const QString& passphrase ) { mBundlePass = passphrase; }
 
-    const QString issuerPath() const { return mIssuerPath; }
-    void setIssuerPath( const QString& id ) { mIssuerPath = id; }
+    const QString caCertsPath() const { return mCaCertsPath; }
+    void setCaCertsPath( const QString& id ) { mCaCertsPath = id; }
 
-    bool issuerSelfSigned() const { return mIssuerSelf; }
-    void setIssuerSelfSigned( bool selfsigned ) { mIssuerSelf = selfsigned; }
+    bool ignoreSelfSigned() const { return mIgnoreSelf; }
+    void setIgnoreSelfSigned( bool selfsigned ) { mIgnoreSelf = selfsigned; }
 
     const QString certAsPem() const;
 
     const QStringList keyAsPem( bool reencrypt = true ) const;
 
-    const QString issuerAsPem() const;
+    const QString caCertsAsPem() const;
 
     bool isValid( bool validateid = false ) const;
 
@@ -188,8 +204,8 @@ class QgsAuthConfigPkiPkcs12: public QgsAuthConfigBase
   private:
     QString mBundlePath;
     QString mBundlePass;
-    QString mIssuerPath;
-    bool mIssuerSelf;
+    QString mCaCertsPath;
+    bool mIgnoreSelf;
 };
 
 #endif // QGSAUTHENTICATIONCONFIG_H

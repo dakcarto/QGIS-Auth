@@ -63,6 +63,7 @@ class WebPage : public QDialog, private Ui::WebPage
     void clearWebView();
     void clearLog();
 
+    void on_btnResetWebView_clicked();
     void on_btnAuthEditor_clicked();
     void on_btnAuthSelect_clicked();
     void on_btnAuthClearCached_clicked();
@@ -71,6 +72,7 @@ class WebPage : public QDialog, private Ui::WebPage
     void writeDebug( const QString& message, const QString& tag = QString(), MessageLevel level = INFO );
 
   private:
+    void setWebPage();
     void appendLog( const QString& msg );
     QSslCertificate certAuth();
     QSslCertificate clientCert();
@@ -78,6 +80,7 @@ class WebPage : public QDialog, private Ui::WebPage
     QList<QSslError> expectedSslErrors();
     QString pkiDir();
 
+    QWebPage *mPage;
     QNetworkAccessManager *mNaMan;
     QNetworkReply *mReply;
     bool mLoaded;

@@ -14,6 +14,7 @@ TestWidget::TestWidget( QWidget *parent )
     : QWidget( parent )
     , mSalt( QString() )
     , mHash( QString() )
+    , mCiv( "1c18c442b6723ee465bcbb60568412179fcc3313eb0187b4546ca96d869fbdc1" )
 {
   setupUi( this );
 
@@ -28,7 +29,7 @@ TestWidget::TestWidget( QWidget *parent )
   connect( QgsAuthManager::instance(), SIGNAL( masterPasswordVerified( bool ) ),
            this, SLOT( masterPasswordVerificationChanged( bool ) ) );
 
-  lePassword->setText( "mypassword" );
+  lePassword->setText( "password" );
 
   setButtonTexts();
 }
@@ -49,7 +50,7 @@ void TestWidget::on_teEncryptIn_textChanged()
   if ( !pass.isEmpty() && !in.isEmpty() )
   {
     teEncryptCrypt->setPlainText(
-      QgsAuthCrypto::encrypt( pass, in, "AES" ) );
+      QgsAuthCrypto::encrypt( pass, mCiv, in ) );
   }
 }
 
@@ -60,7 +61,7 @@ void TestWidget::on_teEncryptCrypt_textChanged()
   if ( !pass.isEmpty() && !crypt.isEmpty() )
   {
     teEncryptOut->setPlainText(
-      QgsAuthCrypto::decrypt( pass, crypt, "AES" ) );
+      QgsAuthCrypto::decrypt( pass, mCiv, crypt) );
   }
 }
 

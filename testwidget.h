@@ -27,6 +27,7 @@ class TestWidget : public QWidget, private Ui::TestWidget
   private:
     QString mSalt;
     QString mHash;
+    QString mCiv;
 };
 
 #endif // TESTWIDGET_H

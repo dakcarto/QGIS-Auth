@@ -1,3 +1,19 @@
+/***************************************************************************
+    qgsauthenticationconfigwidget.h
+    ---------------------
+    begin                : October 5, 2014
+    copyright            : (C) 2014 by Boundless Spatial, Inc. USA
+    author               : Larry Shaffer
+    email                : lshaffer at boundlessgeo dot com
+ ***************************************************************************
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ ***************************************************************************/
+
 #ifndef QGSAUTHENTICATIONCINFIGWIDGET_H
 #define QGSAUTHENTICATIONCINFIGWIDGET_H
 
@@ -6,8 +22,11 @@
 #include "ui_qgsauthenticationconfigwidget.h"
 #include "qgsauthenticationconfig.h"
 
-
-class QgsAuthConfigWidget : public QDialog, private Ui::QgsAuthConfigWidget
+/** \ingroup gui
+ * Widget for editing an authentication configuration
+ * \since 2.8
+ */
+class GUI_EXPORT QgsAuthConfigWidget : public QDialog, private Ui::QgsAuthConfigWidget
 {
     Q_OBJECT
 
@@ -19,14 +38,23 @@ class QgsAuthConfigWidget : public QDialog, private Ui::QgsAuthConfigWidget
       Unknown
     };
 
-    explicit QgsAuthConfigWidget( QWidget *parent = 0, const QString& authid = QString() );
+    /**
+     * Create a dialog for editing an authentication configuration
+     *
+     * @param authcfg  Authentication config id for a existing config in auth database
+     */
+    explicit QgsAuthConfigWidget( QWidget *parent = 0, const QString& authcfg = QString() );
     ~QgsAuthConfigWidget();
 
-    const QString configId() const { return mAuthId; }
+    /** Authentication config id, updated with generated id when a new config is saved to auth database */
+    const QString configId() const { return mAuthCfg; }
 
   signals:
-    void authenticationConfigStored( const QString& authid );
-    void authenticationConfigUpdated( const QString& authid );
+    /** Emit generated id when a new config is saved to auth database */
+    void authenticationConfigStored( const QString& authcfg );
+
+    /** Emit current id when an existing config is updated in auth database */
+    void authenticationConfigUpdated( const QString& authcfg );
 
   private slots:
     void loadConfig();
@@ -55,8 +83,8 @@ class QgsAuthConfigWidget : public QDialog, private Ui::QgsAuthConfigWidget
     void clearPkiPathsCertId();
     void clearPkiPathsKeyId();
     void clearPkiPathsKeyPassphrase();
-    void clearPkiPathsIssuerId();
-    void clearPkiPathsIssuerSelfSigned();
+    void clearPkiPathsCaCertsId();
+    void clearPkiPathsIgnoreSelfSigned();
 
     void on_chkPkiPathsPassShow_stateChanged( int state );
 
@@ -64,33 +92,28 @@ class QgsAuthConfigWidget : public QDialog, private Ui::QgsAuthConfigWidget
 
     void on_btnPkiPathsKey_clicked();
 
-    void on_btnPkiPathsIssuer_clicked();
+    void on_btnPkiPathsCaCerts_clicked();
 
     // Auth PkiPkcs#12
     void clearPkiPkcs12Bundle();
 
     void clearPkiPkcs12BundlePath();
     void clearPkiPkcs12KeyPassphrase();
-    void clearPkiPkcs12IssuerPath();
-    void clearPkiPkcs12IssuerSelfSigned();
+    void clearPkiPkcs12CaCertsPath();
+    void clearPkiPkcs12IgnoreSelfSigned();
 
     void on_lePkiPkcs12KeyPass_textChanged( const QString &pass );
     void on_chkPkiPkcs12PassShow_stateChanged( int state );
 
     void on_btnPkiPkcs12Bundle_clicked();
 
-    void on_btnPkiPkcs12Issuer_clicked();
+    void on_btnPkiPkcs12CaCerts_clicked();
 #endif
 
   private:
     bool validateBasic();
 
 #ifndef QT_NO_OPENSSL
-    /**
-     * @brief Validate certificate and private key combination.
-     * @note This is just lightweight validation, and does not traverse the issuer certificate chain
-     * @see QSslCertificate.isValid()
-     */
     bool validatePkiPaths();
 
     bool validatePkiPkcs12();
@@ -101,7 +124,9 @@ class QgsAuthConfigWidget : public QDialog, private Ui::QgsAuthConfigWidget
     void fileFound( bool found, QWidget * widget );
     QString getOpenFileName( const QString& title, const QString& extfilter );
 
-    QString mAuthId;
+    QString mAuthCfg;
+    QVBoxLayout *mAuthNotifyLayout;
+    QLabel *mAuthNotify;
 };
 
 #endif // QGSAUTHENTICATIONCINFIGWIDGET_H
