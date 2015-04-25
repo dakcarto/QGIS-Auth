@@ -140,7 +140,7 @@ class GUI_EXPORT QgsMessageBar: public QFrame
     void pushCritical( const QString& title, const QString& message );
 
   protected:
-    void mousePressEvent( QMouseEvent * e ) override;
+    void mousePressEvent( QMouseEvent * e );
 
   private:
     void popItem( QgsMessageBarItem *item );
