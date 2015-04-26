@@ -11,8 +11,8 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = QGIS-Auth
 TEMPLATE = app
 
-DEPENDPATH += . src
-INCLUDEPATH += . src
+DEPENDPATH += . src src/app src/core src/gui src/core/security src/gui/security
+INCLUDEPATH += . src src/app src/core src/gui src/core/security src/gui/security
 
 DEFINES += CORE_EXPORT=""
 DEFINES += GUI_EXPORT=""
@@ -35,48 +35,48 @@ mac {
 CONFIG += debug
 
 SOURCES += \
-    main.cpp \
-    webpage.cpp \
-    testwidget.cpp \
-    qgsapplication.cpp \
-    qgscredentials.cpp \
-    qgslogger.cpp \
-    qgsmessagebar.cpp \
-    qgsmessagebaritem.cpp \
-    qgsauthenticationmanager.cpp \
-    qgsauthenticationconfig.cpp \
-    qgsauthenticationcrypto.cpp \
-    qgsauthenticationprovider.cpp \
-    qgsauthenticationconfigwidget.cpp \
-    qgsauthenticationconfigeditor.cpp \
-    qgsauthenticationconfigselect.cpp \
-    qgsauthenticationutils.cpp
+    src/app/main.cpp \
+    src/app/webpage.cpp \
+    src/app/testwidget.cpp \
+    src/core/qgsapplication.cpp \
+    src/core/qgscredentials.cpp \
+    src/core/qgslogger.cpp \
+    src/gui/qgsmessagebar.cpp \
+    src/gui/qgsmessagebaritem.cpp \
+    src/core/security/qgsauthenticationmanager.cpp \
+    src/core/security/qgsauthenticationconfig.cpp \
+    src/core/security/qgsauthenticationcrypto.cpp \
+    src/core/security/qgsauthenticationprovider.cpp \
+    src/gui/security/qgsauthenticationconfigwidget.cpp \
+    src/gui/security/qgsauthenticationconfigeditor.cpp \
+    src/gui/security/qgsauthenticationconfigselect.cpp \
+    src/gui/security/qgsauthenticationutils.cpp
 
 HEADERS += \
-    webpage.h \
-    testwidget.h \
-    qgsconfig.h \
-    qgssingleton.h \
-    qgsapplication.h \
-    qgscredentials.h \
-    qgslogger.h \
-    qgsmessagebar.h \
-    qgsmessagebaritem.h \
-    qgsauthenticationmanager.h \
-    qgsauthenticationconfig.h \
-    qgsauthenticationcrypto.h \
-    qgsauthenticationprovider.h \
-    qgsauthenticationconfigwidget.h \
-    qgsauthenticationconfigeditor.h \
-    qgsauthenticationconfigselect.h \
-    qgsauthenticationutils.h
+    src/app/webpage.h \
+    src/app/testwidget.h \
+    src/qgsconfig.h \
+    src/core/qgssingleton.h \
+    src/core/qgsapplication.h \
+    src/core/qgscredentials.h \
+    src/core/qgslogger.h \
+    src/gui/qgsmessagebar.h \
+    src/gui/qgsmessagebaritem.h \
+    src/core/security/qgsauthenticationmanager.h \
+    src/core/security/qgsauthenticationconfig.h \
+    src/core/security/qgsauthenticationcrypto.h \
+    src/core/security/qgsauthenticationprovider.h \
+    src/gui/security/qgsauthenticationconfigwidget.h \
+    src/gui/security/qgsauthenticationconfigeditor.h \
+    src/gui/security/qgsauthenticationconfigselect.h \
+    src/gui/security/qgsauthenticationutils.h
 
 FORMS += \
-    webpage.ui \
-    testwidget.ui \
-    qgsauthenticationconfigwidget.ui \
-    qgsauthenticationconfigeditor.ui \
-    qgsauthenticationconfigselect.ui \
-    qgsmasterpasswordresetdialog.ui
+    src/ui/webpage.ui \
+    src/ui/testwidget.ui \
+    src/ui/qgsmasterpasswordresetdialog.ui \
+    src/ui/qgsauthenticationconfigwidget.ui \
+    src/ui/qgsauthenticationconfigeditor.ui \
+    src/ui/qgsauthenticationconfigselect.ui
 
-#RESOURCES += /Users/larrys/QGIS/github.com/QGIS/images/images.qrc
+RESOURCES += images/images.qrc
