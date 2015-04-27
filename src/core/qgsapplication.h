@@ -14,11 +14,7 @@ class QgsApplication
 
     //! Helper to get a theme icon. It will fall back to the
     //! default theme if the active theme does not have the required icon.
-    static QIcon getThemeIcon( const QString &theName )
-    {
-      Q_UNUSED(theName);
-      return QIcon();
-    }
+    static QIcon getThemeIcon( const QString &theName );
 };
 
 #endif // QGSAPPLICATION_H
