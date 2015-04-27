@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>QgsAuthConfigEditor</class>
- <widget class="QWidget" name="QgsAuthConfigEditor">
+ <class>QgsAuthServersEditor</class>
+ <widget class="QWidget" name="QgsAuthServersEditor">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>582</width>
-    <height>463</height>
+    <width>731</width>
+    <height>558</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Edit Authentication Configurations</string>
+   <string>Server Exceptions/SSL Configs Editor</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout">
+  <layout class="QVBoxLayout" name="verticalLayout">
    <property name="leftMargin">
     <number>0</number>
    </property>
@@ -26,10 +26,54 @@
    <property name="bottomMargin">
     <number>0</number>
    </property>
-   <item row="5" column="0">
+   <item>
+    <widget class="QLabel" name="lblServers">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="text">
+      <string>Server Certificate Exceptions and SSL Configurations</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QVBoxLayout" name="verticalLayout_2">
+     <property name="spacing">
+      <number>0</number>
+     </property>
+     <item>
+      <widget class="QgsMessageBar" name="msgBar"/>
+     </item>
+     <item>
+      <widget class="QTreeWidget" name="treeWidgetServers">
+       <property name="editTriggers">
+        <set>QAbstractItemView::NoEditTriggers</set>
+       </property>
+       <property name="alternatingRowColors">
+        <bool>true</bool>
+       </property>
+       <property name="selectionMode">
+        <enum>QAbstractItemView::SingleSelection</enum>
+       </property>
+       <property name="selectionBehavior">
+        <enum>QAbstractItemView::SelectRows</enum>
+       </property>
+       <column>
+        <property name="text">
+         <string notr="true">1</string>
+        </property>
+       </column>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
     <layout class="QHBoxLayout" name="horizontalLayout_2">
      <item>
-      <widget class="QPushButton" name="btnAddConfig">
+      <widget class="QPushButton" name="btnAddServer">
        <property name="text">
         <string/>
        </property>
@@ -46,7 +90,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="btnRemoveConfig">
+      <widget class="QPushButton" name="btnRemoveServer">
        <property name="text">
         <string/>
        </property>
@@ -63,13 +107,13 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="btnEditConfig">
+      <widget class="QPushButton" name="btnInfoServer">
        <property name="text">
         <string/>
        </property>
        <property name="icon">
         <iconset resource="../../images/images.qrc">
-         <normaloff>:/images/themes/default/symbologyEdit.png</normaloff>:/images/themes/default/symbologyEdit.png</iconset>
+         <normaloff>:/images/themes/default/propertyicons/metadata.svg</normaloff>:/images/themes/default/propertyicons/metadata.svg</iconset>
        </property>
        <property name="iconSize">
         <size>
@@ -93,74 +137,20 @@
       </spacer>
      </item>
      <item>
-      <widget class="QPushButton" name="btnAuthUtilities">
+      <widget class="QPushButton" name="btnViewRefresh">
        <property name="text">
         <string/>
        </property>
        <property name="icon">
         <iconset resource="../../images/images.qrc">
-         <normaloff>:/images/themes/default/propertyicons/settings.svg</normaloff>:/images/themes/default/propertyicons/settings.svg</iconset>
+         <normaloff>:/images/themes/default/mActionRefresh.png</normaloff>:/images/themes/default/mActionRefresh.png</iconset>
        </property>
        <property name="iconSize">
         <size>
-         <width>22</width>
+         <width>20</width>
          <height>20</height>
         </size>
        </property>
-      </widget>
-     </item>
-    </layout>
-   </item>
-   <item row="1" column="0">
-    <widget class="QLabel" name="lblAuthConfigDb">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="text">
-      <string>Authentication Configurations Database</string>
-     </property>
-    </widget>
-   </item>
-   <item row="3" column="0">
-    <layout class="QVBoxLayout" name="verticalLayout">
-     <property name="spacing">
-      <number>0</number>
-     </property>
-     <item>
-      <widget class="QgsMessageBar" name="mMsgBar"/>
-     </item>
-     <item>
-      <widget class="QTableView" name="tableViewConfigs">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-         <horstretch>0</horstretch>
-         <verstretch>3</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="editTriggers">
-        <set>QAbstractItemView::NoEditTriggers</set>
-       </property>
-       <property name="alternatingRowColors">
-        <bool>true</bool>
-       </property>
-       <property name="selectionMode">
-        <enum>QAbstractItemView::SingleSelection</enum>
-       </property>
-       <property name="selectionBehavior">
-        <enum>QAbstractItemView::SelectRows</enum>
-       </property>
-       <property name="sortingEnabled">
-        <bool>true</bool>
-       </property>
-       <property name="cornerButtonEnabled">
-        <bool>false</bool>
-       </property>
-       <attribute name="horizontalHeaderStretchLastSection">
-        <bool>true</bool>
-       </attribute>
       </widget>
      </item>
     </layout>

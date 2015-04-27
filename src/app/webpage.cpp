@@ -35,7 +35,7 @@
 #include <QSslKey>
 
 #include "qgsauthenticationmanager.h"
-#include "qgsauthenticationconfigeditor.h"
+#include "qgsauthenticationeditorwidgets.h"
 #include "qgsauthenticationconfigselect.h"
 #include "qgsauthenticationconfigwidget.h"
 
@@ -220,17 +220,19 @@ void WebPage::on_btnResetWebView_clicked()
   loadUrl();
 }
 
-void WebPage::on_btnAuthEditor_clicked()
+void WebPage::on_btnAuthSettings_clicked()
 {
   QDialog * dlg = new QDialog( 0 );
-  dlg->setWindowTitle( tr( "Authentication Configurations" ) );
+  dlg->setWindowTitle( tr( "Authentication Settings" ) );
   QVBoxLayout *layout = new QVBoxLayout( dlg );
 
-  QgsAuthConfigEditor * ae = new QgsAuthConfigEditor( dlg );
+  QgsAuthEditorWidgets * ae = new QgsAuthEditorWidgets( dlg );
   layout->addWidget( ae );
 
   QDialogButtonBox *buttonBox = new QDialogButtonBox( QDialogButtonBox::Close,
       Qt::Horizontal, dlg );
+  buttonBox->button( QDialogButtonBox::Close )->setDefault( true );
+
   layout->addWidget( buttonBox );
 
   connect( buttonBox, SIGNAL( rejected() ), dlg, SLOT( close() ) );

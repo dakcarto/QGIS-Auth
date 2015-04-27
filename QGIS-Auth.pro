@@ -11,8 +11,8 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = QGIS-Auth
 TEMPLATE = app
 
-DEPENDPATH += . src src/app src/core src/gui src/core/security src/gui/security
-INCLUDEPATH += . src src/app src/core src/gui src/core/security src/gui/security
+DEPENDPATH += . src src/app src/core src/gui src/core/auth src/gui/auth
+INCLUDEPATH += . src src/app src/core src/gui src/core/auth src/gui/auth
 
 DEFINES += CORE_EXPORT=""
 DEFINES += GUI_EXPORT=""
@@ -43,14 +43,18 @@ SOURCES += \
     src/core/qgslogger.cpp \
     src/gui/qgsmessagebar.cpp \
     src/gui/qgsmessagebaritem.cpp \
-    src/core/security/qgsauthenticationmanager.cpp \
-    src/core/security/qgsauthenticationconfig.cpp \
-    src/core/security/qgsauthenticationcrypto.cpp \
-    src/core/security/qgsauthenticationprovider.cpp \
-    src/gui/security/qgsauthenticationconfigwidget.cpp \
-    src/gui/security/qgsauthenticationconfigeditor.cpp \
-    src/gui/security/qgsauthenticationconfigselect.cpp \
-    src/gui/security/qgsauthenticationutils.cpp
+    src/core/auth/qgsauthenticationmanager.cpp \
+    src/core/auth/qgsauthenticationconfig.cpp \
+    src/core/auth/qgsauthenticationcrypto.cpp \
+    src/core/auth/qgsauthenticationprovider.cpp \
+    src/gui/auth/qgsauthenticationconfigwidget.cpp \
+    src/gui/auth/qgsauthenticationconfigeditor.cpp \
+    src/gui/auth/qgsauthenticationconfigselect.cpp \
+    src/gui/auth/qgsauthenticationidentitieseditor.cpp \
+    src/gui/auth/qgsauthenticationserverseditor.cpp \
+    src/gui/auth/qgsauthenticationauthoritieseditor.cpp \
+    src/gui/auth/qgsauthenticationutils.cpp
+#    src/gui/auth/qgauthenticationeditorwidgets.cpp
 
 HEADERS += \
     src/app/webpage.h \
@@ -62,14 +66,18 @@ HEADERS += \
     src/core/qgslogger.h \
     src/gui/qgsmessagebar.h \
     src/gui/qgsmessagebaritem.h \
-    src/core/security/qgsauthenticationmanager.h \
-    src/core/security/qgsauthenticationconfig.h \
-    src/core/security/qgsauthenticationcrypto.h \
-    src/core/security/qgsauthenticationprovider.h \
-    src/gui/security/qgsauthenticationconfigwidget.h \
-    src/gui/security/qgsauthenticationconfigeditor.h \
-    src/gui/security/qgsauthenticationconfigselect.h \
-    src/gui/security/qgsauthenticationutils.h
+    src/core/auth/qgsauthenticationmanager.h \
+    src/core/auth/qgsauthenticationconfig.h \
+    src/core/auth/qgsauthenticationcrypto.h \
+    src/core/auth/qgsauthenticationprovider.h \
+    src/gui/auth/qgsauthenticationconfigwidget.h \
+    src/gui/auth/qgsauthenticationconfigeditor.h \
+    src/gui/auth/qgsauthenticationconfigselect.h \
+    src/gui/auth/qgsauthenticationidentitieseditor.h \
+    src/gui/auth/qgsauthenticationserverseditor.h \
+    src/gui/auth/qgsauthenticationauthoritieseditor.h \
+    src/gui/auth/qgsauthenticationutils.h \
+    src/gui/auth/qgsauthenticationeditorwidgets.h
 
 FORMS += \
     src/ui/webpage.ui \
@@ -77,6 +85,10 @@ FORMS += \
     src/ui/qgsmasterpasswordresetdialog.ui \
     src/ui/qgsauthenticationconfigwidget.ui \
     src/ui/qgsauthenticationconfigeditor.ui \
-    src/ui/qgsauthenticationconfigselect.ui
+    src/ui/qgsauthenticationconfigselect.ui \
+    src/ui/qgsauthenticationidentitieseditor.ui \
+    src/ui/qgsauthenticationauthoritieseditor.ui \
+    src/ui/qgsauthenticationserverseditor.ui \
+    src/ui/qgsauthenticationeditorwidgets.ui
 
 RESOURCES += images/images.qrc

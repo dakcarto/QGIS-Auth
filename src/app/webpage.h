@@ -64,7 +64,7 @@ class WebPage : public QDialog, private Ui::WebPage
     void clearLog();
 
     void on_btnResetWebView_clicked();
-    void on_btnAuthEditor_clicked();
+    void on_btnAuthSettings_clicked();
     void on_btnAuthSelect_clicked();
     void on_btnAuthClearCached_clicked();
     void on_btnTests_clicked();
