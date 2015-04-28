@@ -33,6 +33,7 @@
 #include <QSslConfiguration>
 #include <QSslError>
 #include <QSslKey>
+#include <QTimer>
 
 #include "qgsauthenticationmanager.h"
 #include "qgsauthenticationeditorwidgets.h"
@@ -118,6 +119,9 @@ void WebPage::showEvent( QShowEvent * e )
   }
 
   QDialog::showEvent( e );
+
+  // temporarily do this for testing
+  QTimer::singleShot( 250, this, SLOT( on_btnAuthSettings_clicked() ) );
 }
 
 void WebPage::loadUrl( const QString& url )
