@@ -239,7 +239,7 @@ void WebPage::on_btnAuthSettings_clicked()
 
   dlg->setLayout( layout );
   dlg->setWindowModality( Qt::WindowModal );
-  dlg->resize(700, 500);
+  dlg->resize(800, 512);
   dlg->exec();
 
 }
