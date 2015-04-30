@@ -41,6 +41,8 @@ SOURCES += \
     src/core/qgsapplication.cpp \
     src/core/qgscredentials.cpp \
     src/core/qgslogger.cpp \
+    src/gui/qgscollapsiblegroupbox.cpp \
+    src/gui/qgsfilterlineedit.cpp \
     src/gui/qgsmessagebar.cpp \
     src/gui/qgsmessagebaritem.cpp \
     src/core/auth/qgsauthenticationmanager.cpp \
@@ -64,6 +66,8 @@ HEADERS += \
     src/core/qgsapplication.h \
     src/core/qgscredentials.h \
     src/core/qgslogger.h \
+    src/gui/qgscollapsiblegroupbox.h \
+    src/gui/qgsfilterlineedit.h \
     src/gui/qgsmessagebar.h \
     src/gui/qgsmessagebaritem.h \
     src/core/auth/qgsauthenticationmanager.h \
