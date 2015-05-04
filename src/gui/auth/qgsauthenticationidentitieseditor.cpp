@@ -129,11 +129,3 @@ int QgsAuthIdentitiesEditor::messageTimeout()
   QSettings settings;
   return settings.value( "/qgis/messageTimeout", 5 ).toInt();
 }
-
-QString QgsAuthIdentitiesEditor::selectedId()
-{
-  // get selection count
-
-//  if ( selection.empty() )
-//    return QString();
-}

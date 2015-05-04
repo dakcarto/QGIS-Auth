@@ -61,7 +61,6 @@ class GUI_EXPORT QgsAuthIdentitiesEditor : public QWidget, private Ui::QgsAuthId
   private:
     QgsMessageBar * messageBar();
     int messageTimeout();
-    QString selectedId();
 
     QVBoxLayout *mAuthNotifyLayout;
     QLabel *mAuthNotify;

@@ -4,6 +4,7 @@
 #include <QWidget>
 #include "ui_qgsauthenticationeditorwidgets.h"
 
+class QTabWidget;
 
 class QgsAuthEditorWidgets : public QWidget, private Ui::QgsAuthEditors
 {
@@ -17,6 +18,8 @@ class QgsAuthEditorWidgets : public QWidget, private Ui::QgsAuthEditors
     }
 
     ~QgsAuthEditorWidgets(){}
+
+    QTabWidget * tabbedWidget() { return tabWidget; }
 
   private:
 

@@ -35,7 +35,7 @@
       </sizepolicy>
      </property>
      <property name="text">
-      <string>Trusted Certificate Authorities &lt;i&gt;(Root/Extra CAs are read-only)&lt;/i&gt;</string>
+      <string>Certificate Authorities and Issuers &lt;i&gt;(Root/File certificates are read-only)&lt;/i&gt;</string>
      </property>
     </widget>
    </item>
@@ -53,24 +53,95 @@
      <item row="2" column="0">
       <layout class="QHBoxLayout" name="horizontalLayout">
        <item>
-        <widget class="QLabel" name="lblCaFile">
+        <widget class="QLabel" name="label">
          <property name="text">
-          <string>Extra CAs file</string>
+          <string>Default Policy</string>
          </property>
         </widget>
        </item>
        <item>
-        <widget class="QLineEdit" name="leCaFile">
-         <property name="readOnly">
-          <bool>true</bool>
-         </property>
-         <property name="placeholderText">
-          <string>PEM-formatted file of concatenated CAs</string>
+        <widget class="QComboBox" name="cmbDefaultTrustPolicy"/>
+       </item>
+       <item>
+        <widget class="Line" name="line">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
          </property>
         </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="lblCaFile">
+         <property name="text">
+          <string>Certificates file</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_2">
+         <property name="spacing">
+          <number>0</number>
+         </property>
+         <item>
+          <widget class="QLineEdit" name="leCaFile">
+           <property name="minimumSize">
+            <size>
+             <width>125</width>
+             <height>24</height>
+            </size>
+           </property>
+           <property name="readOnly">
+            <bool>true</bool>
+           </property>
+           <property name="placeholderText">
+            <string>File of concatenated CAs and/or Issuers</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QToolButton" name="btnCaFileClear">
+           <property name="minimumSize">
+            <size>
+             <width>26</width>
+             <height>22</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>26</width>
+             <height>22</height>
+            </size>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset resource="../../images/images.qrc">
+             <normaloff>:/images/themes/default/mIconClose.png</normaloff>:/images/themes/default/mIconClose.png</iconset>
+           </property>
+           <property name="iconSize">
+            <size>
+             <width>14</width>
+             <height>14</height>
+            </size>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
        <item>
         <widget class="QToolButton" name="btnCaFile">
+         <property name="minimumSize">
+          <size>
+           <width>26</width>
+           <height>22</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>26</width>
+           <height>22</height>
+          </size>
+         </property>
          <property name="text">
           <string>...</string>
          </property>
@@ -97,6 +168,9 @@
            <height>32</height>
           </size>
          </property>
+         <property name="toolTip">
+          <string>Import certificate(s) to authentication database</string>
+         </property>
          <property name="text">
           <string/>
          </property>
@@ -120,6 +194,9 @@
            <height>32</height>
           </size>
          </property>
+         <property name="toolTip">
+          <string>Remove certificate from authentication database</string>
+         </property>
          <property name="text">
           <string/>
          </property>
@@ -142,6 +219,9 @@
            <width>32</width>
            <height>32</height>
           </size>
+         </property>
+         <property name="toolTip">
+          <string>Show information for certificate</string>
          </property>
          <property name="text">
           <string/>
@@ -172,12 +252,47 @@
         </spacer>
        </item>
        <item>
+        <widget class="QToolButton" name="btnGroupByOrg">
+         <property name="minimumSize">
+          <size>
+           <width>32</width>
+           <height>32</height>
+          </size>
+         </property>
+         <property name="toolTip">
+          <string>Group by organization</string>
+         </property>
+         <property name="text">
+          <string>...</string>
+         </property>
+         <property name="icon">
+          <iconset resource="../../images/images.qrc">
+           <normaloff>:/images/themes/default/mActionFilter.svg</normaloff>:/images/themes/default/mActionFilter.svg</iconset>
+         </property>
+         <property name="iconSize">
+          <size>
+           <width>20</width>
+           <height>20</height>
+          </size>
+         </property>
+         <property name="checkable">
+          <bool>true</bool>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QToolButton" name="btnViewRefresh">
          <property name="minimumSize">
           <size>
            <width>32</width>
            <height>32</height>
           </size>
+         </property>
+         <property name="toolTip">
+          <string>Refresh certificate tree view</string>
          </property>
          <property name="text">
           <string/>
@@ -198,6 +313,9 @@
      </item>
      <item row="0" column="0">
       <widget class="QTreeWidget" name="treeWidgetCAs">
+       <property name="focusPolicy">
+        <enum>Qt::WheelFocus</enum>
+       </property>
        <property name="editTriggers">
         <set>QAbstractItemView::NoEditTriggers</set>
        </property>

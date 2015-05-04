@@ -55,8 +55,11 @@ SOURCES += \
     src/gui/auth/qgsauthenticationidentitieseditor.cpp \
     src/gui/auth/qgsauthenticationserverseditor.cpp \
     src/gui/auth/qgsauthenticationauthoritieseditor.cpp \
-    src/gui/auth/qgsauthenticationutils.cpp
-#    src/gui/auth/qgauthenticationeditorwidgets.cpp
+    src/gui/auth/qgsauthenticationutils.cpp \
+    src/gui/auth/qgsauthenticationcertificateinfo.cpp \
+    src/gui/auth/qgsauthenticationimportcertdialog.cpp \
+    src/core/auth/qgsauthenticationcertutils.cpp \
+    src/gui/auth/qgsauthenticationcerttrustpolicycombobox.cpp
 
 HEADERS += \
     src/app/webpage.h \
@@ -81,7 +84,11 @@ HEADERS += \
     src/gui/auth/qgsauthenticationserverseditor.h \
     src/gui/auth/qgsauthenticationauthoritieseditor.h \
     src/gui/auth/qgsauthenticationutils.h \
-    src/gui/auth/qgsauthenticationeditorwidgets.h
+    src/gui/auth/qgsauthenticationeditorwidgets.h \
+    src/gui/auth/qgsauthenticationcertificateinfo.h \
+    src/gui/auth/qgsauthenticationimportcertdialog.h \
+    src/core/auth/qgsauthenticationcertutils.h \
+    src/gui/auth/qgsauthenticationcerttrustpolicycombobox.h
 
 FORMS += \
     src/ui/webpage.ui \
@@ -93,6 +100,8 @@ FORMS += \
     src/ui/qgsauthenticationidentitieseditor.ui \
     src/ui/qgsauthenticationauthoritieseditor.ui \
     src/ui/qgsauthenticationserverseditor.ui \
-    src/ui/qgsauthenticationeditorwidgets.ui
+    src/ui/qgsauthenticationeditorwidgets.ui \
+    src/ui/qgsauthenticationcertificateinfo.ui \
+    src/ui/qgsauthenticationimportcertdialog.ui
 
 RESOURCES += images/images.qrc

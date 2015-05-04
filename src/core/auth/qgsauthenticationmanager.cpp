@@ -30,7 +30,12 @@
 
 #include <QtCrypto>
 
+#ifndef QT_NO_OPENSSL
+#include <QSslConfiguration>
+#endif
+
 #include "qgsapplication.h"
+#include "qgsauthenticationcertutils.h"
 #include "qgsauthenticationcrypto.h"
 #include "qgsauthenticationprovider.h"
 #include "qgscredentials.h"
@@ -39,6 +44,11 @@
 
 const QString QgsAuthManager::smAuthConfigTable = "auth_configs";
 const QString QgsAuthManager::smAuthPassTable = "auth_pass";
+const QString QgsAuthManager::smAuthSettingsTable = "auth_settings";
+const QString QgsAuthManager::smAuthIdentitiesTable = "auth_identities";
+const QString QgsAuthManager::smAuthServersTable = "auth_servers";
+const QString QgsAuthManager::smAuthAuthoritiesTable = "auth_authorities";
+const QString QgsAuthManager::smAuthTrustTable = "auth_trust";
 const QString QgsAuthManager::smAuthManTag = QObject::tr( "Authentication Manager" );
 
 QSqlDatabase QgsAuthManager::authDbConnection() const
@@ -133,16 +143,41 @@ bool QgsAuthManager::init()
     if ( dbinfo.size() > 0 )
     {
       QgsDebugMsg( "Auth db exists and has data" );
+
+      if ( !createCertTables() )
+        return false;
+
       updateConfigProviderTypes();
+
+#ifndef QT_NO_OPENSSL
+      rebuildCaCertsCache();
+      rebuildCertTrustCache();
+#endif
+
       return true;
     }
   }
   else
   {
     QgsDebugMsg( "Auth db does not exist: creating through QSqlDatabase initial connection" );
+
+    if ( !createConfigTables() )
+      return false;
+
+    if ( !createCertTables() )
+      return false;
   }
 
+#ifndef QT_NO_OPENSSL
+  rebuildCaCertsCache();
+  rebuildCertTrustCache();
+#endif
 
+  return true;
+}
+
+bool QgsAuthManager::createConfigTables()
+{
   // create and open the db
   if ( !authDbOpen() )
   {
@@ -185,6 +220,89 @@ bool QgsAuthManager::init()
   query.clear();
 
   qstr = QString( "CREATE INDEX 'uri_index' on %1 (uri ASC);" ).arg( authDbConfigTable() );
+  query.prepare( qstr );
+  if ( !authDbQuery( &query ) )
+    return false;
+  query.clear();
+
+  return true;
+}
+
+bool QgsAuthManager::createCertTables()
+{
+  // NOTE: these tables were added later, so IF NOT EXISTS is used
+  QgsDebugMsg( "Creating cert tables in auth db" );
+
+  QSqlQuery query( authDbConnection() );
+
+  // create the tables
+  QString qstr;
+
+  qstr = QString( "CREATE TABLE IF NOT EXISTS %1 (\n"
+                  "    'setting' TEXT NOT NULL\n"
+                  ", 'value' TEXT);" ).arg( authDbSettingsTable() );
+  query.prepare( qstr );
+  if ( !authDbQuery( &query ) )
+    return false;
+  query.clear();
+
+
+  qstr = QString( "CREATE TABLE IF NOT EXISTS %1 (\n"
+                  "    'id' TEXT NOT NULL,\n"
+                  "    'key' TEXT NOT NULL\n"
+                  ", 'cert' TEXT  NOT NULL);" ).arg( authDbIdentitiesTable() );
+  query.prepare( qstr );
+  if ( !authDbQuery( &query ) )
+    return false;
+  query.clear();
+
+  qstr = QString( "CREATE UNIQUE INDEX IF NOT EXISTS 'id_index' on %1 (id ASC);" ).arg( authDbIdentitiesTable() );
+  query.prepare( qstr );
+  if ( !authDbQuery( &query ) )
+    return false;
+  query.clear();
+
+
+  qstr = QString( "CREATE TABLE IF NOT EXISTS %1 (\n"
+                  "    'id' TEXT NOT NULL,\n"
+                  "    'host' TEXT NOT NULL,\n"
+                  "    'cert' TEXT\n"
+                  ", 'config' TEXT  NOT NULL);" ).arg( authDbServersTable() );
+  query.prepare( qstr );
+  if ( !authDbQuery( &query ) )
+    return false;
+  query.clear();
+
+  qstr = QString( "CREATE UNIQUE INDEX IF NOT EXISTS 'host_index' on %1 (host ASC);" ).arg( authDbServersTable() );
+  query.prepare( qstr );
+  if ( !authDbQuery( &query ) )
+    return false;
+  query.clear();
+
+
+  qstr = QString( "CREATE TABLE IF NOT EXISTS %1 (\n"
+                  "    'id' TEXT NOT NULL\n"
+                  ", 'cert' TEXT  NOT NULL);" ).arg( authDbAuthoritiesTable() );
+  query.prepare( qstr );
+  if ( !authDbQuery( &query ) )
+    return false;
+  query.clear();
+
+  qstr = QString( "CREATE UNIQUE INDEX IF NOT EXISTS 'id_index' on %1 (id ASC);" ).arg( authDbAuthoritiesTable() );
+  query.prepare( qstr );
+  if ( !authDbQuery( &query ) )
+    return false;
+  query.clear();
+
+  qstr = QString( "CREATE TABLE IF NOT EXISTS %1 (\n"
+                  "    'id' TEXT NOT NULL\n"
+                  ", 'policy' TEXT  NOT NULL);" ).arg( authDbTrustTable() );
+  query.prepare( qstr );
+  if ( !authDbQuery( &query ) )
+    return false;
+  query.clear();
+
+  qstr = QString( "CREATE UNIQUE INDEX IF NOT EXISTS 'id_index' on %1 (id ASC);" ).arg( authDbTrustTable() );
   query.prepare( qstr );
   if ( !authDbQuery( &query ) )
     return false;
@@ -930,6 +1048,607 @@ bool QgsAuthManager::updateNetworkReply( QNetworkReply *reply, const QString& au
   return false;
 }
 
+bool QgsAuthManager::storeAuthSetting( const QString &key, QVariant value, bool encrypt )
+{
+  if ( key.isEmpty() )
+    return false;
+
+  QString storeval( value.toString() );
+  if ( encrypt )
+  {
+    if ( !setMasterPassword( true ) )
+    {
+      return false;
+    }
+    else
+    {
+      storeval = QgsAuthCrypto::encrypt( mMasterPass, masterPasswordCiv(), value.toString() );
+    }
+  }
+
+  removeAuthSetting( key );
+
+  QSqlQuery query( authDbConnection() );
+  query.prepare( QString( "INSERT INTO %1 (setting, value) "
+                          "VALUES (:setting, :value)" ).arg( authDbSettingsTable() ) );
+
+  query.bindValue( ":setting", key );
+  query.bindValue( ":value", storeval );
+
+  if ( !authDbStartTransaction() )
+    return false;
+
+  if ( !authDbQuery( &query ) )
+    return false;
+
+  if ( !authDbCommit() )
+    return false;
+
+  QgsDebugMsg( QString( "Store setting SUCCESS for key: %1" ).arg( key ) );
+  return true;
+}
+
+QVariant QgsAuthManager::getAuthSetting( const QString &key, QVariant defaultValue , bool decrypt )
+{
+  if ( key.isEmpty() )
+    return QVariant();
+
+  if ( decrypt && !setMasterPassword( true ) )
+    return QVariant();
+
+  QVariant value = defaultValue;
+  QSqlQuery query( authDbConnection() );
+  query.prepare( QString( "SELECT value FROM %1 "
+                          "WHERE setting = :setting" ).arg( authDbSettingsTable() ) );
+
+  query.bindValue( ":setting", key );
+
+  if ( !authDbQuery( &query ) )
+    return QVariant();
+
+  if ( query.isActive() && query.isSelect() )
+  {
+    if ( query.first() )
+    {
+      if ( decrypt )
+      {
+        value = QVariant( QgsAuthCrypto::decrypt( mMasterPass, masterPasswordCiv(), query.value( 0 ).toString() ) );
+      }
+      else
+      {
+        value = query.value( 0 );
+      }
+      QgsDebugMsg( QString( "Authentication setting retrieved for key: %1" ).arg( key ) );
+    }
+    if ( query.next() )
+    {
+      QgsDebugMsg( QString( "Select contains more than one for setting key: %1" ).arg( key ) );
+      emit messageOut( tr( "Authentication database contains duplicate settings" ), authManTag(), WARNING );
+      return QVariant();
+    }
+  }
+  return value;
+}
+
+bool QgsAuthManager::existsAuthSetting( const QString& key )
+{
+  if ( key.isEmpty() )
+    return false;
+
+  QSqlQuery query( authDbConnection() );
+  query.prepare( QString( "SELECT value FROM %1 "
+                          "WHERE setting = :setting" ).arg( authDbSettingsTable() ) );
+
+  query.bindValue( ":setting", key );
+
+  if ( !authDbQuery( &query ) )
+    return false;
+
+  if ( query.isActive() && query.isSelect() )
+  {
+    if ( query.first() )
+    {
+      QgsDebugMsg( QString( "Authentication setting exists for key: %1" ).arg( key ) );
+      return true;
+    }
+    if ( query.next() )
+    {
+      QgsDebugMsg( QString( "Select contains more than one for setting key: %1" ).arg( key ) );
+      emit messageOut( tr( "Authentication database contains duplicate settings" ), authManTag(), WARNING );
+    }
+  }
+  return false;
+}
+
+bool QgsAuthManager::removeAuthSetting( const QString& key )
+{
+  if ( key.isEmpty() )
+    return false;
+
+  QSqlQuery query( authDbConnection() );
+
+  query.prepare( QString( "DELETE FROM %1 WHERE setting = :setting" ).arg( authDbSettingsTable() ) );
+
+  query.bindValue( ":setting", key );
+
+  if ( !authDbStartTransaction() )
+    return false;
+
+  if ( !authDbQuery( &query ) )
+    return false;
+
+  if ( !authDbCommit() )
+    return false;
+
+  QgsDebugMsg( QString( "REMOVED setting for key: %1" ).arg( key ) );
+
+  return true;
+}
+
+
+#ifndef QT_NO_OPENSSL
+
+////////////////// Certificate calls ///////////////////////
+
+bool QgsAuthManager::storeCertAuthorities( const QList<QSslCertificate> &certs )
+{
+  if ( certs.size() < 1 )
+  {
+    QgsDebugMsg( "Passed certificate list has no certs" );
+    return false;
+  }
+
+  Q_FOREACH( const QSslCertificate& cert, certs )
+  {
+    if ( !storeCertAuthority( cert ) )
+      return false;
+  }
+  return true;
+}
+
+bool QgsAuthManager::storeCertAuthority( const QSslCertificate& cert )
+{
+  // don't refuse !cert.isValid() (actually just expired) CAs,
+  // as user may want to ignore that SSL connection error
+  if ( cert.isNull() )
+  {
+    QgsDebugMsg( "Passed certificate is null" );
+    return false;
+  }
+
+  removeCertAuthority( cert );
+
+  QString id( QgsAuthCertUtils::shaHexForCert( cert ) );
+  QString pem( cert.toPem() );
+
+  QSqlQuery query( authDbConnection() );
+  query.prepare( QString( "INSERT INTO %1 (id, cert) "
+                          "VALUES (:id, :cert)" ).arg( authDbAuthoritiesTable() ) );
+
+  query.bindValue( ":id", id );
+  query.bindValue( ":cert", pem );
+
+  if ( !authDbStartTransaction() )
+    return false;
+
+  if ( !authDbQuery( &query ) )
+    return false;
+
+  if ( !authDbCommit() )
+    return false;
+
+  QgsDebugMsg( QString( "Store certificate authority SUCCESS for id: %1" ).arg( id ) );
+  return true;
+}
+
+const QSslCertificate QgsAuthManager::getCertAuthority( const QString &id )
+{
+  QSslCertificate emptycert;
+  QSslCertificate cert;
+  if ( id.isEmpty() )
+    return emptycert;
+
+  QSqlQuery query( authDbConnection() );
+  query.prepare( QString( "SELECT cert FROM %1 "
+                          "WHERE id = :id" ).arg( authDbAuthoritiesTable() ) );
+
+  query.bindValue( ":id", id );
+
+  if ( !authDbQuery( &query ) )
+    return emptycert;
+
+  if ( query.isActive() && query.isSelect() )
+  {
+    if ( query.first() )
+    {
+      cert = QSslCertificate( query.value( 0 ).toByteArray(), QSsl::Pem );
+      QgsDebugMsg( QString( "Certificate authority retrieved for id: %1" ).arg( id ) );
+    }
+    if ( query.next() )
+    {
+      QgsDebugMsg( QString( "Select contains more than one certificate authority for id: %1" ).arg( id ) );
+      emit messageOut( tr( "Authentication database contains duplicate certificate authorities" ), authManTag(), WARNING );
+      return emptycert;
+    }
+  }
+  return cert;
+}
+
+bool QgsAuthManager::existsCertAuthority( const QSslCertificate& cert )
+{
+  if ( cert.isNull() )
+  {
+    QgsDebugMsg( "Passed certificate is null" );
+    return false;
+  }
+
+  QString id( QgsAuthCertUtils::shaHexForCert( cert ) );
+
+  QSqlQuery query( authDbConnection() );
+  query.prepare( QString( "SELECT value FROM %1 "
+                          "WHERE id = :id" ).arg( authDbAuthoritiesTable() ) );
+
+  query.bindValue( ":id", id );
+
+  if ( !authDbQuery( &query ) )
+    return false;
+
+  if ( query.isActive() && query.isSelect() )
+  {
+    if ( query.first() )
+    {
+      QgsDebugMsg( QString( "Certificate authority exists for id: %1" ).arg( id ) );
+      return true;
+    }
+    if ( query.next() )
+    {
+      QgsDebugMsg( QString( "Select contains more than one certificate authority for id: %1" ).arg( id ) );
+      emit messageOut( tr( "Authentication database contains duplicate certificate authorities" ), authManTag(), WARNING );
+    }
+  }
+  return false;
+}
+
+bool QgsAuthManager::removeCertAuthority( const QSslCertificate& cert )
+{
+  if ( cert.isNull() )
+  {
+    QgsDebugMsg( "Passed certificate is null" );
+    return false;
+  }
+
+  QString id( QgsAuthCertUtils::shaHexForCert( cert ) );
+
+  QSqlQuery query( authDbConnection() );
+
+  query.prepare( QString( "DELETE FROM %1 WHERE id = :id" ).arg( authDbAuthoritiesTable() ) );
+
+  query.bindValue( ":id", id );
+
+  if ( !authDbStartTransaction() )
+    return false;
+
+  if ( !authDbQuery( &query ) )
+    return false;
+
+  if ( !authDbCommit() )
+    return false;
+
+  QgsDebugMsg( QString( "REMOVED authority for id: %1" ).arg( id ) );
+
+  return true;
+}
+
+const QList<QSslCertificate> QgsAuthManager::getSystemRootCAs()
+{
+  QNetworkRequest req;
+  return req.sslConfiguration().caCertificates();
+}
+
+const QList<QSslCertificate> QgsAuthManager::getExtraFileCAs()
+{
+  QList<QSslCertificate> certs;
+  QList<QSslCertificate> filecerts;
+  QVariant cafileval = QgsAuthManager::instance()->getAuthSetting( QString( "cafile" ) );
+  if ( cafileval.isNull() )
+    return certs;
+
+  QVariant allowinvalid = QgsAuthManager::instance()->getAuthSetting( QString( "cafileallowinvalid" ), QVariant( false ) );
+  if ( allowinvalid.isNull() )
+    return certs;
+
+  QString cafile( cafileval.toString() );
+  if ( !cafile.isEmpty() && QFile::exists( cafile ) )
+  {
+    filecerts = QgsAuthCertUtils::certsFromFile( cafile );
+  }
+  // only CAs or certs capable of signing other certs are allowed
+  Q_FOREACH( QSslCertificate cert, filecerts )
+  {
+    if ( !allowinvalid.toBool() && !cert.isValid() )
+    {
+      continue;
+    }
+
+    if ( QgsAuthCertUtils::certificateIsAuthorityOrIssuer( cert ) )
+    {
+      certs << cert;
+    }
+  }
+  return certs;
+}
+
+const QList<QSslCertificate> QgsAuthManager::getDatabaseCAs()
+{
+  QList<QSslCertificate> certs;
+
+  QSqlQuery query( authDbConnection() );
+  query.prepare( QString( "SELECT id, cert FROM %1" ).arg( authDbAuthoritiesTable() ) );
+
+  if ( !authDbQuery( &query ) )
+    return certs;
+
+  if ( query.isActive() && query.isSelect() )
+  {
+    while ( query.next() )
+    {
+      certs << QSslCertificate( query.value( 1 ).toByteArray(), QSsl::Pem );
+    }
+  }
+
+  return certs;
+}
+
+const QMap<QString, QSslCertificate> QgsAuthManager::getMappedDatabaseCAs()
+{
+  return QgsAuthCertUtils::mapDigestToCerts( getDatabaseCAs() );
+}
+
+void QgsAuthManager::rebuildCaCertsCache()
+{
+  mCaCertsCache.clear();
+  // in reverse order of precedence, with regards to duplicates, so QMap inserts overwrite
+  insertCaCertInCache( QgsAuthCertUtils::SystemRoot, getSystemRootCAs() );
+  insertCaCertInCache( QgsAuthCertUtils::FromFile, getExtraFileCAs() );
+  insertCaCertInCache( QgsAuthCertUtils::InDatabase, getDatabaseCAs() );
+}
+
+bool QgsAuthManager::storeCertTrustPolicy(const QSslCertificate &cert, QgsAuthCertUtils::CertTrustPolicy policy )
+{
+  if ( cert.isNull() )
+  {
+    QgsDebugMsg( "Passed certificate is null" );
+    return false;
+  }
+
+  removeCertTrustPolicy( cert );
+
+  QString id( QgsAuthCertUtils::shaHexForCert( cert ) );
+
+  if ( policy == QgsAuthCertUtils::DefaultTrust )
+  {
+    QgsDebugMsg( QString( "Passed policy was default, all cert records in database were removed for id: %1").arg( id ) );
+    return true;
+  }
+
+  QSqlQuery query( authDbConnection() );
+  query.prepare( QString( "INSERT INTO %1 (id, policy) "
+                          "VALUES (:id, :policy)" ).arg( authDbTrustTable() ) );
+
+  query.bindValue( ":id", id );
+  query.bindValue( ":policy", ( int )policy );
+
+  if ( !authDbStartTransaction() )
+    return false;
+
+  if ( !authDbQuery( &query ) )
+    return false;
+
+  if ( !authDbCommit() )
+    return false;
+
+  QgsDebugMsg( QString( "Store certificate trust policy SUCCESS for id: %1" ).arg( id ) );
+  return true;
+}
+
+QgsAuthCertUtils::CertTrustPolicy QgsAuthManager::getCertTrustPolicy( const QSslCertificate &cert )
+{
+  if ( cert.isNull() )
+  {
+    QgsDebugMsg( "Passed certificate is null" );
+    return QgsAuthCertUtils::DefaultTrust;
+  }
+
+  QString id( QgsAuthCertUtils::shaHexForCert( cert ) );
+
+  QSqlQuery query( authDbConnection() );
+  query.prepare( QString( "SELECT policy FROM %1 "
+                          "WHERE id = :id" ).arg( authDbTrustTable() ) );
+
+  query.bindValue( ":id", id );
+
+  if ( !authDbQuery( &query ) )
+    return QgsAuthCertUtils::DefaultTrust;
+
+  QgsAuthCertUtils::CertTrustPolicy policy( QgsAuthCertUtils::DefaultTrust );
+  if ( query.isActive() && query.isSelect() )
+  {
+    if ( query.first() )
+    {
+      policy = ( QgsAuthCertUtils::CertTrustPolicy )query.value( 0 ).toInt();
+      QgsDebugMsg( QString( "Authentication cert trust policy retrieved for id: %1" ).arg( id ) );
+    }
+    if ( query.next() )
+    {
+      QgsDebugMsg( QString( "Select contains more than one cert trust policy for id: %1" ).arg( id ) );
+      emit messageOut( tr( "Authentication database contains duplicate cert trust policies" ), authManTag(), WARNING );
+      return QgsAuthCertUtils::DefaultTrust;
+    }
+  }
+  return policy;
+}
+
+bool QgsAuthManager::removeCertTrustPolicies( const QList<QSslCertificate> &certs )
+{
+  if ( certs.size() < 1 )
+  {
+    QgsDebugMsg( "Passed certificate list has no certs" );
+    return false;
+  }
+
+  Q_FOREACH( const QSslCertificate& cert, certs )
+  {
+    if ( !removeCertTrustPolicy( cert ) )
+      return false;
+  }
+  return true;
+}
+
+bool QgsAuthManager::removeCertTrustPolicy( const QSslCertificate &cert )
+{
+  if ( cert.isNull() )
+  {
+    QgsDebugMsg( "Passed certificate is null" );
+    return false;
+  }
+
+  QString id( QgsAuthCertUtils::shaHexForCert( cert ) );
+
+  QSqlQuery query( authDbConnection() );
+
+  query.prepare( QString( "DELETE FROM %1 WHERE id = :id" ).arg( authDbTrustTable() ) );
+
+  query.bindValue( ":id", id );
+
+  if ( !authDbStartTransaction() )
+    return false;
+
+  if ( !authDbQuery( &query ) )
+    return false;
+
+  if ( !authDbCommit() )
+    return false;
+
+  QgsDebugMsg( QString( "REMOVED cert trust policy for id: %1" ).arg( id ) );
+
+  return true;
+}
+
+QgsAuthCertUtils::CertTrustPolicy QgsAuthManager::getCertificateTrustPolicy( const QSslCertificate &cert )
+{
+  QString id( QgsAuthCertUtils::shaHexForCert( cert ) );
+  const QStringList& trustedids = mCertTrustCache.value( QgsAuthCertUtils::Trusted );
+  const QStringList& untrustedids = mCertTrustCache.value( QgsAuthCertUtils::Untrusted );
+
+  QgsAuthCertUtils::CertTrustPolicy policy( QgsAuthCertUtils::DefaultTrust );
+  if ( trustedids.contains( id ) )
+  {
+    policy = QgsAuthCertUtils::Trusted;
+  }
+  else if ( untrustedids.contains( id ) )
+  {
+    policy = QgsAuthCertUtils::Untrusted;
+  }
+  return policy;
+}
+
+bool QgsAuthManager::setDefaultCertTrustPolicy( QgsAuthCertUtils::CertTrustPolicy policy )
+{
+  if ( policy == QgsAuthCertUtils::DefaultTrust )
+  {
+    // set default trust policy to Trusted by removing setting
+    return removeAuthSetting( "certdefaulttrust" );
+  }
+  return storeAuthSetting( "certdefaulttrust", ( int )policy );
+}
+
+QgsAuthCertUtils::CertTrustPolicy QgsAuthManager::defaultCertTrustPolicy()
+{
+  QVariant policy( getAuthSetting( "certdefaulttrust" ) );
+  if ( policy.isNull() )
+  {
+    return QgsAuthCertUtils::Trusted;
+  }
+  return ( QgsAuthCertUtils::CertTrustPolicy )policy.toInt();
+}
+
+bool QgsAuthManager::rebuildCertTrustCache()
+{
+  mCertTrustCache.clear();
+
+  QSqlQuery query( authDbConnection() );
+  query.prepare( QString( "SELECT id, policy FROM %1" ).arg( authDbTrustTable() ) );
+
+  if ( !authDbQuery( &query ) )
+  {
+    QgsDebugMsg( "Rebuild of cert trust policy cache FAILED" );
+    return false;
+  }
+
+  if ( query.isActive() && query.isSelect() )
+  {
+    while ( query.next() )
+    {
+      QString id = query.value( 0 ).toString();
+      QgsAuthCertUtils::CertTrustPolicy policy = ( QgsAuthCertUtils::CertTrustPolicy )query.value( 1 ).toInt();
+
+      QStringList ids;
+      if ( mCertTrustCache.contains( policy ) )
+      {
+        ids = mCertTrustCache.value( policy );
+      }
+      mCertTrustCache.insert( policy, ids << id );
+    }
+  }
+
+  QgsDebugMsg( "Rebuild of cert trust policy cache SUCCEEDED" );
+  return true;
+}
+
+const QList<QSslCertificate> QgsAuthManager::getTrustedCaCerts()
+{
+  QgsAuthCertUtils::CertTrustPolicy defaultpolicy( defaultCertTrustPolicy() );
+  QStringList trustedids = mCertTrustCache.value( QgsAuthCertUtils::Trusted );
+  QStringList untrustedids = mCertTrustCache.value( QgsAuthCertUtils::Untrusted );
+  const QList<QPair<QgsAuthCertUtils::CaCertSource, QSslCertificate> >& certpairs( mCaCertsCache.values() );
+
+  QList<QSslCertificate> trustedcerts;
+  for (int i = 0; i < certpairs.size(); ++i) {
+    QSslCertificate cert( certpairs.at( i ).second );
+    QString certid( QgsAuthCertUtils::shaHexForCert( cert ) );
+    if ( trustedids.contains( certid ) )
+    {
+      trustedcerts.append( cert );
+    }
+    else if ( defaultpolicy == QgsAuthCertUtils::Trusted && !untrustedids.contains( certid ) )
+    {
+      trustedcerts.append( cert );
+    }
+  }
+  return trustedcerts;
+}
+
+const QByteArray QgsAuthManager::getTrustedCaCertsPemText()
+{
+  QByteArray capem;
+  QList<QSslCertificate> certs( getTrustedCaCerts() );
+  if ( !certs.isEmpty() )
+  {
+    QStringList certslist;
+    Q_FOREACH ( const QSslCertificate& cert, certs )
+    {
+      certslist << cert.toPem();
+    }
+    capem = certslist.join( "\n" ).toAscii(); //+ "\n";
+  }
+  return capem;
+}
+
+
+////////////////// Certificate calls - end ///////////////////////
+
+#endif
+
 void QgsAuthManager::clearAllCachedConfigs()
 {
   if ( isDisabled() )
@@ -1371,5 +2090,14 @@ bool QgsAuthManager::authDbTransactionQuery( QSqlQuery *query ) const
   }
 
   return ok;
+}
+
+void QgsAuthManager::insertCaCertInCache( QgsAuthCertUtils::CaCertSource source, const QList<QSslCertificate>& certs )
+{
+  Q_FOREACH( const QSslCertificate& cert, certs )
+  {
+    mCaCertsCache.insert( QgsAuthCertUtils::shaHexForCert( cert ),
+                             QPair<QgsAuthCertUtils::CaCertSource, QSslCertificate>( source, cert ) );
+  }
 }
 

@@ -28,17 +28,10 @@
 #include <QtCrypto>
 #endif
 
+#include "qgsauthenticationcertutils.h"
 #include "qgsauthenticationconfig.h"
 #include "qgsauthenticationmanager.h"
 
-static QString validGreen_( const QString& selector = "*" )
-{
-  return QString( "%1{color: rgb(0, 170, 0);}" ).arg( selector );
-}
-static QString validRed_( const QString& selector = "*" )
-{
-  return QString( "%1{color: rgb(200, 0, 0);}" ).arg( selector );
-}
 
 QgsAuthConfigWidget::QgsAuthConfigWidget( QWidget *parent , const QString& authcfg )
     : QDialog( parent )
@@ -370,7 +363,7 @@ void QgsAuthConfigWidget::fileFound( bool found, QWidget *widget )
 {
   if ( !found )
   {
-    widget->setStyleSheet( validRed_( "QLineEdit" ) );
+    widget->setStyleSheet( QgsAuthCertUtils::redTextStyleSheet( "QLineEdit" ) );
     widget->setToolTip( tr( "File not found" ) );
   }
   else
@@ -440,11 +433,11 @@ void QgsAuthConfigWidget::writePkiMessage( QLineEdit *lineedit, const QString &m
   switch ( valid )
   {
     case Valid:
-      ss = validGreen_( "QLineEdit" );
+      ss = QgsAuthCertUtils::greenTextStyleSheet( "QLineEdit" );
       txt = tr( "Valid: %1" ).arg( msg );
       break;
     case Invalid:
-      ss = validRed_( "QLineEdit" );
+      ss = QgsAuthCertUtils::redTextStyleSheet( "QLineEdit" );
       txt = tr( "Invalid: %1" ).arg( msg );
       break;
     case Unknown:

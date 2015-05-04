@@ -18,6 +18,7 @@
 #define QGSAUTHENTICATIONAUTHORITIESEDITOR_H
 
 #include <QWidget>
+#include <QSslCertificate>
 
 #include "ui_qgsauthenticationauthoritieseditor.h"
 #include "qgsauthenticationmanager.h"
@@ -33,6 +34,15 @@ class GUI_EXPORT QgsAuthAuthoritiesEditor : public QWidget, private Ui::QgsAuthA
     Q_OBJECT
 
   public:
+    enum CaType
+    {
+      Section = 1000,
+      OrgName = 1001,
+      RootCaCert = 1002,
+      FileCaCert = 1003,
+      DbCaCert = 1004,
+    };
+
     /**
      * Widget for viewing and editing certificate authorities directly in database
      */
@@ -43,8 +53,9 @@ class GUI_EXPORT QgsAuthAuthoritiesEditor : public QWidget, private Ui::QgsAuthA
     void toggleTitleVisibility( bool visible );
 
   private slots:
-    /** Relay messages to widget's messagebar */
-    void authMessageOut( const QString& message, const QString& authtag, QgsAuthManager::MessageLevel level );
+    void populateCaCertsView( bool rebuildCaCache = true );
+
+    void showCertInfo( QTreeWidgetItem *item );
 
     /** Pass selection change on to UI update */
     void selectionChanged( const QItemSelection& selected, const QItemSelection& deselected );
@@ -52,19 +63,58 @@ class GUI_EXPORT QgsAuthAuthoritiesEditor : public QWidget, private Ui::QgsAuthA
     /** Update UI based upon current selection */
     void checkSelection();
 
-    void on_btnAddAuthority_clicked();
+    void handleDoubleClick( QTreeWidgetItem* item, int col );
 
-    void on_btnRemoveAuthority_clicked();
+    void on_btnAddCa_clicked();
 
-    void on_btnInfoAuthority_clicked();
+    void on_btnRemoveCa_clicked();
+
+    void on_btnInfoCa_clicked();
+
+    void on_btnGroupByOrg_toggled( bool checked );
+
+    void defaultTrustPolicyIndexChanged( int indx );
+
+    void on_btnCaFile_clicked();
+
+    void on_btnCaFileClear_clicked();
+
+    /** Relay messages to widget's messagebar */
+    void authMessageOut( const QString& message, const QString& authtag, QgsAuthManager::MessageLevel level );
+
+  protected:
+    void showEvent( QShowEvent *e);
 
   private:
+    void populateDefaultTrustPolicyComboBox();
+
+    QTreeWidgetItem *populateCaCertsSection( const QString& section, QList<QSslCertificate> certs,
+                                             QgsAuthAuthoritiesEditor::CaType catype);
+
+    void appendCertsToGroup( QList<QSslCertificate> certs,
+                             QgsAuthAuthoritiesEditor::CaType catype,
+                             QTreeWidgetItem *parent = 0 );
+
+    void appendCertsToItem( QList<QSslCertificate> certs,
+                            QgsAuthAuthoritiesEditor::CaType catype,
+                            QTreeWidgetItem *parent = 0 );
+
     QgsMessageBar * messageBar();
     int messageTimeout();
-    QString selectedId();
 
     QVBoxLayout *mAuthNotifyLayout;
     QLabel *mAuthNotify;
+
+    QTreeWidgetItem * mRootCaSecItem;
+    QTreeWidgetItem * mFileCaSecItem;
+    QTreeWidgetItem * mDbCaSecItem;
+
+    bool mRootCaSecExp;
+    bool mFileCaSecExp;
+    bool mDbCaSecExp;
+
+    QgsAuthCertUtils::CertTrustPolicy mDefaultTrustPolicy;
+    QMap<QgsAuthCertUtils::CertTrustPolicy, QStringList > mCertTrustCache;
 };
 
 #endif // QGSAUTHENTICATIONAUTHORITIESEDITOR_H
