@@ -308,6 +308,12 @@ class CORE_EXPORT QgsAuthManager : public QObject, public QgsSingleton<QgsAuthMa
     /** Get list of all trusted CA certificates */
     const QList<QSslCertificate> getTrustedCaCerts( bool includeinvalid = false );
 
+    /** Rebuild trusted certificate authorities cache */
+    bool rebuildTrustedCaCertsCache();
+
+    /** Get cache of trusted certificate authorities, ready for network connections */
+    const QList<QSslCertificate> getTrustedCaCertsCache() { return mTrustedCaCertsCache; }
+
     /** Get concatenated string of all trusted CA certificates */
     const QByteArray getTrustedCaCertsPemText( bool includeinvalid = false );
 
@@ -420,6 +426,8 @@ class CORE_EXPORT QgsAuthManager : public QObject, public QgsSingleton<QgsAuthMa
     QMap<QString, QPair<QgsAuthCertUtils::CaCertSource , QSslCertificate> > mCaCertsCache;
     // list of sha1 digests per policy
     QMap<QgsAuthCertUtils::CertTrustPolicy, QStringList > mCertTrustCache;
+    // cache of certs ready to be utilized in network connections
+    QList<QSslCertificate> mTrustedCaCertsCache;
 #endif
 };
 

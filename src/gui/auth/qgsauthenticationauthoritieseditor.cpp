@@ -383,6 +383,7 @@ void QgsAuthAuthoritiesEditor::showCertInfo( QTreeWidgetItem *item )
   dlg->exec();
   if ( ci->trustCacheRebuilt() )
   {
+    // QgsAuthManager::instance()->rebuildTrustedCaCertsCache() already called in dlg
     populateCaCertsView();
   }
 }
@@ -477,6 +478,7 @@ void QgsAuthAuthoritiesEditor::on_btnAddCa_clicked()
       updateCertTrustPolicyCache();
     }
 
+    QgsAuthManager::instance()->rebuildTrustedCaCertsCache();
     populateDatabaseCaCerts();
     mDbCaSecItem->setExpanded( true );
   }
@@ -545,6 +547,7 @@ void QgsAuthAuthoritiesEditor::on_btnRemoveCa_clicked()
   }
 
   QgsAuthManager::instance()->rebuildCaCertsCache();
+  QgsAuthManager::instance()->rebuildTrustedCaCertsCache();
   updateCertTrustPolicyCache();
 
   item->parent()->removeChild( item );
@@ -587,6 +590,7 @@ void QgsAuthAuthoritiesEditor::defaultTrustPolicyIndexChanged( int indx )
   }
   mDefaultTrustPolicy = trustpolicy;
   QgsAuthManager::instance()->rebuildCertTrustCache();
+  QgsAuthManager::instance()->rebuildTrustedCaCertsCache();
   populateCaCertsView();
 }
 
@@ -634,6 +638,8 @@ void QgsAuthAuthoritiesEditor::on_btnCaFile_clicked()
       updateCertTrustPolicyCache();
     }
 
+    QgsAuthManager::instance()->rebuildTrustedCaCertsCache();
+
     populateFileCaCerts();
     mFileCaSecItem->setExpanded( true );
   }
@@ -675,6 +681,8 @@ void QgsAuthAuthoritiesEditor::on_btnCaFileClear_clicked()
       updateCertTrustPolicyCache();
     }
   }
+
+  QgsAuthManager::instance()->rebuildTrustedCaCertsCache();
 
   leCaFile->clear();
   populateFileCaCerts();

@@ -237,6 +237,7 @@ void QgsAuthCertInfo::on_btnSaveTrust_clicked()
   // rebuild trust cache
   QgsAuthManager::instance()->rebuildCertTrustCache();
   mTrustCacheRebuilt = true;
+  QgsAuthManager::instance()->rebuildTrustedCaCertsCache();
 }
 
 void QgsAuthCertInfo::currentPolicyIndexChanged( int indx )

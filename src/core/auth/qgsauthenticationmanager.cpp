@@ -152,6 +152,7 @@ bool QgsAuthManager::init()
 #ifndef QT_NO_OPENSSL
       rebuildCaCertsCache();
       rebuildCertTrustCache();
+      rebuildTrustedCaCertsCache();
 #endif
 
       return true;
@@ -171,6 +172,7 @@ bool QgsAuthManager::init()
 #ifndef QT_NO_OPENSSL
   rebuildCaCertsCache();
   rebuildCertTrustCache();
+  rebuildTrustedCaCertsCache();
 #endif
 
   return true;
@@ -1629,6 +1631,14 @@ const QList<QSslCertificate> QgsAuthManager::getTrustedCaCerts( bool includeinva
     }
   }
   return trustedcerts;
+}
+
+bool QgsAuthManager::rebuildTrustedCaCertsCache()
+{
+  mTrustedCaCertsCache = getTrustedCaCerts();
+  QgsDebugMsg( "Rebuilt trusted cert authorities cache" );
+  // TODO: add some error trapping for the operation
+  return true;
 }
 
 const QByteArray QgsAuthManager::getTrustedCaCertsPemText( bool includeinvalid )
