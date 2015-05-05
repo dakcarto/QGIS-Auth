@@ -43,9 +43,6 @@ QgsAuthAuthoritiesEditor::QgsAuthAuthoritiesEditor( QWidget *parent )
     , mRootCaSecItem( 0 )
     , mFileCaSecItem( 0 )
     , mDbCaSecItem( 0 )
-    , mRootCaSecExp( false )
-    , mFileCaSecExp( true )
-    , mDbCaSecExp( true )
 {
   if ( QgsAuthManager::instance()->isDisabled() )
   {
@@ -58,15 +55,10 @@ QgsAuthAuthoritiesEditor::QgsAuthAuthoritiesEditor( QWidget *parent )
   {
     setupUi( this );
 
-    treeWidgetCAs->setColumnCount(3);
-    treeWidgetCAs->setHeaderLabels(
-          QStringList() << tr( "Common Name" )
-          << tr( "Serial #" )
-          << tr( "Epiry Date" )
-          << tr( "Trust Policy" ) );
-    treeWidgetCAs->setColumnWidth( 0, 300 );
-    treeWidgetCAs->setColumnWidth( 1, 75 );
-    treeWidgetCAs->setColumnWidth( 2, 200 );
+    connect( QgsAuthManager::instance(), SIGNAL( messageOut( const QString&, const QString&, QgsAuthManager::MessageLevel ) ),
+             this, SLOT( authMessageOut( const QString&, const QString&, QgsAuthManager::MessageLevel ) ) );
+
+    setupCaCertsTree();
 
     connect( treeWidgetCAs->selectionModel(), SIGNAL( selectionChanged( const QItemSelection&, const QItemSelection& ) ),
              this, SLOT( selectionChanged( const QItemSelection&, const QItemSelection& ) ) );
@@ -74,24 +66,24 @@ QgsAuthAuthoritiesEditor::QgsAuthAuthoritiesEditor( QWidget *parent )
     connect( treeWidgetCAs, SIGNAL( itemDoubleClicked ( QTreeWidgetItem *, int ) ),
              this, SLOT( handleDoubleClick ( QTreeWidgetItem *, int ) ) );
 
-    connect( btnViewRefresh, SIGNAL( clicked() ), this, SLOT( populateCaCertsView() ) );
-
-    connect( QgsAuthManager::instance(), SIGNAL( messageOut( const QString&, const QString&, QgsAuthManager::MessageLevel ) ),
-             this, SLOT( authMessageOut( const QString&, const QString&, QgsAuthManager::MessageLevel ) ) );
+    connect( btnViewRefresh, SIGNAL( clicked() ), this, SLOT( refreshCaCertsView() ) );
 
     QVariant cafileval = QgsAuthManager::instance()->getAuthSetting( QString( "cafile" ) );
     if ( !cafileval.isNull() )
+    {
       leCaFile->setText( cafileval.toString() );
+    }
 
     btnGroupByOrg->setChecked( true );
     QVariant sortbyval = QgsAuthManager::instance()->getAuthSetting( QString( "casortby" ), QVariant( true ) );
     if ( !sortbyval.isNull() )
       btnGroupByOrg->setChecked( sortbyval.toBool() );
 
-    populateCaCertsView( false );
+    mDefaultTrustPolicy = QgsAuthManager::instance()->defaultCertTrustPolicy();
+    populateCaCertsView();
     checkSelection();
 
-    populateDefaultTrustPolicyComboBox();  // needs to come after populateCaCertsView
+    populateDefaultTrustPolicyComboBox();
     connect( cmbDefaultTrustPolicy, SIGNAL( currentIndexChanged( int ) ),
              this, SLOT( defaultTrustPolicyIndexChanged( int ) ) );
   }
@@ -101,75 +93,113 @@ QgsAuthAuthoritiesEditor::~QgsAuthAuthoritiesEditor()
 {
 }
 
-void QgsAuthAuthoritiesEditor::populateDefaultTrustPolicyComboBox()
+static void setItemBold_( QTreeWidgetItem* item )
 {
-  QList < QPair<QgsAuthCertUtils::CertTrustPolicy, QString> > policies;
-  policies << qMakePair( QgsAuthCertUtils::Trusted,
-                         QgsAuthCertUtils::getCertTrustName( QgsAuthCertUtils::Trusted ) )
-           << qMakePair( QgsAuthCertUtils::Untrusted,
-                         QgsAuthCertUtils::getCertTrustName( QgsAuthCertUtils::Untrusted ) );
-
-  for ( int i = 0; i < policies.size(); i++ )
-  {
-    cmbDefaultTrustPolicy->addItem( policies.at( i ).second, QVariant(( int )policies.at( i ).first ) );
-  }
-
-  int idx = cmbDefaultTrustPolicy->findData( QVariant(( int )mDefaultTrustPolicy ) );
-  cmbDefaultTrustPolicy->setCurrentIndex( idx == -1 ? 0 : idx );
-}
-
-void QgsAuthAuthoritiesEditor::populateCaCertsView( bool rebuildCaCache )
-{
-  mDefaultTrustPolicy = QgsAuthManager::instance()->defaultCertTrustPolicy();
-  mCertTrustCache = QgsAuthManager::instance()->getCertTrustCache();
-
-  if ( mDbCaSecItem )
-    mDbCaSecExp = mDbCaSecItem->isExpanded();
-
-  if ( mFileCaSecItem )
-    mFileCaSecExp = mFileCaSecItem->isExpanded();
-
-  if ( mRootCaSecItem )
-    mRootCaSecExp = mRootCaSecItem->isExpanded();
-
-  mDbCaSecItem = 0;
-  mFileCaSecItem = 0;
-  mRootCaSecItem = 0;
-  treeWidgetCAs->clear();
-
-  mDbCaSecItem = populateCaCertsSection(
-        QgsAuthCertUtils::getCaSourceName( QgsAuthCertUtils::InDatabase ),
-        QgsAuthManager::instance()->getDatabaseCAs(),
-        QgsAuthAuthoritiesEditor::DbCaCert );
-  mDbCaSecItem->setExpanded( mDbCaSecExp );
-
-  mFileCaSecItem = populateCaCertsSection(
-        QgsAuthCertUtils::getCaSourceName( QgsAuthCertUtils::FromFile ),
-        QgsAuthManager::instance()->getExtraFileCAs(),
-        QgsAuthAuthoritiesEditor::FileCaCert );
-  mFileCaSecItem->setExpanded( mFileCaSecExp );
-
-  mRootCaSecItem = populateCaCertsSection(
-        QgsAuthCertUtils::getCaSourceName( QgsAuthCertUtils::SystemRoot ),
-        QgsAuthManager::instance()->getSystemRootCAs(),
-        QgsAuthAuthoritiesEditor::RootCaCert );
-  mRootCaSecItem->setExpanded( mRootCaSecExp );
-
-  if ( rebuildCaCache )
-    QgsAuthManager::instance()->rebuildCaCertsCache();
-}
-
-QTreeWidgetItem * QgsAuthAuthoritiesEditor::populateCaCertsSection( const QString &section, QList<QSslCertificate> certs,
-                                                                    QgsAuthAuthoritiesEditor::CaType catype )
-{
-  QTreeWidgetItem * item( new QTreeWidgetItem( treeWidgetCAs,
-                                               QStringList( section ),
-                                               ( int )QgsAuthAuthoritiesEditor::Section ) );
   item->setFirstColumnSpanned( true );
   QFont secf( item->font( 0 ) );
   secf.setBold( true );
   item->setFont( 0, secf );
+}
 
+void QgsAuthAuthoritiesEditor::setupCaCertsTree()
+{
+  treeWidgetCAs->setColumnCount(3);
+  treeWidgetCAs->setHeaderLabels(
+        QStringList() << tr( "Common Name" )
+        << tr( "Serial #" )
+        << tr( "Epiry Date" )
+        << tr( "Trust Policy" ) );
+  treeWidgetCAs->setColumnWidth( 0, 300 );
+  treeWidgetCAs->setColumnWidth( 1, 75 );
+  treeWidgetCAs->setColumnWidth( 2, 200 );
+
+  // add root sections
+   mDbCaSecItem = new QTreeWidgetItem(
+         treeWidgetCAs,
+         QStringList( QgsAuthCertUtils::getCaSourceName( QgsAuthCertUtils::InDatabase ) ),
+         ( int )QgsAuthAuthoritiesEditor::Section );
+   setItemBold_( mDbCaSecItem );
+   mDbCaSecItem->setFlags( Qt::ItemIsEnabled );
+   mDbCaSecItem->setExpanded( true );
+   treeWidgetCAs->insertTopLevelItem(0, mDbCaSecItem);
+
+   mFileCaSecItem = new QTreeWidgetItem(
+         treeWidgetCAs,
+         QStringList( QgsAuthCertUtils::getCaSourceName( QgsAuthCertUtils::FromFile ) ),
+         ( int )QgsAuthAuthoritiesEditor::Section );
+   setItemBold_( mFileCaSecItem );
+   mFileCaSecItem->setFlags( Qt::ItemIsEnabled );
+   mFileCaSecItem->setExpanded( true );
+   treeWidgetCAs->insertTopLevelItem(0, mFileCaSecItem);
+
+   mRootCaSecItem = new QTreeWidgetItem(
+         treeWidgetCAs,
+         QStringList( QgsAuthCertUtils::getCaSourceName( QgsAuthCertUtils::SystemRoot ) ),
+         ( int )QgsAuthAuthoritiesEditor::Section );
+   setItemBold_( mRootCaSecItem );
+   mRootCaSecItem->setFlags( Qt::ItemIsEnabled );
+   mRootCaSecItem->setExpanded( false );
+   treeWidgetCAs->insertTopLevelItem(0, mRootCaSecItem);
+}
+
+void QgsAuthAuthoritiesEditor::populateCaCertsView()
+{
+  updateCertTrustPolicyCache();
+  populateDatabaseCaCerts();
+  populateFileCaCerts();
+  populateRootCaCerts();
+}
+
+void QgsAuthAuthoritiesEditor::refreshCaCertsView()
+{
+//  QgsAuthManager::instance()->rebuildCaCertsCache();
+  populateCaCertsView();
+}
+
+static void removeChildren_( QTreeWidgetItem* item )
+{
+  Q_FOREACH( QTreeWidgetItem* child, item->takeChildren() )
+  {
+    delete child;
+  }
+}
+
+void QgsAuthAuthoritiesEditor::populateDatabaseCaCerts()
+{
+  removeChildren_( mDbCaSecItem );
+
+  bool expanded = mDbCaSecItem->isExpanded();
+  populateCaCertsSection( mDbCaSecItem,
+                          QgsAuthManager::instance()->getDatabaseCAs(),
+                          QgsAuthAuthoritiesEditor::DbCaCert );
+  mDbCaSecItem->setExpanded( expanded );
+}
+
+void QgsAuthAuthoritiesEditor::populateFileCaCerts()
+{
+  removeChildren_( mFileCaSecItem );
+
+  bool expanded = mFileCaSecItem->isExpanded();
+  populateCaCertsSection( mFileCaSecItem,
+                          QgsAuthManager::instance()->getExtraFileCAs(),
+                          QgsAuthAuthoritiesEditor::FileCaCert );
+  mFileCaSecItem->setExpanded( expanded );
+}
+
+void QgsAuthAuthoritiesEditor::populateRootCaCerts()
+{
+  removeChildren_( mRootCaSecItem );
+
+  bool expanded = mRootCaSecItem->isExpanded();
+  populateCaCertsSection( mRootCaSecItem,
+                          QgsAuthManager::instance()->getSystemRootCAs(),
+                          QgsAuthAuthoritiesEditor::RootCaCert );
+  mRootCaSecItem->setExpanded( expanded );
+}
+
+void QgsAuthAuthoritiesEditor::populateCaCertsSection( QTreeWidgetItem* item, QList<QSslCertificate> certs,
+                                                       QgsAuthAuthoritiesEditor::CaType catype )
+{
   if ( btnGroupByOrg->isChecked() )
   {
     appendCertsToGroup( certs, catype, item );
@@ -178,9 +208,6 @@ QTreeWidgetItem * QgsAuthAuthoritiesEditor::populateCaCertsSection( const QStrin
   {
     appendCertsToItem( certs, catype, item );
   }
-  treeWidgetCAs->insertTopLevelItem(0, item);
-
-  return item;
 }
 
 void QgsAuthAuthoritiesEditor::appendCertsToGroup( QList<QSslCertificate> certs,
@@ -206,6 +233,8 @@ void QgsAuthAuthoritiesEditor::appendCertsToGroup( QList<QSslCertificate> certs,
                                                     QStringList() << it.key(),
                                                     ( int )QgsAuthAuthoritiesEditor::OrgName ) );
     grpitem->setFirstColumnSpanned( true );
+    grpitem->setFlags( Qt::ItemIsEnabled );
+
     QBrush orgb( grpitem->foreground( 0 ) );
     orgb.setColor( QColor::fromRgb( 90, 90, 90 ) );
     grpitem->setForeground( 0, orgb );
@@ -253,7 +282,7 @@ void QgsAuthAuthoritiesEditor::appendCertsToItem( QList<QSslCertificate> certs,
     {
       policy = QgsAuthCertUtils::getCertTrustName( QgsAuthCertUtils::Trusted );
     }
-    else if ( untrustedids.contains( id ) )
+    else if ( untrustedids.contains( id ) || !cert.isValid() )
     {
       policy = QgsAuthCertUtils::getCertTrustName( QgsAuthCertUtils::Untrusted );
     }
@@ -271,7 +300,10 @@ void QgsAuthAuthoritiesEditor::appendCertsToItem( QList<QSslCertificate> certs,
     if ( trustedids.contains( id ) )
     {
       item->setForeground( 3, greenb );
-      item->setIcon( 0, QgsApplication::getThemeIcon( "/mIconCertificateTrusted.svg" ) );
+      if ( cert.isValid() )
+      {
+        item->setIcon( 0, QgsApplication::getThemeIcon( "/mIconCertificateTrusted.svg" ) );
+      }
     }
     else if ( untrustedids.contains( id ) )
     {
@@ -287,6 +319,28 @@ void QgsAuthAuthoritiesEditor::appendCertsToItem( QList<QSslCertificate> certs,
   }
 
   parent->sortChildren(0, Qt::AscendingOrder );
+}
+
+void QgsAuthAuthoritiesEditor::updateCertTrustPolicyCache()
+{
+  mCertTrustCache = QgsAuthManager::instance()->getCertTrustCache();
+}
+
+void QgsAuthAuthoritiesEditor::populateDefaultTrustPolicyComboBox()
+{
+  QList < QPair<QgsAuthCertUtils::CertTrustPolicy, QString> > policies;
+  policies << qMakePair( QgsAuthCertUtils::Trusted,
+                         QgsAuthCertUtils::getCertTrustName( QgsAuthCertUtils::Trusted ) )
+           << qMakePair( QgsAuthCertUtils::Untrusted,
+                         QgsAuthCertUtils::getCertTrustName( QgsAuthCertUtils::Untrusted ) );
+
+  for ( int i = 0; i < policies.size(); i++ )
+  {
+    cmbDefaultTrustPolicy->addItem( policies.at( i ).second, QVariant(( int )policies.at( i ).first ) );
+  }
+
+  int idx = cmbDefaultTrustPolicy->findData( QVariant(( int )mDefaultTrustPolicy ) );
+  cmbDefaultTrustPolicy->setCurrentIndex( idx == -1 ? 0 : idx );
 }
 
 void QgsAuthAuthoritiesEditor::showCertInfo( QTreeWidgetItem *item )
@@ -325,7 +379,7 @@ void QgsAuthAuthoritiesEditor::showCertInfo( QTreeWidgetItem *item )
 
   dlg->setLayout( layout );
   dlg->setWindowModality( Qt::WindowModal );
-  dlg->resize(600, 480);
+  dlg->resize(650, 480);
   dlg->exec();
   if ( ci->trustCacheRebuilt() )
   {
@@ -406,6 +460,8 @@ void QgsAuthAuthoritiesEditor::on_btnAddCa_clicked()
                                  QgsMessageBar::CRITICAL);
     }
 
+    QgsAuthManager::instance()->rebuildCaCertsCache();
+
     if ( dlg->certTrustPolicy() != QgsAuthCertUtils::DefaultTrust )
     {
       Q_FOREACH( const QSslCertificate& cert, certs )
@@ -418,9 +474,10 @@ void QgsAuthAuthoritiesEditor::on_btnAddCa_clicked()
         }
       }
       QgsAuthManager::instance()->rebuildCertTrustCache();
+      updateCertTrustPolicyCache();
     }
 
-    populateCaCertsView();
+    populateDatabaseCaCerts();
     mDbCaSecItem->setExpanded( true );
   }
 }
@@ -487,7 +544,13 @@ void QgsAuthAuthoritiesEditor::on_btnRemoveCa_clicked()
     return;
   }
 
-  populateCaCertsView();
+  QgsAuthManager::instance()->rebuildCaCertsCache();
+  updateCertTrustPolicyCache();
+
+  item->parent()->removeChild( item );
+  delete item;
+
+//  populateDatabaseCaCerts();
   mDbCaSecItem->setExpanded( true );
 }
 
@@ -508,7 +571,7 @@ void QgsAuthAuthoritiesEditor::on_btnGroupByOrg_toggled( bool checked )
                     QObject::tr( "Authorities Manager" ),
                     QgsAuthManager::WARNING );
   }
-  populateCaCertsView( false );
+  populateCaCertsView();
 }
 
 void QgsAuthAuthoritiesEditor::defaultTrustPolicyIndexChanged( int indx )
@@ -522,6 +585,7 @@ void QgsAuthAuthoritiesEditor::defaultTrustPolicyIndexChanged( int indx )
                     QObject::tr( "Authorities Manager" ),
                     QgsAuthManager::CRITICAL );
   }
+  mDefaultTrustPolicy = trustpolicy;
   QgsAuthManager::instance()->rebuildCertTrustCache();
   populateCaCertsView();
 }
@@ -552,6 +616,8 @@ void QgsAuthAuthoritiesEditor::on_btnCaFile_clicked()
                       QgsAuthManager::WARNING );
     }
 
+    QgsAuthManager::instance()->rebuildCaCertsCache();
+
     if ( dlg->certTrustPolicy() != QgsAuthCertUtils::DefaultTrust )
     {
       QList<QSslCertificate> certs( QgsAuthManager::instance()->getExtraFileCAs() );
@@ -565,9 +631,10 @@ void QgsAuthAuthoritiesEditor::on_btnCaFile_clicked()
         }
       }
       QgsAuthManager::instance()->rebuildCertTrustCache();
+      updateCertTrustPolicyCache();
     }
 
-    populateCaCertsView();
+    populateFileCaCerts();
     mFileCaSecItem->setExpanded( true );
   }
 }
@@ -589,6 +656,8 @@ void QgsAuthAuthoritiesEditor::on_btnCaFileClear_clicked()
     return;
   }
 
+  QgsAuthManager::instance()->rebuildCaCertsCache();
+
   QString fn( leCaFile->text() );
   if ( QFile::exists( fn ) )
   {
@@ -603,11 +672,12 @@ void QgsAuthAuthoritiesEditor::on_btnCaFileClear_clicked()
         return;
       }
       QgsAuthManager::instance()->rebuildCertTrustCache();
+      updateCertTrustPolicyCache();
     }
   }
 
   leCaFile->clear();
-  populateCaCertsView();
+  populateFileCaCerts();
 }
 
 void QgsAuthAuthoritiesEditor::authMessageOut( const QString& message, const QString& authtag, QgsAuthManager::MessageLevel level )

@@ -53,7 +53,9 @@ class GUI_EXPORT QgsAuthAuthoritiesEditor : public QWidget, private Ui::QgsAuthA
     void toggleTitleVisibility( bool visible );
 
   private slots:
-    void populateCaCertsView( bool rebuildCaCache = true );
+    void populateCaCertsView();
+
+    void refreshCaCertsView();
 
     void showCertInfo( QTreeWidgetItem *item );
 
@@ -86,10 +88,16 @@ class GUI_EXPORT QgsAuthAuthoritiesEditor : public QWidget, private Ui::QgsAuthA
     void showEvent( QShowEvent *e);
 
   private:
-    void populateDefaultTrustPolicyComboBox();
+    void setupCaCertsTree();
 
-    QTreeWidgetItem *populateCaCertsSection( const QString& section, QList<QSslCertificate> certs,
-                                             QgsAuthAuthoritiesEditor::CaType catype);
+    void populateDatabaseCaCerts();
+
+    void populateFileCaCerts();
+
+    void populateRootCaCerts();
+
+    void populateCaCertsSection( QTreeWidgetItem *item, QList<QSslCertificate> certs,
+                                 QgsAuthAuthoritiesEditor::CaType catype );
 
     void appendCertsToGroup( QList<QSslCertificate> certs,
                              QgsAuthAuthoritiesEditor::CaType catype,
@@ -98,6 +106,10 @@ class GUI_EXPORT QgsAuthAuthoritiesEditor : public QWidget, private Ui::QgsAuthA
     void appendCertsToItem( QList<QSslCertificate> certs,
                             QgsAuthAuthoritiesEditor::CaType catype,
                             QTreeWidgetItem *parent = 0 );
+
+    void updateCertTrustPolicyCache();
+
+    void populateDefaultTrustPolicyComboBox();
 
     QgsMessageBar * messageBar();
     int messageTimeout();
@@ -108,10 +120,6 @@ class GUI_EXPORT QgsAuthAuthoritiesEditor : public QWidget, private Ui::QgsAuthA
     QTreeWidgetItem * mRootCaSecItem;
     QTreeWidgetItem * mFileCaSecItem;
     QTreeWidgetItem * mDbCaSecItem;
-
-    bool mRootCaSecExp;
-    bool mFileCaSecExp;
-    bool mDbCaSecExp;
 
     QgsAuthCertUtils::CertTrustPolicy mDefaultTrustPolicy;
     QMap<QgsAuthCertUtils::CertTrustPolicy, QStringList > mCertTrustCache;
