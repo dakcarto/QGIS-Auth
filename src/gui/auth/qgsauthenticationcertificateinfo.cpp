@@ -34,6 +34,8 @@ QgsAuthCertInfo::QgsAuthCertInfo( QSslCertificate cert, bool manageCertTrust, QW
 {
   setupUi( this );
 
+  lblError->setHidden( true );
+
   treeHeirarchy->setRootIsDecorated( true );
 
   connect( treeHeirarchy, SIGNAL( currentItemChanged( QTreeWidgetItem *, QTreeWidgetItem * ) ),
@@ -66,10 +68,11 @@ QgsAuthCertInfo::~QgsAuthCertInfo()
 
 void QgsAuthCertInfo::setupError( const QString &msg )
 {
+  lblError->setShown( true );
   QString out = tr( "<b>Setup ERROR:</b>\n\n" );
   out += msg;
-  teGeneral->setText( out );
-  teGeneral->setTextColor( QgsAuthCertUtils::redColor() );
+  lblError->setText( out );
+  lblError->setStyleSheet( QgsAuthCertUtils::redTextStyleSheet() );
 }
 
 void QgsAuthCertInfo::currentCertItemChanged( QTreeWidgetItem *current, QTreeWidgetItem *previous )
@@ -87,20 +90,6 @@ void QgsAuthCertInfo::updateCurrentCert( QTreeWidgetItem *item )
 
   int indx( item->data( 0, Qt::UserRole ).toInt() );
   updateCurrentCertInfo( indx );
-}
-
-void QgsAuthCertInfo::updateCurrentCertInfo( int chainindx )
-{
-  btnSaveTrust->setEnabled( false );
-
-  mCurrentQCert = mQCertChain.at( chainindx );
-  mCurrentACert = mACertChain.at( chainindx );
-
-  QgsAuthCertUtils::CertTrustPolicy trustpolicy( QgsAuthManager::instance()->getCertificateTrustPolicy( mCurrentQCert ) );
-  mCurrentTrustPolicy = trustpolicy;
-  cmbbxTrust->setTrustPolicy( trustpolicy );
-
-  teGeneral->setText( QgsAuthCertUtils::resolvedCertName( mCurrentQCert ) );
 }
 
 bool QgsAuthCertInfo::populateQcaCertCollection()
@@ -202,6 +191,36 @@ void QgsAuthCertInfo::setCertHeirarchy()
     previtem = item;
   }
   treeHeirarchy->setCurrentItem( item, 0, QItemSelectionModel::ClearAndSelect );
+}
+
+void QgsAuthCertInfo::updateCurrentCertInfo( int chainindx )
+{
+  btnSaveTrust->setEnabled( false );
+
+  mCurrentQCert = mQCertChain.at( chainindx );
+  mCurrentACert = mACertChain.at( chainindx );
+
+  QgsAuthCertUtils::CertTrustPolicy trustpolicy( QgsAuthManager::instance()->getCertificateTrustPolicy( mCurrentQCert ) );
+  mCurrentTrustPolicy = trustpolicy;
+  cmbbxTrust->setTrustPolicy( trustpolicy );
+  if ( !mCurrentQCert.isValid() )
+  {
+    cmbbxTrust->setDefaultTrustPolicy( QgsAuthCertUtils::Untrusted );
+  }
+
+  populateCertDetails();
+  populateCertPemText();
+}
+
+void QgsAuthCertInfo::populateCertDetails()
+{
+  //QgsAuthCertUtils::resolvedCertName( mCurrentQCert )
+
+}
+
+void QgsAuthCertInfo::populateCertPemText()
+{
+  ptePem->setPlainText( mCurrentQCert.toPem() );
 }
 
 void QgsAuthCertInfo::on_btnSaveTrust_clicked()

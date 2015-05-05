@@ -56,8 +56,6 @@ class GUI_EXPORT QgsAuthCertInfo : public QWidget, private Ui::QgsAuthCertInfo
   private:
     void populateTrustBox();
 
-    void updateCurrentCertInfo( int chainindx );
-
     bool populateQcaCertCollection();
 
     bool setQcaCertificate( QSslCertificate cert );
@@ -65,6 +63,12 @@ class GUI_EXPORT QgsAuthCertInfo : public QWidget, private Ui::QgsAuthCertInfo
     bool populateCertChain();
 
     void setCertHeirarchy();
+
+    void updateCurrentCertInfo( int chainindx );
+
+    void populateCertDetails();
+
+    void populateCertPemText();
 
     QCA::Certificate mCert;
     QMap<QString, QPair<QgsAuthCertUtils::CaCertSource, QSslCertificate> > mCaCertsCache;
