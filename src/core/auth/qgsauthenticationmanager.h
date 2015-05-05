@@ -306,10 +306,10 @@ class CORE_EXPORT QgsAuthManager : public QObject, public QgsSingleton<QgsAuthMa
     bool rebuildCertTrustCache();
 
     /** Get list of all trusted CA certificates */
-    const QList<QSslCertificate> getTrustedCaCerts();
+    const QList<QSslCertificate> getTrustedCaCerts( bool includeinvalid = false );
 
     /** Get concatenated string of all trusted CA certificates */
-    const QByteArray getTrustedCaCertsPemText();
+    const QByteArray getTrustedCaCertsPemText( bool includeinvalid = false );
 
 #endif
 

@@ -1605,7 +1605,7 @@ bool QgsAuthManager::rebuildCertTrustCache()
   return true;
 }
 
-const QList<QSslCertificate> QgsAuthManager::getTrustedCaCerts()
+const QList<QSslCertificate> QgsAuthManager::getTrustedCaCerts( bool includeinvalid )
 {
   QgsAuthCertUtils::CertTrustPolicy defaultpolicy( defaultCertTrustPolicy() );
   QStringList trustedids = mCertTrustCache.value( QgsAuthCertUtils::Trusted );
@@ -1618,20 +1618,23 @@ const QList<QSslCertificate> QgsAuthManager::getTrustedCaCerts()
     QString certid( QgsAuthCertUtils::shaHexForCert( cert ) );
     if ( trustedids.contains( certid ) )
     {
+      // trusted certs are always added regardless of their validity
       trustedcerts.append( cert );
     }
     else if ( defaultpolicy == QgsAuthCertUtils::Trusted && !untrustedids.contains( certid ) )
     {
+      if ( !includeinvalid && !cert.isValid() )
+        continue;
       trustedcerts.append( cert );
     }
   }
   return trustedcerts;
 }
 
-const QByteArray QgsAuthManager::getTrustedCaCertsPemText()
+const QByteArray QgsAuthManager::getTrustedCaCertsPemText( bool includeinvalid )
 {
   QByteArray capem;
-  QList<QSslCertificate> certs( getTrustedCaCerts() );
+  QList<QSslCertificate> certs( getTrustedCaCerts( includeinvalid ) );
   if ( !certs.isEmpty() )
   {
     QStringList certslist;
