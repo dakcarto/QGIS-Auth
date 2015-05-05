@@ -28,6 +28,7 @@
 #include <QSettings>
 #include <QSslConfiguration>
 
+#include "qgsapplication.h"
 #include "qgsauthenticationcertificateinfo.h"
 #include "qgsauthenticationcertutils.h"
 #include "qgsauthenticationimportcertdialog.h"
@@ -260,24 +261,26 @@ void QgsAuthAuthoritiesEditor::appendCertsToItem( QList<QSslCertificate> certs,
 
     QTreeWidgetItem * item( new QTreeWidgetItem( parent, coltxts, ( int )catype ) );
 
+    item->setIcon( 0, QgsApplication::getThemeIcon( "/mIconCertificate.svg" ) );
     if ( !cert.isValid() )
     {
-      item->setForeground( 0, redb );
       item->setForeground( 2, redb );
+      item->setIcon( 0, QgsApplication::getThemeIcon( "/mIconCertificateUntrusted.svg" ) );
     }
 
     if ( trustedids.contains( id ) )
     {
       item->setForeground( 3, greenb );
+      item->setIcon( 0, QgsApplication::getThemeIcon( "/mIconCertificateTrusted.svg" ) );
     }
     else if ( untrustedids.contains( id ) )
     {
-      item->setForeground( 0, redb );
       item->setForeground( 3, redb );
+      item->setIcon( 0, QgsApplication::getThemeIcon( "/mIconCertificateUntrusted.svg" ) );
     }
     else if ( mDefaultTrustPolicy == QgsAuthCertUtils::Untrusted )
     {
-      item->setForeground( 0, redb );
+      item->setIcon( 0, QgsApplication::getThemeIcon( "/mIconCertificateUntrusted.svg" ) );
     }
 
     item->setData( 0, Qt::UserRole, id );

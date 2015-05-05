@@ -70,6 +70,12 @@
         <property name="editTriggers">
          <set>QAbstractItemView::NoEditTriggers</set>
         </property>
+        <property name="iconSize">
+         <size>
+          <width>26</width>
+          <height>22</height>
+         </size>
+        </property>
         <property name="verticalScrollMode">
          <enum>QAbstractItemView::ScrollPerPixel</enum>
         </property>

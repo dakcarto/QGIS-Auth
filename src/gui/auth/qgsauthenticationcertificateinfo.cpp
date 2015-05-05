@@ -20,6 +20,7 @@
 
 #include <QtCrypto>
 
+#include "qgsapplication.h"
 #include "qgsauthenticationcertutils.h"
 #include "qgsauthenticationmanager.h"
 #include "qgslogger.h"
@@ -193,7 +194,7 @@ void QgsAuthCertInfo::setCertHeirarchy()
       mDefaultItemForeground = item->foreground( 0 );
     }
 
-    setCertTreeItemColor( cert, QgsAuthManager::instance()->getCertificateTrustPolicy( cert ), item );
+    decorateCertTreeItem( cert, QgsAuthManager::instance()->getCertificateTrustPolicy( cert ), item );
 
     item->setFirstColumnSpanned( true );
     if ( !previtem )
@@ -210,7 +211,8 @@ void QgsAuthCertInfo::on_btnSaveTrust_clicked()
   {
     QgsDebugMsg( "Could not set trust policy for certificate" );
   }
-  setCertTreeItemColor( mCurrentQCert, newpolicy, 0 );
+  mCurrentTrustPolicy = newpolicy;
+  decorateCertTreeItem( mCurrentQCert, newpolicy, 0 );
   btnSaveTrust->setEnabled( false );
 
   // rebuild trust cache
@@ -224,7 +226,7 @@ void QgsAuthCertInfo::currentPolicyIndexChanged( int indx )
   btnSaveTrust->setEnabled( newpolicy != mCurrentTrustPolicy );
 }
 
-void QgsAuthCertInfo::setCertTreeItemColor( const QSslCertificate &cert,
+void QgsAuthCertInfo::decorateCertTreeItem( const QSslCertificate &cert,
                                             QgsAuthCertUtils::CertTrustPolicy trustpolicy,
                                             QTreeWidgetItem * item )
 {
@@ -239,22 +241,22 @@ void QgsAuthCertInfo::setCertTreeItemColor( const QSslCertificate &cert,
 
   if ( !cert.isValid() )
   {
-    item->setForeground( 0, QBrush( QgsAuthCertUtils::redColor() ) );
+    item->setIcon( 0, QgsApplication::getThemeIcon( "/mIconCertificateUntrusted.svg" ) );
     return;
   }
 
   if ( trustpolicy == QgsAuthCertUtils::Trusted )
   {
-    item->setForeground( 0, QBrush( QgsAuthCertUtils::greenColor() ) );
+    item->setIcon( 0, QgsApplication::getThemeIcon( "/mIconCertificateTrusted.svg" ) );
   }
   else if ( trustpolicy == QgsAuthCertUtils::Untrusted
             || ( trustpolicy == QgsAuthCertUtils::DefaultTrust
                  && mDefaultTrustPolicy == QgsAuthCertUtils::Untrusted ) )
   {
-    item->setForeground( 0, QBrush( QgsAuthCertUtils::redColor() ) );
+    item->setIcon( 0, QgsApplication::getThemeIcon( "/mIconCertificateUntrusted.svg" ) );
   }
   else
   {
-    item->setForeground( 0, mDefaultItemForeground );
+    item->setIcon( 0, QgsApplication::getThemeIcon( "/mIconCertificate.svg" ) );
   }
 }

@@ -49,7 +49,7 @@ class GUI_EXPORT QgsAuthCertInfo : public QWidget, private Ui::QgsAuthCertInfo
 
     void currentPolicyIndexChanged( int indx );
 
-    void setCertTreeItemColor( const QSslCertificate& cert,
+    void decorateCertTreeItem( const QSslCertificate& cert,
                                QgsAuthCertUtils::CertTrustPolicy trustpolicy,
                                QTreeWidgetItem * item = 0 );
 

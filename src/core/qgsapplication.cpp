@@ -13,7 +13,7 @@ const QString QgsApplication::qgisAuthDbFilePath()
 
 QIcon QgsApplication::getThemeIcon( const QString &theName )
 {
-  QString myDefaultPath = QString( ":/images/themes/default/" ) + QDir::separator() + theName;
+  QString myDefaultPath = QString( ":/images/themes/default" ) + QDir::separator() + theName;
   if ( QFile::exists( myDefaultPath ) )
   {
     //could still return an empty icon if it
