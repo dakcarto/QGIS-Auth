@@ -24,6 +24,8 @@
 #include "qgsauthenticationmanager.h"
 
 class QgsMessageBar;
+class QMenu;
+class QAction;
 
 /** \ingroup gui
  * Widget for viewing and editing authentication identities database
@@ -75,7 +77,9 @@ class GUI_EXPORT QgsAuthAuthoritiesEditor : public QWidget, private Ui::QgsAuthA
 
     void on_btnGroupByOrg_toggled( bool checked );
 
-    void defaultTrustPolicyIndexChanged( int indx );
+    void editDefaultTrustPolicy();
+
+    void defaultTrustPolicyChanged( QgsAuthCertUtils::CertTrustPolicy trustpolicy );
 
     void on_btnCaFile_clicked();
 
@@ -109,7 +113,7 @@ class GUI_EXPORT QgsAuthAuthoritiesEditor : public QWidget, private Ui::QgsAuthA
 
     void updateCertTrustPolicyCache();
 
-    void populateDefaultTrustPolicyComboBox();
+    void populateUtilitiesMenu();
 
     QgsMessageBar * messageBar();
     int messageTimeout();
@@ -123,6 +127,9 @@ class GUI_EXPORT QgsAuthAuthoritiesEditor : public QWidget, private Ui::QgsAuthA
 
     QgsAuthCertUtils::CertTrustPolicy mDefaultTrustPolicy;
     QMap<QgsAuthCertUtils::CertTrustPolicy, QStringList > mCertTrustCache;
+
+    QMenu * mUtilitiesMenu;
+    QAction * mActionDefaultTrustPolicy;
 };
 
 #endif // QGSAUTHENTICATIONAUTHORITIESEDITOR_H

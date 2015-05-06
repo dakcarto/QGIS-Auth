@@ -160,7 +160,7 @@ const QString QgsAuthCertUtils::getCertTrustName( QgsAuthCertUtils::CertTrustPol
   switch( trust )
   {
     case DefaultTrust:
-      name = QObject::tr( "Default policy" );
+      name = QObject::tr( "Default" );
       break;
     case Trusted:
       name = QObject::tr( "Trusted" );

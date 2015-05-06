@@ -17,6 +17,8 @@
 #include "qgsauthenticationauthoritieseditor.h"
 #include "ui_qgsauthenticationauthoritieseditor.h"
 
+#include <QAction>
+#include <QComboBox>
 #include <QDateTime>
 #include <QDir>
 #include <QFileDialog>
@@ -43,6 +45,8 @@ QgsAuthAuthoritiesEditor::QgsAuthAuthoritiesEditor( QWidget *parent )
     , mRootCaSecItem( 0 )
     , mFileCaSecItem( 0 )
     , mDbCaSecItem( 0 )
+    , mUtilitiesMenu( 0 )
+    , mActionDefaultTrustPolicy( 0 )
 {
   if ( QgsAuthManager::instance()->isDisabled() )
   {
@@ -83,9 +87,7 @@ QgsAuthAuthoritiesEditor::QgsAuthAuthoritiesEditor( QWidget *parent )
     populateCaCertsView();
     checkSelection();
 
-    populateDefaultTrustPolicyComboBox();
-    connect( cmbDefaultTrustPolicy, SIGNAL( currentIndexChanged( int ) ),
-             this, SLOT( defaultTrustPolicyIndexChanged( int ) ) );
+    populateUtilitiesMenu();
   }
 }
 
@@ -326,21 +328,16 @@ void QgsAuthAuthoritiesEditor::updateCertTrustPolicyCache()
   mCertTrustCache = QgsAuthManager::instance()->getCertTrustCache();
 }
 
-void QgsAuthAuthoritiesEditor::populateDefaultTrustPolicyComboBox()
+void QgsAuthAuthoritiesEditor::populateUtilitiesMenu()
 {
-  QList < QPair<QgsAuthCertUtils::CertTrustPolicy, QString> > policies;
-  policies << qMakePair( QgsAuthCertUtils::Trusted,
-                         QgsAuthCertUtils::getCertTrustName( QgsAuthCertUtils::Trusted ) )
-           << qMakePair( QgsAuthCertUtils::Untrusted,
-                         QgsAuthCertUtils::getCertTrustName( QgsAuthCertUtils::Untrusted ) );
+  mActionDefaultTrustPolicy = new QAction( "Change default trust policy", this );
 
-  for ( int i = 0; i < policies.size(); i++ )
-  {
-    cmbDefaultTrustPolicy->addItem( policies.at( i ).second, QVariant(( int )policies.at( i ).first ) );
-  }
+  connect( mActionDefaultTrustPolicy, SIGNAL( triggered() ), this, SLOT( editDefaultTrustPolicy() ) );
 
-  int idx = cmbDefaultTrustPolicy->findData( QVariant(( int )mDefaultTrustPolicy ) );
-  cmbDefaultTrustPolicy->setCurrentIndex( idx == -1 ? 0 : idx );
+  mUtilitiesMenu = new QMenu( this );
+  mUtilitiesMenu->addAction( mActionDefaultTrustPolicy );
+
+  btnUtilities->setMenu( mUtilitiesMenu );
 }
 
 void QgsAuthAuthoritiesEditor::showCertInfo( QTreeWidgetItem *item )
@@ -386,6 +383,7 @@ void QgsAuthAuthoritiesEditor::showCertInfo( QTreeWidgetItem *item )
     // QgsAuthManager::instance()->rebuildTrustedCaCertsCache() already called in dlg
     populateCaCertsView();
   }
+  dlg->deleteLater();
 }
 
 void QgsAuthAuthoritiesEditor::selectionChanged( const QItemSelection& selected , const QItemSelection& deselected )
@@ -477,6 +475,7 @@ void QgsAuthAuthoritiesEditor::on_btnAddCa_clicked()
       QgsAuthManager::instance()->rebuildCertTrustCache();
       updateCertTrustPolicyCache();
     }
+    dlg->deleteLater();
 
     QgsAuthManager::instance()->rebuildTrustedCaCertsCache();
     populateDatabaseCaCerts();
@@ -577,11 +576,80 @@ void QgsAuthAuthoritiesEditor::on_btnGroupByOrg_toggled( bool checked )
   populateCaCertsView();
 }
 
-void QgsAuthAuthoritiesEditor::defaultTrustPolicyIndexChanged( int indx )
+void QgsAuthAuthoritiesEditor::editDefaultTrustPolicy()
 {
-  QgsAuthCertUtils::CertTrustPolicy trustpolicy(
-        ( QgsAuthCertUtils::CertTrustPolicy )cmbDefaultTrustPolicy->itemData( indx ).toInt() );
+  QDialog * dlg = new QDialog( this );
+  dlg->setWindowTitle( tr( "Default Trust Policy" ) );
+  QVBoxLayout *layout = new QVBoxLayout( dlg );
 
+  QHBoxLayout *hlayout = new QHBoxLayout();
+
+  QLabel * lblwarn = new QLabel( dlg );
+  QStyle *style = QApplication::style();
+  lblwarn->setPixmap( style->standardIcon( QStyle::SP_MessageBoxWarning ).pixmap( 48, 48 ) );
+  lblwarn->setSizePolicy( QSizePolicy::Fixed, QSizePolicy::Fixed );
+  hlayout->addWidget( lblwarn );
+
+  QLabel *lbltxt = new QLabel( dlg );
+  lbltxt->setText( tr( "Changing the default certificate authority trust policy to 'Untrusted' "
+                       "can cause unexpected SSL network connection results."  ) );
+  lbltxt->setWordWrap( true );
+  hlayout->addWidget( lbltxt );
+
+  layout->addLayout( hlayout );
+
+  QHBoxLayout *hlayout2 = new QHBoxLayout();
+
+  QLabel *lblpolicy = new QLabel( tr( "Default policy" ), dlg );
+  lblpolicy->setSizePolicy( QSizePolicy::Maximum, QSizePolicy::Preferred );
+  hlayout2->addWidget( lblpolicy );
+
+  QComboBox *cmbpolicy = new QComboBox( dlg );
+  QList < QPair<QgsAuthCertUtils::CertTrustPolicy, QString> > policies;
+  policies << qMakePair( QgsAuthCertUtils::Trusted,
+                         QgsAuthCertUtils::getCertTrustName( QgsAuthCertUtils::Trusted ) )
+           << qMakePair( QgsAuthCertUtils::Untrusted,
+                         QgsAuthCertUtils::getCertTrustName( QgsAuthCertUtils::Untrusted ) );
+
+  for ( int i = 0; i < policies.size(); i++ )
+  {
+    cmbpolicy->addItem( policies.at( i ).second, QVariant(( int )policies.at( i ).first ) );
+  }
+
+  int idx = cmbpolicy->findData( QVariant(( int )mDefaultTrustPolicy ) );
+  cmbpolicy->setCurrentIndex( idx == -1 ? 0 : idx );
+  hlayout2->addWidget( cmbpolicy );
+
+  layout->addLayout( hlayout2 );
+
+  QDialogButtonBox *buttonBox = new QDialogButtonBox( QDialogButtonBox::Close | QDialogButtonBox::Ok,
+      Qt::Horizontal, dlg );
+  buttonBox->button( QDialogButtonBox::Close )->setDefault( true );
+
+  layout->addWidget( buttonBox );
+
+  connect( buttonBox, SIGNAL( accepted() ), dlg, SLOT( accept() ) );
+  connect( buttonBox, SIGNAL( rejected() ), dlg, SLOT( close() ) );
+
+  dlg->setLayout( layout );
+  dlg->setWindowModality( Qt::WindowModal );
+  dlg->resize( 400, 200 );
+  dlg->setMinimumSize( 400, 200 );
+  dlg->setMaximumSize( 500, 300 );
+  if ( dlg->exec() )
+  {
+    QgsAuthCertUtils::CertTrustPolicy trustpolicy(
+          ( QgsAuthCertUtils::CertTrustPolicy )cmbpolicy->itemData( cmbpolicy->currentIndex() ).toInt() );
+    if ( mDefaultTrustPolicy != trustpolicy )
+    {
+      defaultTrustPolicyChanged( trustpolicy );
+    }
+  }
+  dlg->deleteLater();
+}
+
+void QgsAuthAuthoritiesEditor::defaultTrustPolicyChanged( QgsAuthCertUtils::CertTrustPolicy trustpolicy )
+{
   if ( !QgsAuthManager::instance()->setDefaultCertTrustPolicy( trustpolicy ) )
   {
     authMessageOut( QObject::tr( "Could not store default trust policy" ),
@@ -603,6 +671,12 @@ void QgsAuthAuthoritiesEditor::on_btnCaFile_clicked()
   dlg->resize( 400, 250 );
   if ( dlg->exec() )
   {
+    // clear out any currently defined file certs and their trust settings
+    if ( !leCaFile->text().isEmpty() )
+    {
+      on_btnCaFileClear_clicked();
+    }
+
     const QString& fn = dlg->certFileToImport();
     leCaFile->setText( fn );
 
@@ -637,6 +711,7 @@ void QgsAuthAuthoritiesEditor::on_btnCaFile_clicked()
       QgsAuthManager::instance()->rebuildCertTrustCache();
       updateCertTrustPolicyCache();
     }
+    dlg->deleteLater();
 
     QgsAuthManager::instance()->rebuildTrustedCaCertsCache();
 
