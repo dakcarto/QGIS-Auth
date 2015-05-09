@@ -39,7 +39,14 @@ class CORE_EXPORT QgsAuthCertUtils
     {
       DefaultTrust = 0,
       Trusted = 1,
-      Untrusted = 2
+      Untrusted = 2,
+      NoPolicy = 3
+    };
+
+    enum ConstraintGroup
+    {
+      KeyUsage = 0,
+      ExtendedKeyUsage = 1
     };
 
     /** Green color representing valid, trusted, etc. certificate */
@@ -71,20 +78,42 @@ class CORE_EXPORT QgsAuthCertUtils
     static const QString getCaSourceName( QgsAuthCertUtils::CaCertSource source , bool single = false );
 
     /** Get the general name via RFC 5280 resolution */
-    static const QString resolvedCertName( QSslCertificate cert );
+    static const QString resolvedCertName( const QSslCertificate& cert, bool issuer = false );
+
+    /** Get combined directory name for certificate */
+    static const QString getCertDistinguishedName( const QSslCertificate& qcert,
+                                                   const QCA::Certificate& acert = QCA::Certificate(),
+                                                   bool issuer = false );
 
     /** Get the general name for certificate trust */
     static const QString getCertTrustName( QgsAuthCertUtils::CertTrustPolicy trust );
 
+    /** Get string with colon delimeters every 2 characters */
+    static const QString getColonDelimited( const QString& txt );
+
     /** Get the sha1 hash for certificate */
-    static const QString shaHexForCert( const QSslCertificate &cert );
+    static const QString shaHexForCert( const QSslCertificate &cert , bool formatted = false );
 
     /** Certificate validity check messages per enum */
     static const QString qcaValidityMessage( QCA::Validity validity );
 
-    /** Certificate is an Authority */
+    /** Certificate signature algorithm strings per enum */
+    static const QString qcaSignatureAlgorithm( QCA::SignatureAlgorithm algorithm );
+
+    /** Certificate well-known constraint strings per enum */
+    static const QString qcaKnownConstraint( QCA::ConstraintTypeKnown constraint );
+
+    /** Get whether a certificate is an Authority */
+    static bool certificateIsAuthority( const QSslCertificate& cert );
+
+    /** Get whether a certificate can sign other certificates */
+    static bool certificateIsIssuer( const QSslCertificate& cert );
+
+    /** Get whether a certificate is an Authority or can at least sign other certificates */
     static bool certificateIsAuthorityOrIssuer( const QSslCertificate& cert );
 
+  private:
+    static void appendDirSegment_( QStringList &dirname, const QString &segment, QString value );
 };
 
 #endif // QGSAUTHCERTUTILS_H

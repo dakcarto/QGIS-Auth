@@ -33,6 +33,20 @@ class GUI_EXPORT QgsAuthCertInfo : public QWidget, private Ui::QgsAuthCertInfo
     Q_OBJECT
 
   public:
+    enum DetailsType
+    {
+      DetailsSection = 1000,
+      DetailsGroup = 1001,
+      DetailsField = 1002,
+    };
+
+    enum FieldWidget
+    {
+      NoWidget = 0,
+      LineEdit = 1,
+      TextEdit = 2,
+    };
+
     explicit QgsAuthCertInfo( QSslCertificate cert, bool manageCertTrust = false, QWidget *parent = 0 );
     ~QgsAuthCertInfo();
 
@@ -54,6 +68,8 @@ class GUI_EXPORT QgsAuthCertInfo : public QWidget, private Ui::QgsAuthCertInfo
                                QTreeWidgetItem * item = 0 );
 
   private:
+    void setUpCertDetailsTree();
+
     void populateTrustBox();
 
     bool populateQcaCertCollection();
@@ -66,9 +82,18 @@ class GUI_EXPORT QgsAuthCertInfo : public QWidget, private Ui::QgsAuthCertInfo
 
     void updateCurrentCertInfo( int chainindx );
 
-    void populateCertDetails();
+    void populateCertInfo();
 
-    void populateCertPemText();
+    QTreeWidgetItem *addGroupItem( QTreeWidgetItem *parent, const QString& group );
+
+    void addFieldItem( QTreeWidgetItem *parent, const QString& field, const QString& value, FieldWidget wdgt = NoWidget ,
+                       QColor color = QColor() );
+
+    void populateInfoGeneralSection();
+
+    void populateInfoDetailsSection();
+
+    void populateInfoPemTextSection();
 
     QCA::Certificate mCert;
     QMap<QString, QPair<QgsAuthCertUtils::CaCertSource, QSslCertificate> > mCaCertsCache;
@@ -84,6 +109,16 @@ class GUI_EXPORT QgsAuthCertInfo : public QWidget, private Ui::QgsAuthCertInfo
     bool mTrustCacheRebuilt;
     QgsAuthCertUtils::CertTrustPolicy mDefaultTrustPolicy;
     QgsAuthCertUtils::CertTrustPolicy mCurrentTrustPolicy;
+
+    QTreeWidgetItem *mSecGeneral;
+    QTreeWidgetItem *mSecDetails;
+    QTreeWidgetItem *mSecPemText;
+    QTreeWidgetItem *mGrpSubj;
+    QTreeWidgetItem *mGrpIssu;
+    QTreeWidgetItem *mGrpCert;
+    QTreeWidgetItem *mGrpPkey;
+    QTreeWidgetItem *mGrpExts;
+
 };
 
 #endif // QGSAUTHENTICATIONCERTIFICATEINFO_H

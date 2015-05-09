@@ -1538,6 +1538,11 @@ bool QgsAuthManager::removeCertTrustPolicy( const QSslCertificate &cert )
 
 QgsAuthCertUtils::CertTrustPolicy QgsAuthManager::getCertificateTrustPolicy( const QSslCertificate &cert )
 {
+  if ( cert.isNull() )
+  {
+    return QgsAuthCertUtils::NoPolicy;
+  }
+
   QString id( QgsAuthCertUtils::shaHexForCert( cert ) );
   const QStringList& trustedids = mCertTrustCache.value( QgsAuthCertUtils::Trusted );
   const QStringList& untrustedids = mCertTrustCache.value( QgsAuthCertUtils::Untrusted );

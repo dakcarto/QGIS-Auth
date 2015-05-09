@@ -376,7 +376,7 @@ void QgsAuthAuthoritiesEditor::showCertInfo( QTreeWidgetItem *item )
 
   dlg->setLayout( layout );
   dlg->setWindowModality( Qt::WindowModal );
-  dlg->resize(650, 480);
+  dlg->resize(675, 500);
   dlg->exec();
   if ( ci->trustCacheRebuilt() )
   {
