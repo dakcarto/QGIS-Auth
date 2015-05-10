@@ -445,13 +445,9 @@ void QgsAuthCertInfo::populateInfoGeneralSection()
     certype = tr( "Root Authority" );
   }
   QString selfsigned( tr( "self-signed" ) );
-  if ( isselfsigned && certype.isEmpty() )
+  if ( isselfsigned  )
   {
-    certype.append( selfsigned );
-  }
-  else
-  {
-    certype.append( QString( " (%1)" ).arg( selfsigned ) );
+    certype.append( certype.isEmpty() ? selfsigned : QString( " (%1)" ).arg( selfsigned ) );
   }
 
   addFieldItem( mSecGeneral, tr( "Type" ),
