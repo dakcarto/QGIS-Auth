@@ -240,10 +240,28 @@ class CORE_EXPORT QgsAuthManager : public QObject, public QgsSingleton<QgsAuthMa
 #ifndef QT_NO_OPENSSL
     ////////////////// Certificate calls ///////////////////////
 
-    /** Store a certificate authority */
-    bool storeCertAuthorities( const QList<QSslCertificate>& certs );
+    /** Store a certificate identity */
+    bool storeCertIdentity( const QSslCertificate& cert, const QSslKey& key );
+
+    /** Get a certificate identity by id (sha hash) */
+    const QSslCertificate getCertIdentity( const QString& id );
+
+    /** Get a certificate identity bundle by id (sha hash) */
+    const QPair<QSslCertificate, QSslKey> getCertIdentityBundle( const QString& id );
+
+    /** Get certificate identities */
+    const QList<QSslCertificate> getCertIdentities();
+
+    /** Check if a certificate identity exists */
+    bool existsCertIdentity( const QString& id );
+
+    /** Remove a certificate identity */
+    bool removeCertIdentity( const QString& id );
 
     /** Store multiple certificate authorities */
+    bool storeCertAuthorities( const QList<QSslCertificate>& certs );
+
+    /** Store a certificate authority */
     bool storeCertAuthority( const QSslCertificate& cert );
 
     /** Get a certificate authority by id (sha hash) */

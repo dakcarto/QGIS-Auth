@@ -60,7 +60,8 @@ SOURCES += \
     src/gui/auth/qgsauthenticationimportcertdialog.cpp \
     src/core/auth/qgsauthenticationcertutils.cpp \
     src/gui/auth/qgsauthenticationcerttrustpolicycombobox.cpp \
-    src/gui/auth/qgsauthenticationtrustedcasdialog.cpp
+    src/gui/auth/qgsauthenticationtrustedcasdialog.cpp \
+    src/gui/auth/qgsauthenticationimportidentitydialog.cpp
 
 HEADERS += \
     src/app/webpage.h \
@@ -90,7 +91,8 @@ HEADERS += \
     src/gui/auth/qgsauthenticationimportcertdialog.h \
     src/core/auth/qgsauthenticationcertutils.h \
     src/gui/auth/qgsauthenticationcerttrustpolicycombobox.h \
-    src/gui/auth/qgsauthenticationtrustedcasdialog.h
+    src/gui/auth/qgsauthenticationtrustedcasdialog.h \
+    src/gui/auth/qgsauthenticationimportidentitydialog.h
 
 FORMS += \
     src/ui/webpage.ui \
@@ -105,6 +107,7 @@ FORMS += \
     src/ui/qgsauthenticationeditorwidgets.ui \
     src/ui/qgsauthenticationcertificateinfo.ui \
     src/ui/qgsauthenticationimportcertdialog.ui \
-    src/ui/qgsauthenticationtrustedcasdialog.ui
+    src/ui/qgsauthenticationtrustedcasdialog.ui \
+    src/ui/qgsauthenticationimportidentitydialog.ui
 
 RESOURCES += images/images.qrc

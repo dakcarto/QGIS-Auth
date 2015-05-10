@@ -34,7 +34,7 @@ int main( int argc, char *argv[] )
   dlg->setLayout( layout );
   dlg->show();
   // indexes:  configs:0, identities:1, servers:2, authorities:3
-  ae->tabbedWidget()->setCurrentIndex( 3 );
+  ae->tabbedWidget()->setCurrentIndex( 1 );
   dlg->raise();
   dlg->activateWindow();
   dlg->resize(800, 512);

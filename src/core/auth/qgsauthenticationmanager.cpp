@@ -1194,6 +1194,217 @@ bool QgsAuthManager::removeAuthSetting( const QString& key )
 
 ////////////////// Certificate calls ///////////////////////
 
+bool QgsAuthManager::storeCertIdentity( const QSslCertificate &cert, const QSslKey &key )
+{
+  if ( cert.isNull() )
+  {
+    QgsDebugMsg( "Passed certificate is null" );
+    return false;
+  }
+  if ( key.isNull() )
+  {
+    QgsDebugMsg( "Passed private key is null" );
+    return false;
+  }
+
+  if ( !setMasterPassword( true ) )
+    return false;
+
+  QString id( QgsAuthCertUtils::shaHexForCert( cert ) );
+  removeCertIdentity( id );
+
+  QString certpem( cert.toPem() );
+  QString keypem( QgsAuthCrypto::encrypt( mMasterPass, masterPasswordCiv(), key.toPem() ) );
+
+  QSqlQuery query( authDbConnection() );
+  query.prepare( QString( "INSERT INTO %1 (id, key, cert) "
+                          "VALUES (:id, :key, :cert)" ).arg( authDbIdentitiesTable() ) );
+
+  query.bindValue( ":id", id );
+  query.bindValue( ":key", keypem );
+  query.bindValue( ":cert", certpem );
+
+  if ( !authDbStartTransaction() )
+    return false;
+
+  if ( !authDbQuery( &query ) )
+    return false;
+
+  if ( !authDbCommit() )
+    return false;
+
+  QgsDebugMsg( QString( "Store certificate identity SUCCESS for id: %1" ).arg( id ) );
+  return true;
+}
+
+const QSslCertificate QgsAuthManager::getCertIdentity( const QString &id )
+{
+  QSslCertificate emptycert;
+  QSslCertificate cert;
+  if ( id.isEmpty() )
+    return emptycert;
+
+  QSqlQuery query( authDbConnection() );
+  query.prepare( QString( "SELECT cert FROM %1 "
+                          "WHERE id = :id" ).arg( authDbIdentitiesTable() ) );
+
+  query.bindValue( ":id", id );
+
+  if ( !authDbQuery( &query ) )
+    return emptycert;
+
+  if ( query.isActive() && query.isSelect() )
+  {
+    if ( query.first() )
+    {
+      cert = QSslCertificate( query.value( 0 ).toByteArray(), QSsl::Pem );
+      QgsDebugMsg( QString( "Certificate identity retrieved for id: %1" ).arg( id ) );
+    }
+    if ( query.next() )
+    {
+      QgsDebugMsg( QString( "Select contains more than one certificate identity for id: %1" ).arg( id ) );
+      emit messageOut( tr( "Authentication database contains duplicate certificate identity" ), authManTag(), WARNING );
+      return emptycert;
+    }
+  }
+  return cert;
+}
+
+const QPair<QSslCertificate, QSslKey> QgsAuthManager::getCertIdentityBundle( const QString &id )
+{
+  QPair<QSslCertificate, QSslKey> bundle;
+  if ( id.isEmpty() )
+    return bundle;
+
+  if ( !setMasterPassword( true ) )
+    return bundle;
+
+  QSqlQuery query( authDbConnection() );
+  query.prepare( QString( "SELECT key, cert FROM %1 "
+                          "WHERE id = :id" ).arg( authDbIdentitiesTable() ) );
+
+  query.bindValue( ":id", id );
+
+  if ( !authDbQuery( &query ) )
+    return bundle;
+
+  if ( query.isActive() && query.isSelect() )
+  {
+    QSslCertificate cert;
+    QSslKey key;
+    if ( query.first() )
+    {
+      key =  QSslKey( QgsAuthCrypto::decrypt( mMasterPass, masterPasswordCiv(), query.value( 0 ).toString() ).toAscii(),
+                      QSsl::Rsa, QSsl::Pem, QSsl::PrivateKey );
+      if ( key.isNull() )
+      {
+        const char* err = QT_TR_NOOP( "Retieve certificate identity bundle: FAILED to create private key" );
+        QgsDebugMsg( err );
+        emit messageOut( tr( err ), authManTag(), WARNING );
+        return bundle;
+      }
+      cert = QSslCertificate( query.value( 1 ).toByteArray(), QSsl::Pem );
+      if ( cert.isNull() )
+      {
+        const char* err = QT_TR_NOOP( "Retieve certificate identity bundle: FAILED to create certificate" );
+        QgsDebugMsg( err );
+        emit messageOut( tr( err ), authManTag(), WARNING );
+        return bundle;
+      }
+      QgsDebugMsg( QString( "Certificate identity bundle retrieved for id: %1" ).arg( id ) );
+    }
+    if ( query.next() )
+    {
+      QgsDebugMsg( QString( "Select contains more than one certificate identity for id: %1" ).arg( id ) );
+      emit messageOut( tr( "Authentication database contains duplicate certificate identity" ), authManTag(), WARNING );
+      return bundle;
+    }
+    bundle = qMakePair( cert, key );
+  }
+  return bundle;
+}
+
+const QList<QSslCertificate> QgsAuthManager::getCertIdentities()
+{
+  QList<QSslCertificate> certs;
+
+  QSqlQuery query( authDbConnection() );
+  query.prepare( QString( "SELECT id, cert FROM %1" ).arg( authDbIdentitiesTable() ) );
+
+  if ( !authDbQuery( &query ) )
+    return certs;
+
+  if ( query.isActive() && query.isSelect() )
+  {
+    while ( query.next() )
+    {
+      certs << QSslCertificate( query.value( 1 ).toByteArray(), QSsl::Pem );
+    }
+  }
+
+  return certs;
+}
+
+bool QgsAuthManager::existsCertIdentity( const QString &id )
+{
+  if ( id.isEmpty() )
+    return false;
+
+  QSqlQuery query( authDbConnection() );
+  query.prepare( QString( "SELECT cert FROM %1 "
+                          "WHERE id = :id" ).arg( authDbIdentitiesTable() ) );
+
+  query.bindValue( ":id", id );
+
+  if ( !authDbQuery( &query ) )
+    return false;
+
+  bool res = false;
+  if ( query.isActive() && query.isSelect() )
+  {
+    if ( query.first() )
+    {
+      QgsDebugMsg( QString( "Certificate bundle exists for id: %1" ).arg( id ) );
+      res = true;
+    }
+    if ( query.next() )
+    {
+      QgsDebugMsg( QString( "Select contains more than one certificate bundle for id: %1" ).arg( id ) );
+      emit messageOut( tr( "Authentication database contains duplicate certificate bundles" ), authManTag(), WARNING );
+      return false;
+    }
+  }
+  return res;
+}
+
+bool QgsAuthManager::removeCertIdentity( const QString &id )
+{
+  if ( id.isEmpty() )
+  {
+    QgsDebugMsg( "Passed bundle ID is empty" );
+    return false;
+  }
+
+  QSqlQuery query( authDbConnection() );
+
+  query.prepare( QString( "DELETE FROM %1 WHERE id = :id" ).arg( authDbIdentitiesTable() ) );
+
+  query.bindValue( ":id", id );
+
+  if ( !authDbStartTransaction() )
+    return false;
+
+  if ( !authDbQuery( &query ) )
+    return false;
+
+  if ( !authDbCommit() )
+    return false;
+
+  QgsDebugMsg( QString( "REMOVED certificate identity for id: %1" ).arg( id ) );
+  return true;
+}
+
+
 bool QgsAuthManager::storeCertAuthorities( const QList<QSslCertificate> &certs )
 {
   if ( certs.size() < 1 )
