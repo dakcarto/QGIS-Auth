@@ -19,8 +19,10 @@
 #include "ui_qgsauthenticationcertificateinfo.h"
 
 #include <QtCrypto>
+#include <QDialogButtonBox>
 #include <QLineEdit>
 #include <QPlainTextEdit>
+#include <QPushButton>
 #include <QTextEdit>
 
 #include "qgsapplication.h"
@@ -860,4 +862,30 @@ void QgsAuthCertInfo::decorateCertTreeItem( const QSslCertificate &cert,
   {
     item->setIcon( 0, QgsApplication::getThemeIcon( "/mIconCertificate.svg" ) );
   }
+}
+
+//////////////// Embed in dialog ///////////////////
+
+QgsAuthCertInfoDialog::QgsAuthCertInfoDialog( const QSslCertificate& cert, bool manageCertTrust, QWidget *parent )
+  : QDialog( parent )
+  , mCertInfoWdgt( 0 )
+{
+  setWindowTitle( tr( "Certificate Information" ) );
+  QVBoxLayout *layout = new QVBoxLayout( this );
+  layout->setMargin( 6 );
+
+  mCertInfoWdgt = new QgsAuthCertInfo( cert, manageCertTrust, this );
+  layout->addWidget( mCertInfoWdgt );
+
+  QDialogButtonBox *buttonBox = new QDialogButtonBox( QDialogButtonBox::Close,
+      Qt::Horizontal, this );
+  buttonBox->button( QDialogButtonBox::Close )->setDefault( true );
+  connect( buttonBox, SIGNAL( rejected() ), this, SLOT( close() ) );
+  layout->addWidget( buttonBox );
+
+  setLayout( layout );
+}
+
+QgsAuthCertInfoDialog::~QgsAuthCertInfoDialog()
+{
 }

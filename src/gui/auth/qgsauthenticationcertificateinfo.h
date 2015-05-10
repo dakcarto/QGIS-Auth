@@ -23,6 +23,7 @@
 #include <QSslCertificate>
 #endif
 
+#include <QDialog>
 #include <QWidget>
 #include "ui_qgsauthenticationcertificateinfo.h"
 #include "qgsauthenticationcertutils.h"
@@ -119,6 +120,24 @@ class GUI_EXPORT QgsAuthCertInfo : public QWidget, private Ui::QgsAuthCertInfo
     QTreeWidgetItem *mGrpPkey;
     QTreeWidgetItem *mGrpExts;
 
+};
+
+//////////////// Embed in dialog ///////////////////
+
+class GUI_EXPORT QgsAuthCertInfoDialog : public QDialog
+{
+    Q_OBJECT
+
+  public:
+    explicit QgsAuthCertInfoDialog( const QSslCertificate& cert, bool manageCertTrust, QWidget *parent = 0 );
+    ~QgsAuthCertInfoDialog();
+
+    QgsAuthCertInfo *certInfoWidget() { return mCertInfoWdgt; }
+
+    bool trustCacheRebuilt() { return mCertInfoWdgt->trustCacheRebuilt(); }
+
+  private:
+    QgsAuthCertInfo *mCertInfoWdgt;
 };
 
 #endif // QGSAUTHENTICATIONCERTIFICATEINFO_H

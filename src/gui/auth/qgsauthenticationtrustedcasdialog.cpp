@@ -223,23 +223,7 @@ void QgsAuthTrustedCAsDialog::showCertInfo( QTreeWidgetItem *item )
 
   QSslCertificate cert( cacertscache.value( digest ).second );
 
-  QDialog * dlg = new QDialog( this );
-  dlg->setWindowTitle( tr( "Certificate Information" ) );
-  QVBoxLayout *layout = new QVBoxLayout( dlg );
-  layout->setMargin( 6 );
-
-  QgsAuthCertInfo * ci = new QgsAuthCertInfo( cert, false, dlg );
-  layout->addWidget( ci );
-
-  QDialogButtonBox *buttonBox = new QDialogButtonBox( QDialogButtonBox::Close,
-      Qt::Horizontal, dlg );
-  buttonBox->button( QDialogButtonBox::Close )->setDefault( true );
-
-  layout->addWidget( buttonBox );
-
-  connect( buttonBox, SIGNAL( rejected() ), dlg, SLOT( close() ) );
-
-  dlg->setLayout( layout );
+  QgsAuthCertInfoDialog * dlg = new QgsAuthCertInfoDialog( cert, false, this );
   dlg->setWindowModality( Qt::WindowModal );
   dlg->resize(675, 500);
   dlg->exec();

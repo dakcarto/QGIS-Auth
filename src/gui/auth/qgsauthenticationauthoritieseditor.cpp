@@ -364,27 +364,11 @@ void QgsAuthAuthoritiesEditor::showCertInfo( QTreeWidgetItem *item )
 
   QSslCertificate cert( cacertscache.value( digest ).second );
 
-  QDialog * dlg = new QDialog( this );
-  dlg->setWindowTitle( tr( "Certificate Information" ) );
-  QVBoxLayout *layout = new QVBoxLayout( dlg );
-  layout->setMargin( 6 );
-
-  QgsAuthCertInfo * ci = new QgsAuthCertInfo( cert, true, dlg );
-  layout->addWidget( ci );
-
-  QDialogButtonBox *buttonBox = new QDialogButtonBox( QDialogButtonBox::Close,
-      Qt::Horizontal, dlg );
-  buttonBox->button( QDialogButtonBox::Close )->setDefault( true );
-
-  layout->addWidget( buttonBox );
-
-  connect( buttonBox, SIGNAL( rejected() ), dlg, SLOT( close() ) );
-
-  dlg->setLayout( layout );
+  QgsAuthCertInfoDialog * dlg = new QgsAuthCertInfoDialog( cert, true, this );
   dlg->setWindowModality( Qt::WindowModal );
   dlg->resize(675, 500);
   dlg->exec();
-  if ( ci->trustCacheRebuilt() )
+  if ( dlg->trustCacheRebuilt() )
   {
     // QgsAuthManager::instance()->rebuildTrustedCaCertsCache() already called in dlg
     populateCaCertsView();
