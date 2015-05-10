@@ -1146,20 +1146,22 @@ bool QgsAuthManager::existsAuthSetting( const QString& key )
   if ( !authDbQuery( &query ) )
     return false;
 
+  bool res = false;
   if ( query.isActive() && query.isSelect() )
   {
     if ( query.first() )
     {
       QgsDebugMsg( QString( "Authentication setting exists for key: %1" ).arg( key ) );
-      return true;
+      res = true;
     }
     if ( query.next() )
     {
       QgsDebugMsg( QString( "Select contains more than one for setting key: %1" ).arg( key ) );
       emit messageOut( tr( "Authentication database contains duplicate settings" ), authManTag(), WARNING );
+      return false;
     }
   }
-  return false;
+  return res;
 }
 
 bool QgsAuthManager::removeAuthSetting( const QString& key )
@@ -1295,20 +1297,22 @@ bool QgsAuthManager::existsCertAuthority( const QSslCertificate& cert )
   if ( !authDbQuery( &query ) )
     return false;
 
+  bool res = false;
   if ( query.isActive() && query.isSelect() )
   {
     if ( query.first() )
     {
       QgsDebugMsg( QString( "Certificate authority exists for id: %1" ).arg( id ) );
-      return true;
+      res = true;
     }
     if ( query.next() )
     {
       QgsDebugMsg( QString( "Select contains more than one certificate authority for id: %1" ).arg( id ) );
       emit messageOut( tr( "Authentication database contains duplicate certificate authorities" ), authManTag(), WARNING );
+      return false;
     }
   }
-  return false;
+  return res;
 }
 
 bool QgsAuthManager::removeCertAuthority( const QSslCertificate& cert )
@@ -1337,7 +1341,6 @@ bool QgsAuthManager::removeCertAuthority( const QSslCertificate& cert )
     return false;
 
   QgsDebugMsg( QString( "REMOVED authority for id: %1" ).arg( id ) );
-
   return true;
 }
 

@@ -81,7 +81,7 @@ QgsAuthAuthoritiesEditor::QgsAuthAuthoritiesEditor( QWidget *parent )
     }
 
     btnGroupByOrg->setChecked( false );
-    QVariant sortbyval = QgsAuthManager::instance()->getAuthSetting( QString( "casortby" ), QVariant( true ) );
+    QVariant sortbyval = QgsAuthManager::instance()->getAuthSetting( QString( "casortby" ), QVariant( false ) );
     if ( !sortbyval.isNull() )
       btnGroupByOrg->setChecked( sortbyval.toBool() );
 
@@ -465,12 +465,12 @@ void QgsAuthAuthoritiesEditor::on_btnAddCa_clicked()
       QgsAuthManager::instance()->rebuildCertTrustCache();
       updateCertTrustPolicyCache();
     }
-    dlg->deleteLater();
 
     QgsAuthManager::instance()->rebuildTrustedCaCertsCache();
     populateDatabaseCaCerts();
     mDbCaSecItem->setExpanded( true );
   }
+  dlg->deleteLater();
 }
 
 void QgsAuthAuthoritiesEditor::on_btnRemoveCa_clicked()

@@ -56,7 +56,7 @@ QgsAuthTrustedCAsDialog::QgsAuthTrustedCAsDialog( QWidget *parent )
 
 
     btnGroupByOrg->setChecked( false );
-    QVariant sortbyval = QgsAuthManager::instance()->getAuthSetting( QString( "trustedcasortby" ), QVariant( true ) );
+    QVariant sortbyval = QgsAuthManager::instance()->getAuthSetting( QString( "trustedcasortby" ), QVariant( false ) );
     if ( !sortbyval.isNull() )
       btnGroupByOrg->setChecked( sortbyval.toBool() );
 
