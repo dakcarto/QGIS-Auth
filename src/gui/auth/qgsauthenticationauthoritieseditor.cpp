@@ -35,6 +35,7 @@
 #include "qgsauthenticationcertutils.h"
 #include "qgsauthenticationimportcertdialog.h"
 #include "qgsauthenticationmanager.h"
+#include "qgsauthenticationtrustedcasdialog.h"
 #include "qgsauthenticationutils.h"
 #include "qgslogger.h"
 
@@ -47,6 +48,7 @@ QgsAuthAuthoritiesEditor::QgsAuthAuthoritiesEditor( QWidget *parent )
     , mDbCaSecItem( 0 )
     , mUtilitiesMenu( 0 )
     , mActionDefaultTrustPolicy( 0 )
+    , mActionShowTrustedCAs( 0 )
 {
   if ( QgsAuthManager::instance()->isDisabled() )
   {
@@ -78,7 +80,7 @@ QgsAuthAuthoritiesEditor::QgsAuthAuthoritiesEditor( QWidget *parent )
       leCaFile->setText( cafileval.toString() );
     }
 
-    btnGroupByOrg->setChecked( true );
+    btnGroupByOrg->setChecked( false );
     QVariant sortbyval = QgsAuthManager::instance()->getAuthSetting( QString( "casortby" ), QVariant( true ) );
     if ( !sortbyval.isNull() )
       btnGroupByOrg->setChecked( sortbyval.toBool() );
@@ -105,7 +107,7 @@ static void setItemBold_( QTreeWidgetItem* item )
 
 void QgsAuthAuthoritiesEditor::setupCaCertsTree()
 {
-  treeWidgetCAs->setColumnCount(3);
+  treeWidgetCAs->setColumnCount(4);
   treeWidgetCAs->setHeaderLabels(
         QStringList() << tr( "Common Name" )
         << tr( "Serial #" )
@@ -331,11 +333,15 @@ void QgsAuthAuthoritiesEditor::updateCertTrustPolicyCache()
 void QgsAuthAuthoritiesEditor::populateUtilitiesMenu()
 {
   mActionDefaultTrustPolicy = new QAction( "Change default trust policy", this );
-
   connect( mActionDefaultTrustPolicy, SIGNAL( triggered() ), this, SLOT( editDefaultTrustPolicy() ) );
+
+  mActionShowTrustedCAs = new QAction( "Show trusted authorities/issuers", this );
+  connect( mActionShowTrustedCAs, SIGNAL( triggered() ), this, SLOT( showTrustedCertificateAuthorities() ) );
 
   mUtilitiesMenu = new QMenu( this );
   mUtilitiesMenu->addAction( mActionDefaultTrustPolicy );
+  mUtilitiesMenu->addSeparator();
+  mUtilitiesMenu->addAction( mActionShowTrustedCAs );
 
   btnUtilities->setMenu( mUtilitiesMenu );
 }
@@ -761,6 +767,15 @@ void QgsAuthAuthoritiesEditor::on_btnCaFileClear_clicked()
 
   leCaFile->clear();
   populateFileCaCerts();
+}
+
+void QgsAuthAuthoritiesEditor::showTrustedCertificateAuthorities()
+{
+  QgsAuthTrustedCAsDialog *dlg = new QgsAuthTrustedCAsDialog( this );
+  dlg->setWindowModality( Qt::WindowModal );
+  dlg->resize( 675, 500 );
+  dlg->exec();
+  dlg->deleteLater();
 }
 
 void QgsAuthAuthoritiesEditor::authMessageOut( const QString& message, const QString& authtag, QgsAuthManager::MessageLevel level )

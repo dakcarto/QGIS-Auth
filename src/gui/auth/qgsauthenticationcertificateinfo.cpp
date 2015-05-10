@@ -254,7 +254,10 @@ void QgsAuthCertInfo::updateCurrentCertInfo( int chainindx )
   mCurrentQCert = mQCertChain.at( chainindx );
   mCurrentACert = mACertChain.at( chainindx );
 
-  grpbxTrust->setHidden( mCurrentQCert.isNull() );
+  if ( mManageTrust )
+  {
+    grpbxTrust->setHidden( mCurrentQCert.isNull() );
+  }
 
   if ( !mCurrentQCert.isNull() )
   {

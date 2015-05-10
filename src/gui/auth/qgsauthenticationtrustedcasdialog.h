@@ -1,7 +1,7 @@
 /***************************************************************************
-    qgsauthenticationauthoritieseditor.h
+    qgsauthenticationtrustedcasdialog.h
     ---------------------
-    begin                : April 26, 2015
+    begin                : May 9, 2015
     copyright            : (C) 2015 by Boundless Spatial, Inc. USA
     author               : Larry Shaffer
     email                : lshaffer at boundlessgeo dot com
@@ -14,24 +14,20 @@
  *                                                                         *
  ***************************************************************************/
 
-#ifndef QGSAUTHENTICATIONAUTHORITIESEDITOR_H
-#define QGSAUTHENTICATIONAUTHORITIESEDITOR_H
+#ifndef QGSAUTHENTICATIONTRUSTEDCASDIALOG_H
+#define QGSAUTHENTICATIONTRUSTEDCASDIALOG_H
 
-#include <QWidget>
+#include <QDialog>
+#include "ui_qgsauthenticationtrustedcasdialog.h"
+
 #include <QSslCertificate>
 
-#include "ui_qgsauthenticationauthoritieseditor.h"
 #include "qgsauthenticationmanager.h"
 
 class QgsMessageBar;
-class QMenu;
-class QAction;
 
-/** \ingroup gui
- * Widget for viewing and editing authentication identities database
- * \since 2.9
- */
-class GUI_EXPORT QgsAuthAuthoritiesEditor : public QWidget, private Ui::QgsAuthAuthoritiesEditor
+
+class GUI_EXPORT QgsAuthTrustedCAsDialog : public QDialog, private Ui::QgsAuthTrustedCAsDialog
 {
     Q_OBJECT
 
@@ -40,21 +36,14 @@ class GUI_EXPORT QgsAuthAuthoritiesEditor : public QWidget, private Ui::QgsAuthA
     {
       Section = 1000,
       OrgName = 1001,
-      RootCaCert = 1002,
-      FileCaCert = 1003,
-      DbCaCert = 1004,
+      CaCert = 1002,
     };
 
-    /**
-     * Widget for viewing and editing certificate authorities directly in database
-     */
-    explicit QgsAuthAuthoritiesEditor( QWidget *parent = 0 );
-    ~QgsAuthAuthoritiesEditor();
+    explicit QgsAuthTrustedCAsDialog( QWidget *parent = 0 );
+    ~QgsAuthTrustedCAsDialog();
 
   private slots:
     void populateCaCertsView();
-
-    void refreshCaCertsView();
 
     void showCertInfo( QTreeWidgetItem *item );
 
@@ -66,23 +55,9 @@ class GUI_EXPORT QgsAuthAuthoritiesEditor : public QWidget, private Ui::QgsAuthA
 
     void handleDoubleClick( QTreeWidgetItem* item, int col );
 
-    void on_btnAddCa_clicked();
-
-    void on_btnRemoveCa_clicked();
-
     void on_btnInfoCa_clicked();
 
     void on_btnGroupByOrg_toggled( bool checked );
-
-    void editDefaultTrustPolicy();
-
-    void defaultTrustPolicyChanged( QgsAuthCertUtils::CertTrustPolicy trustpolicy );
-
-    void on_btnCaFile_clicked();
-
-    void on_btnCaFileClear_clicked();
-
-    void showTrustedCertificateAuthorities();
 
     /** Relay messages to widget's messagebar */
     void authMessageOut( const QString& message, const QString& authtag, QgsAuthManager::MessageLevel level );
@@ -93,26 +68,16 @@ class GUI_EXPORT QgsAuthAuthoritiesEditor : public QWidget, private Ui::QgsAuthA
   private:
     void setupCaCertsTree();
 
-    void populateDatabaseCaCerts();
-
-    void populateFileCaCerts();
-
-    void populateRootCaCerts();
-
     void populateCaCertsSection( QTreeWidgetItem *item, QList<QSslCertificate> certs,
-                                 QgsAuthAuthoritiesEditor::CaType catype );
+                                 QgsAuthTrustedCAsDialog::CaType catype );
 
     void appendCertsToGroup( QList<QSslCertificate> certs,
-                             QgsAuthAuthoritiesEditor::CaType catype,
+                             QgsAuthTrustedCAsDialog::CaType catype,
                              QTreeWidgetItem *parent = 0 );
 
     void appendCertsToItem( QList<QSslCertificate> certs,
-                            QgsAuthAuthoritiesEditor::CaType catype,
+                            QgsAuthTrustedCAsDialog::CaType catype,
                             QTreeWidgetItem *parent = 0 );
-
-    void updateCertTrustPolicyCache();
-
-    void populateUtilitiesMenu();
 
     QgsMessageBar * messageBar();
     int messageTimeout();
@@ -121,15 +86,6 @@ class GUI_EXPORT QgsAuthAuthoritiesEditor : public QWidget, private Ui::QgsAuthA
     QLabel *mAuthNotify;
 
     QTreeWidgetItem * mRootCaSecItem;
-    QTreeWidgetItem * mFileCaSecItem;
-    QTreeWidgetItem * mDbCaSecItem;
-
-    QgsAuthCertUtils::CertTrustPolicy mDefaultTrustPolicy;
-    QMap<QgsAuthCertUtils::CertTrustPolicy, QStringList > mCertTrustCache;
-
-    QMenu * mUtilitiesMenu;
-    QAction * mActionDefaultTrustPolicy;
-    QAction * mActionShowTrustedCAs;
 };
 
-#endif // QGSAUTHENTICATIONAUTHORITIESEDITOR_H
+#endif // QGSAUTHENTICATIONTRUSTEDCASDIALOG_H
