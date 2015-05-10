@@ -90,7 +90,7 @@ void QgsAuthTrustedCAsDialog::setupCaCertsTree()
   // add root section
    mRootCaSecItem = new QTreeWidgetItem(
          treeTrustedCAs,
-         QStringList( tr( "Certificates/Issuers" ) ),
+         QStringList( tr( "Authorities/Issuers" ) ),
          ( int )QgsAuthTrustedCAsDialog::Section );
    setItemBold_( mRootCaSecItem );
    mRootCaSecItem->setFlags( Qt::ItemIsEnabled );
