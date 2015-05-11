@@ -64,7 +64,7 @@ QgsAuthCertInfo::QgsAuthCertInfo( QSslCertificate cert, bool manageCertTrust, QW
 
   lblError->setHidden( true );
 
-  treeHeirarchy->setRootIsDecorated( true );
+  treeHeirarchy->setRootIsDecorated( false );
 
   connect( treeHeirarchy, SIGNAL( currentItemChanged( QTreeWidgetItem *, QTreeWidgetItem * ) ),
            this, SLOT( currentCertItemChanged( QTreeWidgetItem*, QTreeWidgetItem* ) ) );
