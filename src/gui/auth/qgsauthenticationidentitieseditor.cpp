@@ -289,9 +289,9 @@ void QgsAuthIdentitiesEditor::handleDoubleClick( QTreeWidgetItem *item, int col 
 
 void QgsAuthIdentitiesEditor::on_btnAddIdentity_clicked()
 {
-  QgsAuthImportIdentityDialog *dlg = new QgsAuthImportIdentityDialog( this );
+  QgsAuthImportIdentityDialog *dlg = new QgsAuthImportIdentityDialog( QgsAuthImportIdentityDialog::CertIdentity, this );
   dlg->setWindowModality( Qt::WindowModal );
-  dlg->resize( 400, 450 );
+  dlg->resize( 400, dlg->height() );
   if ( dlg->exec() )
   {
     if ( dlg->identityType() == QgsAuthImportIdentityDialog::CertIdentity )
@@ -354,8 +354,6 @@ void QgsAuthIdentitiesEditor::on_btnRemoveIdentity_clicked()
 
   item->parent()->removeChild( item );
   delete item;
-
-  item->parent()->setExpanded( true );
 }
 
 void QgsAuthIdentitiesEditor::on_btnInfoIdentity_clicked()
