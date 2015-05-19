@@ -83,7 +83,7 @@ void QgsAuthTrustedCAsDialog::setupCaCertsTree()
   treeTrustedCAs->setHeaderLabels(
         QStringList() << tr( "Common Name" )
         << tr( "Serial #" )
-        << tr( "Epiry Date" ) );
+        << tr( "Expiry Date" ) );
   treeTrustedCAs->setColumnWidth( 0, 300 );
   treeTrustedCAs->setColumnWidth( 1, 75 );
 
@@ -180,7 +180,7 @@ void QgsAuthTrustedCAsDialog::appendCertsToItem( QList<QSslCertificate> certs,
 
   QBrush redb( QgsAuthCertUtils::redColor() );
 
-  // Columns: Common Name, Serial #, Epiry Date
+  // Columns: Common Name, Serial #, Expiry Date
   Q_FOREACH( QSslCertificate cert, certs )
   {
     QString id( QgsAuthCertUtils::shaHexForCert( cert ) );

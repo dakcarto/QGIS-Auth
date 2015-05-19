@@ -111,7 +111,7 @@ void QgsAuthAuthoritiesEditor::setupCaCertsTree()
   treeWidgetCAs->setHeaderLabels(
         QStringList() << tr( "Common Name" )
         << tr( "Serial #" )
-        << tr( "Epiry Date" )
+        << tr( "Expiry Date" )
         << tr( "Trust Policy" ) );
   treeWidgetCAs->setColumnWidth( 0, 300 );
   treeWidgetCAs->setColumnWidth( 1, 75 );
@@ -270,7 +270,7 @@ void QgsAuthAuthoritiesEditor::appendCertsToItem( QList<QSslCertificate> certs,
   QStringList trustedids = mCertTrustCache.value( QgsAuthCertUtils::Trusted );
   QStringList untrustedids = mCertTrustCache.value( QgsAuthCertUtils::Untrusted );
 
-  // Columns: Common Name, Serial #, Epiry Date
+  // Columns: Common Name, Serial #, Expiry Date
   Q_FOREACH( QSslCertificate cert, certs )
   {
     QString id( QgsAuthCertUtils::shaHexForCert( cert ) );

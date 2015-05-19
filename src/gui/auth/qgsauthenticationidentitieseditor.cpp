@@ -87,7 +87,7 @@ void QgsAuthIdentitiesEditor::setupIdentitiesTree()
   treeIdentities->setHeaderLabels(
         QStringList() << tr( "Common Name" )
         << tr( "Serial #" )
-        << tr( "Epiry Date" ) );
+        << tr( "Expiry Date" ) );
   treeIdentities->setColumnWidth( 0, 300 );
   treeIdentities->setColumnWidth( 1, 75 );
 
@@ -189,7 +189,7 @@ void QgsAuthIdentitiesEditor::appendIdentitiesToItem( QList<QSslCertificate> cer
 
   QBrush redb( QgsAuthCertUtils::redColor() );
 
-  // Columns: Common Name, Serial #, Epiry Date
+  // Columns: Common Name, Serial #, Expiry Date
   Q_FOREACH( QSslCertificate cert, certs )
   {
     QString id( QgsAuthCertUtils::shaHexForCert( cert ) );
