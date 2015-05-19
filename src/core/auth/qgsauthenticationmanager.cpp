@@ -1852,6 +1852,26 @@ const QList<QSslCertificate> QgsAuthManager::getTrustedCaCerts( bool includeinva
   return trustedcerts;
 }
 
+const QList<QSslCertificate> QgsAuthManager::getUntrustedCaCerts( QList<QSslCertificate> trustedCAs )
+{
+  if ( trustedCAs.isEmpty() )
+  {
+    trustedCAs = getTrustedCaCerts();
+  }
+
+  const QList<QPair<QgsAuthCertUtils::CaCertSource, QSslCertificate> >& certpairs( mCaCertsCache.values() );
+
+  QList<QSslCertificate> untrustedCAs;
+  for (int i = 0; i < certpairs.size(); ++i) {
+    QSslCertificate cert( certpairs.at( i ).second );
+    if ( !trustedCAs.contains( cert ) )
+    {
+      untrustedCAs.append( cert );
+    }
+  }
+  return untrustedCAs;
+}
+
 bool QgsAuthManager::rebuildTrustedCaCertsCache()
 {
   mTrustedCaCertsCache = getTrustedCaCerts();

@@ -326,6 +326,9 @@ class CORE_EXPORT QgsAuthManager : public QObject, public QgsSingleton<QgsAuthMa
     /** Get list of all trusted CA certificates */
     const QList<QSslCertificate> getTrustedCaCerts( bool includeinvalid = false );
 
+    /** Get list of all untrusted CA certificates */
+    const QList<QSslCertificate> getUntrustedCaCerts( QList<QSslCertificate> trustedCAs = QList<QSslCertificate>() );
+
     /** Rebuild trusted certificate authorities cache */
     bool rebuildTrustedCaCertsCache();
 
