@@ -63,7 +63,7 @@
        <widget class="QTreeWidget" name="treeHeirarchy">
         <property name="minimumSize">
          <size>
-          <width>0</width>
+          <width>600</width>
           <height>75</height>
          </size>
         </property>
@@ -78,6 +78,9 @@
         </property>
         <property name="verticalScrollMode">
          <enum>QAbstractItemView::ScrollPerPixel</enum>
+        </property>
+        <property name="itemsExpandable">
+         <bool>false</bool>
         </property>
         <attribute name="headerVisible">
          <bool>false</bool>

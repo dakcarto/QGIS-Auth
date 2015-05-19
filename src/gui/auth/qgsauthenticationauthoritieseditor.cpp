@@ -238,6 +238,7 @@ void QgsAuthAuthoritiesEditor::appendCertsToGroup( QList<QSslCertificate> certs,
                                                     ( int )QgsAuthAuthoritiesEditor::OrgName ) );
     grpitem->setFirstColumnSpanned( true );
     grpitem->setFlags( Qt::ItemIsEnabled );
+    grpitem->setExpanded( true );
 
     QBrush orgb( grpitem->foreground( 0 ) );
     orgb.setColor( QColor::fromRgb( 90, 90, 90 ) );

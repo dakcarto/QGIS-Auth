@@ -58,6 +58,7 @@ QgsAuthIdentitiesEditor::QgsAuthIdentitiesEditor( QWidget *parent )
     connect( treeIdentities, SIGNAL( itemDoubleClicked ( QTreeWidgetItem *, int ) ),
              this, SLOT( handleDoubleClick ( QTreeWidgetItem *, int ) ) );
 
+    connect( btnViewRefresh, SIGNAL( clicked() ), this, SLOT( refreshCaCertsView() ) );
 
     btnGroupByOrg->setChecked( false );
     QVariant sortbyval = QgsAuthManager::instance()->getAuthSetting( QString( "identitiessortby" ), QVariant( false ) );
@@ -161,6 +162,7 @@ void QgsAuthIdentitiesEditor::appendIdentitiesToGroup( QList<QSslCertificate> ce
                                                     ( int )QgsAuthIdentitiesEditor::OrgName ) );
     grpitem->setFirstColumnSpanned( true );
     grpitem->setFlags( Qt::ItemIsEnabled );
+    grpitem->setExpanded( true );
 
     QBrush orgb( grpitem->foreground( 0 ) );
     orgb.setColor( QColor::fromRgb( 90, 90, 90 ) );

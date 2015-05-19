@@ -26,7 +26,7 @@
 class QPushButton;
 
 
-class QgsAuthImportCertDialog : public QDialog, private Ui::QgsAuthImportCertDialog
+class GUI_EXPORT QgsAuthImportCertDialog : public QDialog, private Ui::QgsAuthImportCertDialog
 {
     Q_OBJECT
 
