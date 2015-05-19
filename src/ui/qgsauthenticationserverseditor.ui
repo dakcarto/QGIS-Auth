@@ -47,26 +47,8 @@
      <property name="verticalSpacing">
       <number>6</number>
      </property>
-     <item row="0" column="0">
-      <widget class="QTreeWidget" name="treeWidgetServers">
-       <property name="editTriggers">
-        <set>QAbstractItemView::NoEditTriggers</set>
-       </property>
-       <property name="alternatingRowColors">
-        <bool>true</bool>
-       </property>
-       <property name="selectionMode">
-        <enum>QAbstractItemView::SingleSelection</enum>
-       </property>
-       <property name="selectionBehavior">
-        <enum>QAbstractItemView::SelectRows</enum>
-       </property>
-       <column>
-        <property name="text">
-         <string notr="true">1</string>
-        </property>
-       </column>
-      </widget>
+     <item row="1" column="0" colspan="2">
+      <widget class="QgsMessageBar" name="msgBar"/>
      </item>
      <item row="0" column="1">
       <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -126,7 +108,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QToolButton" name="btnInfoServer">
+        <widget class="QToolButton" name="btnEditServer">
          <property name="minimumSize">
           <size>
            <width>32</width>
@@ -138,7 +120,7 @@
          </property>
          <property name="icon">
           <iconset resource="../../images/images.qrc">
-           <normaloff>:/images/themes/default/propertyicons/metadata.svg</normaloff>:/images/themes/default/propertyicons/metadata.svg</iconset>
+           <normaloff>:/images/themes/default/symbologyEdit.png</normaloff>:/images/themes/default/symbologyEdit.png</iconset>
          </property>
          <property name="iconSize">
           <size>
@@ -160,6 +142,38 @@
           </size>
          </property>
         </spacer>
+       </item>
+       <item>
+        <widget class="QToolButton" name="btnGroupByOrg">
+         <property name="minimumSize">
+          <size>
+           <width>32</width>
+           <height>32</height>
+          </size>
+         </property>
+         <property name="toolTip">
+          <string>Group by organization</string>
+         </property>
+         <property name="text">
+          <string>...</string>
+         </property>
+         <property name="icon">
+          <iconset resource="../../images/images.qrc">
+           <normaloff>:/images/themes/default/mActionFilter.svg</normaloff>:/images/themes/default/mActionFilter.svg</iconset>
+         </property>
+         <property name="iconSize">
+          <size>
+           <width>20</width>
+           <height>20</height>
+          </size>
+         </property>
+         <property name="checkable">
+          <bool>true</bool>
+         </property>
+         <property name="checked">
+          <bool>false</bool>
+         </property>
+        </widget>
        </item>
        <item>
         <widget class="QToolButton" name="btnViewRefresh">
@@ -186,8 +200,32 @@
        </item>
       </layout>
      </item>
-     <item row="1" column="0" colspan="2">
-      <widget class="QgsMessageBar" name="msgBar"/>
+     <item row="0" column="0">
+      <widget class="QTreeWidget" name="treeServerConfigs">
+       <property name="editTriggers">
+        <set>QAbstractItemView::NoEditTriggers</set>
+       </property>
+       <property name="alternatingRowColors">
+        <bool>true</bool>
+       </property>
+       <property name="selectionMode">
+        <enum>QAbstractItemView::SingleSelection</enum>
+       </property>
+       <property name="selectionBehavior">
+        <enum>QAbstractItemView::SelectRows</enum>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>26</width>
+         <height>22</height>
+        </size>
+       </property>
+       <column>
+        <property name="text">
+         <string notr="true">1</string>
+        </property>
+       </column>
+      </widget>
      </item>
     </layout>
    </item>

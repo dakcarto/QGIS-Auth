@@ -47,8 +47,12 @@ static void removeChildren_( QTreeWidgetItem* item )
   }
 }
 
-QgsAuthCertInfo::QgsAuthCertInfo( QSslCertificate cert, bool manageCertTrust, QWidget *parent )
+QgsAuthCertInfo::QgsAuthCertInfo( QSslCertificate cert,
+                                  bool manageCertTrust,
+                                  QWidget *parent ,
+                                  QList<QSslCertificate> connectionCAs )
   : QWidget( parent )
+  , mConnectionCAs( connectionCAs )
   , mDefaultItemForeground( QBrush() )
   , mManageTrust( manageCertTrust )
   , mTrustCacheRebuilt( false )
@@ -133,6 +137,19 @@ bool QgsAuthCertInfo::populateQcaCertCollection()
       mCaCerts.addCertificate( acert );
     }
   }
+  if ( !mConnectionCAs.isEmpty() )
+  {
+    Q_FOREACH( const QSslCertificate& cert, mConnectionCAs )
+    {
+      QCA::ConvertResult res;
+      QCA::Certificate acert = QCA::Certificate::fromPEM( cert.toPem(), &res, QString( "qca-ossl" ) );
+      if ( res == QCA::ConvertGood && !acert.isNull() )
+      {
+        mCaCerts.addCertificate( acert );
+      }
+    }
+  }
+
   if ( mCaCerts.certificates().size() < 1 )
   {
     setupError( tr( "Could not populate QCA certificate collection" ) );
@@ -217,6 +234,11 @@ void QgsAuthCertInfo::setCertHeirarchy()
         const QPair<QgsAuthCertUtils::CaCertSource, QSslCertificate >& certpair( mCaCertsCache.value( sha ) );
         cert_source += QString( " (%1)").arg( QgsAuthCertUtils::getCaSourceName( certpair.first, true ) );
       }
+      else if ( mConnectionCAs.contains( cert ) )
+      {
+        cert_source += QString( " (%1)")
+            .arg( QgsAuthCertUtils::getCaSourceName( QgsAuthCertUtils::Connection, true ) );
+      }
     }
 
     if ( !previtem )
@@ -247,6 +269,7 @@ void QgsAuthCertInfo::setCertHeirarchy()
     previtem = item;
   }
   treeHeirarchy->setCurrentItem( item, 0, QItemSelectionModel::ClearAndSelect );
+  treeHeirarchy->expandAll();
 }
 
 void QgsAuthCertInfo::updateCurrentCertInfo( int chainindx )
@@ -430,27 +453,40 @@ void QgsAuthCertInfo::populateInfoGeneralSection()
   }
 
   QString certype;
-  bool isca = mCurrentACert.isCA();
   bool isselfsigned = mCurrentACert.isSelfSigned();
-  bool isissuer = QgsAuthCertUtils::certificateIsIssuer( mCurrentQCert );
+  QString selfsigned( tr( "self-signed" ) );
 
-  // TODO: add client and SSL cerver types
+  QList<QgsAuthCertUtils::CertUsageType> usagetypes(
+        QgsAuthCertUtils::certificateUsageTypes( mCurrentQCert ) );
+  bool isca = usagetypes.contains( QgsAuthCertUtils::CertAuthorityUsage );
+  bool isissuer = usagetypes.contains( QgsAuthCertUtils::CertIssuerUsage );
+  bool issslserver = usagetypes.contains( QgsAuthCertUtils::TlsServerUsage );
+  bool issslclient = usagetypes.contains( QgsAuthCertUtils::TlsClientUsage );
 
+  if ( issslclient )
+  {
+    certype = QgsAuthCertUtils::certificateUsageTypeString( QgsAuthCertUtils::TlsClientUsage );
+  }
+  if ( issslserver )
+  {
+    certype = QgsAuthCertUtils::certificateUsageTypeString( QgsAuthCertUtils::TlsServerUsage );
+  }
   if ( isissuer || ( isca && !isselfsigned ) )
   {
-    certype = tr( "Intermediate Authority" );
+    certype = QgsAuthCertUtils::certificateUsageTypeString( QgsAuthCertUtils::CertIssuerUsage );
   }
   if (( isissuer || isca ) && isselfsigned )
   {
-    certype = tr( "Root Authority" );
+    certype = QString( "%1 %2" )
+        .arg( tr( "Root" ) )
+        .arg( QgsAuthCertUtils::certificateUsageTypeString( QgsAuthCertUtils::CertAuthorityUsage ) );
   }
-  QString selfsigned( tr( "self-signed" ) );
   if ( isselfsigned  )
   {
     certype.append( certype.isEmpty() ? selfsigned : QString( " (%1)" ).arg( selfsigned ) );
   }
 
-  addFieldItem( mSecGeneral, tr( "Type" ),
+  addFieldItem( mSecGeneral, tr( "Usage type" ),
                 certype,
                 LineEdit );
   addFieldItem( mSecGeneral, tr( "Subject" ),
@@ -862,7 +898,10 @@ void QgsAuthCertInfo::decorateCertTreeItem( const QSslCertificate &cert,
 
 //////////////// Embed in dialog ///////////////////
 
-QgsAuthCertInfoDialog::QgsAuthCertInfoDialog( const QSslCertificate& cert, bool manageCertTrust, QWidget *parent )
+QgsAuthCertInfoDialog::QgsAuthCertInfoDialog( const QSslCertificate& cert,
+                                              bool manageCertTrust,
+                                              QWidget *parent ,
+                                              QList<QSslCertificate> connectionCAs )
   : QDialog( parent )
   , mCertInfoWdgt( 0 )
 {
@@ -870,7 +909,7 @@ QgsAuthCertInfoDialog::QgsAuthCertInfoDialog( const QSslCertificate& cert, bool 
   QVBoxLayout *layout = new QVBoxLayout( this );
   layout->setMargin( 6 );
 
-  mCertInfoWdgt = new QgsAuthCertInfo( cert, manageCertTrust, this );
+  mCertInfoWdgt = new QgsAuthCertInfo( cert, manageCertTrust, this, connectionCAs );
   layout->addWidget( mCertInfoWdgt );
 
   QDialogButtonBox *buttonBox = new QDialogButtonBox( QDialogButtonBox::Close,

@@ -30,6 +30,11 @@ const QColor QgsAuthCertUtils::greenColor()
   return QColor( 0, 170, 0 );
 }
 
+const QColor QgsAuthCertUtils::orangeColor()
+{
+  return QColor( 255, 128, 0 );
+}
+
 const QColor QgsAuthCertUtils::redColor()
 {
   return QColor( 200, 0, 0 );
@@ -40,9 +45,43 @@ const QString QgsAuthCertUtils::greenTextStyleSheet( const QString &selector )
   return QString( "%1{color: %2;}" ).arg( selector ).arg( QgsAuthCertUtils::greenColor().name() );
 }
 
+const QString QgsAuthCertUtils::orangeTextStyleSheet(const QString &selector)
+{
+  return QString( "%1{color: %2;}" ).arg( selector ).arg( QgsAuthCertUtils::orangeColor().name() );
+}
+
 const QString QgsAuthCertUtils::redTextStyleSheet( const QString &selector )
 {
   return QString( "%1{color: %2;}" ).arg( selector ).arg( QgsAuthCertUtils::redColor().name() );
+}
+
+const QString QgsAuthCertUtils::getSslProtocolName( QSsl::SslProtocol protocol )
+{
+  QString name;
+  switch( protocol )
+  {
+#if QT_VERSION >= 0x040800
+    case QSsl::SecureProtocols:
+      name = QObject::tr( "SecureProtocols" );
+      break;
+    case QSsl::TlsV1SslV3:
+      name = QObject::tr( "TlsV1SslV3" );
+      break;
+#endif
+    case QSsl::TlsV1:
+      name = QObject::tr( "TlsV1" );
+      break;
+    case QSsl::SslV3:
+      name = QObject::tr( "SslV3" );
+      break;
+    case QSsl::SslV2:
+      name = QObject::tr( "SslV2" );
+      break;
+    default:
+      break;
+  }
+
+  return name;
 }
 
 const QMap<QString, QSslCertificate> QgsAuthCertUtils::mapDigestToCerts( QList<QSslCertificate> certs )
@@ -67,6 +106,30 @@ const QMap<QString, QList<QSslCertificate> > QgsAuthCertUtils::certsGroupedByOrg
     orgcerts.insert( org, valist << cert );
   }
   return orgcerts;
+}
+
+const QMap<QString, QgsAuthConfigSslServer> QgsAuthCertUtils::mapDigestToSslConfigs(QList<QgsAuthConfigSslServer> configs)
+{
+  QMap<QString, QgsAuthConfigSslServer> digestmap;
+  Q_FOREACH( QgsAuthConfigSslServer config, configs )
+  {
+    digestmap.insert( shaHexForCert( config.sslCertificate() ), config );
+  }
+  return digestmap;
+}
+
+const QMap<QString, QList<QgsAuthConfigSslServer> > QgsAuthCertUtils::sslConfigsGroupedByOrg( QList<QgsAuthConfigSslServer> configs )
+{
+  QMap< QString, QList<QgsAuthConfigSslServer> > orgconfigs;
+  Q_FOREACH( QgsAuthConfigSslServer config, configs )
+  {
+    QString org( config.sslCertificate().subjectInfo( QSslCertificate::Organization ) );
+    if ( org.isEmpty() )
+      org = "(Organization not defined)";
+    QList<QgsAuthConfigSslServer> valist = orgconfigs.contains( org ) ? orgconfigs.value( org ) : QList<QgsAuthConfigSslServer>();
+    orgconfigs.insert( org, valist << config );
+  }
+  return orgconfigs;
 }
 
 static QByteArray fileData_( const QString& path, bool astext = false )
@@ -124,6 +187,9 @@ const QString QgsAuthCertUtils::getCaSourceName( QgsAuthCertUtils::CaCertSource 
       break;
     case InDatabase:
       name = single ? QObject::tr( "Database CA" ) : QObject::tr( "Authorities in Database" );
+      break;
+    case Connection:
+      name = single ? QObject::tr( "Connection CA" ) : QObject::tr( "Authorities from connection" );
       break;
     default:
       break;
@@ -261,6 +327,38 @@ const QString QgsAuthCertUtils::shaHexForCert( const QSslCertificate& cert, bool
     return QgsAuthCertUtils::getColonDelimited( sha );
   }
   return sha;
+}
+
+const QCA::Certificate QgsAuthCertUtils::qtCertToQcaCert( const QSslCertificate &cert )
+{
+  if ( QgsAuthManager::instance()->isDisabled() )
+    return QCA::Certificate();
+
+  QCA::ConvertResult res;
+  QCA::Certificate qcacert( QCA::Certificate::fromPEM( cert.toPem(), &res, QString( "qca-ossl" ) ) );
+  if ( res != QCA::ConvertGood || qcacert.isNull() )
+  {
+    QgsDebugMsg( "Certificate could not be converted to QCA cert" );
+    qcacert = QCA::Certificate();
+  }
+  return qcacert;
+}
+
+const QCA::CertificateCollection QgsAuthCertUtils::qtCertsToQcaCollection( const QList<QSslCertificate> &certs )
+{
+  QCA::CertificateCollection qcacoll;
+  if ( QgsAuthManager::instance()->isDisabled() )
+    return qcacoll;
+
+  Q_FOREACH ( const QSslCertificate& cert, certs )
+  {
+    QCA::Certificate qcacert( qtCertToQcaCert( cert )  );
+    if ( !qcacert.isNull() )
+    {
+      qcacoll.addCertificate( qcacert);
+    }
+  }
+  return qcacoll;
 }
 
 const QString QgsAuthCertUtils::qcaValidityMessage( QCA::Validity validity )
@@ -418,54 +516,309 @@ const QString QgsAuthCertUtils::qcaKnownConstraint(QCA::ConstraintTypeKnown cons
   return msg;
 }
 
-bool QgsAuthCertUtils::certificateIsAuthority( const QSslCertificate &cert )
+const QString QgsAuthCertUtils::certificateUsageTypeString(QgsAuthCertUtils::CertUsageType usagetype)
 {
+  QString msg;
+  switch( usagetype )
+  {
+    case QgsAuthCertUtils::AnyOrUnspecifiedUsage:
+      msg = QObject::tr( "Any or unspecified" );
+      break;
+    case QgsAuthCertUtils::CertAuthorityUsage:
+      msg = QObject::tr( "Certificate Authority" );
+      break;
+    case QgsAuthCertUtils::CertIssuerUsage:
+      msg = QObject::tr( "Certificate Issuer" );
+      break;
+    case QgsAuthCertUtils::TlsServerUsage:
+      msg = QObject::tr( "TLS/SSL Server" );
+      break;
+    case QgsAuthCertUtils::TlsServerEvUsage:
+      msg = QObject::tr( "TLS/SSL Server EV" );
+      break;
+    case QgsAuthCertUtils::TlsClientUsage:
+      msg = QObject::tr( "TLS/SSL Client" );
+      break;
+    case QgsAuthCertUtils::CodeSigningUsage:
+      msg = QObject::tr( "Code Signing" );
+      break;
+    case QgsAuthCertUtils::EmailProtectionUsage:
+      msg = QObject::tr( "Email Protection" );
+      break;
+    case QgsAuthCertUtils::TimeStampingUsage:
+      msg = QObject::tr( "Time Stamping" );
+      break;
+    case QgsAuthCertUtils::CRLSigningUsage:
+      msg = QObject::tr( "CRL Signing" );
+      break;
+    case QgsAuthCertUtils::UndeterminedUsage:
+    default:
+      msg = QObject::tr( "Undetermined usage" );
+      break;
+  }
+  return msg;
+
+}
+
+QList<QgsAuthCertUtils::CertUsageType> QgsAuthCertUtils::certificateUsageTypes( const QSslCertificate &cert )
+{
+  QList<QgsAuthCertUtils::CertUsageType> usages;
+
   if ( QgsAuthManager::instance()->isDisabled() )
-    return false;
+    return usages;
 
   QCA::ConvertResult res;
   QCA::Certificate qcacert( QCA::Certificate::fromPEM( cert.toPem(), &res, QString( "qca-ossl" ) ) );
   if ( res != QCA::ConvertGood || qcacert.isNull() )
   {
     QgsDebugMsg( "Certificate could not be converted to QCA cert" );
-    return false;
+    return usages;
   }
+
   if ( qcacert.isCA() )
   {
     QgsDebugMsg( "Certificate has 'CA:TRUE' basic constraint" );
-    return true;
-  }
-  return false;
-}
-
-bool QgsAuthCertUtils::certificateIsIssuer( const QSslCertificate &cert )
-{
-  if ( QgsAuthManager::instance()->isDisabled() )
-    return false;
-
-  QCA::ConvertResult res;
-  QCA::Certificate qcacert( QCA::Certificate::fromPEM( cert.toPem(), &res, QString( "qca-ossl" ) ) );
-  if ( res != QCA::ConvertGood || qcacert.isNull() )
-  {
-    QgsDebugMsg( "Certificate could not be converted to QCA cert" );
-    return false;
+    usages << QgsAuthCertUtils::CertAuthorityUsage;
   }
 
-  // see if key usage allows cert signing, e.g. issuer cert
   QList<QCA::ConstraintType> certconsts = qcacert.constraints();
   Q_FOREACH( QCA::ConstraintType certconst, certconsts )
   {
     if ( certconst.known() == QCA::KeyCertificateSign )
     {
       QgsDebugMsg( "Certificate has 'Certificate Sign' key usage" );
-      return true;
+      usages << QgsAuthCertUtils::CertIssuerUsage;
     }
   }
-  return false;
+
+  // ask QCA what it thinks about potential usages
+  QCA::CertificateCollection trustedCAs(
+        qtCertsToQcaCollection( QgsAuthManager::instance()->getTrustedCaCerts() ) );
+  QCA::CertificateCollection untrustedCAs(
+        qtCertsToQcaCollection( QgsAuthManager::instance()->getUntrustedCaCerts() ) );
+
+  QCA::Validity v_any;
+  v_any = qcacert.validate( trustedCAs, untrustedCAs, QCA::UsageAny, QCA::ValidateAll );
+  if ( v_any == QCA::ValidityGood )
+  {
+    usages << QgsAuthCertUtils::AnyOrUnspecifiedUsage;
+  }
+
+  QCA::Validity v_tlsserver;
+  v_tlsserver = qcacert.validate( trustedCAs, untrustedCAs, QCA::UsageTLSServer, QCA::ValidateAll );
+  if ( v_tlsserver == QCA::ValidityGood )
+  {
+    usages << QgsAuthCertUtils::TlsServerUsage;
+  }
+
+  // TODO: why doesn't this tag client certs?
+  //       always seems to return QCA::ErrorInvalidPurpose (enum #5)
+  QCA::Validity v_tlsclient;
+  v_tlsclient = qcacert.validate( trustedCAs, untrustedCAs, QCA::UsageTLSClient, QCA::ValidateAll );
+  //QgsDebugMsg( QString( "QCA::UsageTLSClient validity: %1" ).arg( ( int )v_tlsclient ) );
+  if ( v_tlsclient == QCA::ValidityGood )
+  {
+    usages << QgsAuthCertUtils::TlsClientUsage;
+  }
+
+  // TODO: add TlsServerEvUsage, CodeSigningUsage, EmailProtectionUsage, TimeStampingUsage, CRLSigningUsage
+  //       as they become necessary, since we do not want the overhead of checking just yet.
+
+  return usages;
+}
+
+bool QgsAuthCertUtils::certificateIsAuthority( const QSslCertificate &cert )
+{
+  return certificateUsageTypes( cert ).contains( QgsAuthCertUtils::CertAuthorityUsage );
+}
+
+bool QgsAuthCertUtils::certificateIsIssuer( const QSslCertificate &cert )
+{
+  return certificateUsageTypes( cert ).contains( QgsAuthCertUtils::CertIssuerUsage );
 }
 
 bool QgsAuthCertUtils::certificateIsAuthorityOrIssuer( const QSslCertificate &cert )
 {
   return ( QgsAuthCertUtils::certificateIsAuthority( cert )
            || QgsAuthCertUtils::certificateIsIssuer( cert ) );
+}
+
+bool QgsAuthCertUtils::certificateIsSslServer( const QSslCertificate &cert )
+{
+  return ( certificateUsageTypes( cert ).contains( QgsAuthCertUtils::TlsServerUsage )
+           || certificateUsageTypes( cert ).contains( QgsAuthCertUtils::TlsServerEvUsage ) );
+}
+
+#if 0
+bool QgsAuthCertUtils::certificateIsSslServer( const QSslCertificate &cert )
+{
+  // TODO: There is no difinitive method for strictly enforcing what determines an SSL server cert;
+  //       only what it should not be able to do (cert sign, etc.). The logic here may need refined
+  // see: http://security.stackexchange.com/a/26650
+
+  if ( QgsAuthManager::instance()->isDisabled() )
+    return false;
+
+  QCA::ConvertResult res;
+  QCA::Certificate qcacert( QCA::Certificate::fromPEM( cert.toPem(), &res, QString( "qca-ossl" ) ) );
+  if ( res != QCA::ConvertGood || qcacert.isNull() )
+  {
+    QgsDebugMsg( "Certificate could not be converted to QCA cert" );
+    return false;
+  }
+
+  if ( qcacert.isCA() )
+  {
+    QgsDebugMsg( "SSL server certificate has 'CA:TRUE' basic constraint (and should not)" );
+    return false;
+  }
+
+  QList<QCA::ConstraintType> certconsts = qcacert.constraints();
+  Q_FOREACH( QCA::ConstraintType certconst, certconsts )
+  {
+    if ( certconst.known() == QCA::KeyCertificateSign )
+    {
+      QgsDebugMsg( "SSL server certificate has 'Certificate Sign' key usage (and should not)" );
+      return false;
+    }
+  }
+
+  // check for common key usage and extended key usage constraints
+  // see: https://www.ietf.org/rfc/rfc3280.txt  4.2.1.3(Key Usage) and  4.2.1.13(Extended Key Usage)
+  bool serverauth = false;
+  bool dsignature = false;
+  bool keyencrypt = false;
+  Q_FOREACH( QCA::ConstraintType certconst, certconsts )
+  {
+    if ( certconst.known() == QCA::DigitalSignature )
+    {
+      QgsDebugMsg( "SSL server certificate has 'digital signature' key usage" );
+      dsignature = true;
+    }
+    else if ( certconst.known() == QCA::KeyEncipherment )
+    {
+      QgsDebugMsg( "SSL server certificate has 'key encipherment' key usage" );
+      keyencrypt = true;
+    }
+    else if ( certconst.known() == QCA::KeyAgreement )
+    {
+      QgsDebugMsg( "SSL server certificate has 'key agreement' key usage" );
+      keyencrypt = true;
+    }
+    else if ( certconst.known() == QCA::ServerAuth )
+    {
+      QgsDebugMsg( "SSL server certificate has 'server authentication' extended key usage" );
+      serverauth = true;
+    }
+  }
+  // From 4.2.1.13(Extended Key Usage):
+  //   "If a certificate contains both a key usage extension and an extended
+  //   key usage extension, then both extensions MUST be processed
+  //   independently and the certificate MUST only be used for a purpose
+  //   consistent with both extensions.  If there is no purpose consistent
+  //   with both extensions, then the certificate MUST NOT be used for any
+  //   purpose."
+
+  if ( serverauth && dsignature && keyencrypt )
+  {
+    return true;
+  }
+  if ( dsignature && keyencrypt )
+  {
+    return true;
+  }
+
+  // lastly, check for DH key and key agreement
+  bool keyagree = false;
+  bool encipheronly = false;
+  bool decipheronly = false;
+
+  QCA::PublicKey pubkey( qcacert.subjectPublicKey() );
+  // key size may be 0 for eliptical curve-based keys, in which case isDH() crashes QCA
+  if ( pubkey.bitSize() > 0 && pubkey.isDH() )
+  {
+    keyagree = pubkey.canKeyAgree();
+    if ( !keyagree )
+    {
+      return false;
+    }
+    Q_FOREACH( QCA::ConstraintType certconst, certconsts )
+    {
+      if ( certconst.known() == QCA::EncipherOnly )
+      {
+        QgsDebugMsg( "SSL server public key has 'encipher only' key usage" );
+        encipheronly = true;
+      }
+      else if ( certconst.known() == QCA::DecipherOnly )
+      {
+        QgsDebugMsg( "SSL server public key has 'decipher only' key usage" );
+        decipheronly = true;
+      }
+    }
+    if ( !encipheronly && !decipheronly )
+    {
+      return true;
+    }
+  }
+  return false;
+}
+#endif
+
+bool QgsAuthCertUtils::certificateIsSslClient( const QSslCertificate &cert )
+{
+  return certificateUsageTypes( cert ).contains( QgsAuthCertUtils::TlsClientUsage );
+}
+
+const QList<QPair<QSslError::SslError, QString> > QgsAuthCertUtils::sslErrorEnumStrings()
+{
+  QList<QPair<QSslError::SslError, QString> > errenums;
+  errenums << qMakePair( QSslError::UnableToGetIssuerCertificate,
+                         QObject::tr( "Unable To Get Issuer Certificate" ) );
+  errenums << qMakePair( QSslError::UnableToDecryptCertificateSignature,
+                         QObject::tr( "Unable To Decrypt Certificate Signature" ) );
+  errenums << qMakePair( QSslError::UnableToDecodeIssuerPublicKey,
+                         QObject::tr( "Unable To Decode Issuer Public Key" ) );
+  errenums << qMakePair( QSslError::CertificateSignatureFailed,
+                         QObject::tr( "Certificate Signature Failed" ) );
+  errenums << qMakePair( QSslError::CertificateNotYetValid,
+                         QObject::tr( "Certificate Not Yet Valid" ) );
+  errenums << qMakePair( QSslError::CertificateExpired,
+                         QObject::tr( "Certificate Expired" ) );
+  errenums << qMakePair( QSslError::InvalidNotBeforeField,
+                         QObject::tr( "Invalid Not Before Field" ) );
+  errenums << qMakePair( QSslError::InvalidNotAfterField,
+                         QObject::tr( "Invalid Not After Field" ) );
+  errenums << qMakePair( QSslError::SelfSignedCertificate,
+                         QObject::tr( "Self-signed Certificate" ) );
+  errenums << qMakePair( QSslError::SelfSignedCertificateInChain,
+                         QObject::tr( "Self-signed Certificate In Chain" ) );
+  errenums << qMakePair( QSslError::UnableToGetLocalIssuerCertificate,
+                         QObject::tr( "Unable To Get Local Issuer Certificate" ) );
+  errenums << qMakePair( QSslError::UnableToVerifyFirstCertificate,
+                         QObject::tr( "Unable To Verify First Certificate" ) );
+  errenums << qMakePair( QSslError::CertificateRevoked,
+                         QObject::tr( "Certificate Revoked" ) );
+  errenums << qMakePair( QSslError::InvalidCaCertificate,
+                         QObject::tr( "Invalid Ca Certificate" ) );
+  errenums << qMakePair( QSslError::PathLengthExceeded,
+                         QObject::tr( "Path Length Exceeded" ) );
+  errenums << qMakePair( QSslError::InvalidPurpose,
+                         QObject::tr( "Invalid Purpose" ) );
+  errenums << qMakePair( QSslError::CertificateUntrusted,
+                         QObject::tr( "Certificate Untrusted" ) );
+  errenums << qMakePair( QSslError::CertificateRejected,
+                         QObject::tr( "Certificate Rejected" ) );
+  errenums << qMakePair( QSslError::SubjectIssuerMismatch,
+                         QObject::tr( "Subject Issuer Mismatch" ) );
+  errenums << qMakePair( QSslError::AuthorityIssuerSerialNumberMismatch,
+                         QObject::tr( "Authority Issuer Serial Number Mismatch" ) );
+  errenums << qMakePair( QSslError::NoPeerCertificate,
+                         QObject::tr( "No Peer Certificate" ) );
+  errenums << qMakePair( QSslError::HostNameMismatch,
+                         QObject::tr( "Host Name Mismatch" ) );
+  errenums << qMakePair( QSslError::UnspecifiedError,
+                         QObject::tr( "Unspecified Error" ) );
+  errenums << qMakePair( QSslError::CertificateBlacklisted,
+                         QObject::tr( "Certificate Blacklisted" ) );
+  return errenums;
 }

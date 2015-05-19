@@ -258,6 +258,23 @@ class CORE_EXPORT QgsAuthManager : public QObject, public QgsSingleton<QgsAuthMa
     /** Remove a certificate identity */
     bool removeCertIdentity( const QString& id );
 
+
+    /** Store an SSL certificate custom config */
+    bool storeSslCertCustomConfig( const QgsAuthConfigSslServer& config );
+
+    /** Get an SSL certificate custom config by id (sha hash) */
+    const QgsAuthConfigSslServer getSslCertCustomConfig( const QString& id );
+
+    /** Get SSL certificate custom configs */
+    const QList<QgsAuthConfigSslServer> getSslCertCustomConfigs();
+
+    /** Check if SSL certificate custom config exists */
+    bool existsSslCertCustomConfig( const QString& id );
+
+    /** Remove an SSL certificate custom config */
+    bool removeSslCertCustomConfig( const QString& id );
+
+
     /** Store multiple certificate authorities */
     bool storeCertAuthorities( const QList<QSslCertificate>& certs );
 

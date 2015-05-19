@@ -1404,6 +1404,164 @@ bool QgsAuthManager::removeCertIdentity( const QString &id )
   return true;
 }
 
+bool QgsAuthManager::storeSslCertCustomConfig( const QgsAuthConfigSslServer &config )
+{
+  if ( config.isNull() )
+  {
+    QgsDebugMsg( "Passed config is null" );
+    return false;
+  }
+
+  QSslCertificate cert( config.sslCertificate() );
+
+  QString id( QgsAuthCertUtils::shaHexForCert( cert ) );
+  removeSslCertCustomConfig( id );
+
+  QString certpem( cert.toPem() );
+
+  QSqlQuery query( authDbConnection() );
+  query.prepare( QString( "INSERT INTO %1 (id, host, cert, config) "
+                          "VALUES (:id, :host, :cert, :config)" ).arg( authDbServersTable() ) );
+
+  query.bindValue( ":id", id );
+  query.bindValue( ":host", config.sslHost() );
+  query.bindValue( ":cert", certpem );
+  query.bindValue( ":config", config.configString() );
+
+  if ( !authDbStartTransaction() )
+    return false;
+
+  if ( !authDbQuery( &query ) )
+    return false;
+
+  if ( !authDbCommit() )
+    return false;
+
+  QgsDebugMsg( QString( "Store SSL cert custom config SUCCESS for id: %1" ).arg( id ) );
+  return true;
+}
+
+const QgsAuthConfigSslServer QgsAuthManager::getSslCertCustomConfig( const QString &id )
+{
+  QgsAuthConfigSslServer config;
+
+  if ( id.isEmpty() )
+    return config;
+
+  QSqlQuery query( authDbConnection() );
+  query.prepare( QString( "SELECT id, host, cert, config FROM %1 "
+                          "WHERE id = :id" ).arg( authDbServersTable() ) );
+
+  query.bindValue( ":id", id );
+
+  if ( !authDbQuery( &query ) )
+    return config;
+
+  if ( query.isActive() && query.isSelect() )
+  {
+    if ( query.first() )
+    {
+      config.setSslCertificate( QSslCertificate( query.value( 2 ).toByteArray(), QSsl::Pem ) );
+      config.setSslHost( query.value( 1 ).toString() );
+      config.loadConfigString( query.value( 3 ).toString() );
+      QgsDebugMsg( QString( "SSL cert custom config retrieved for id: %1" ).arg( id ) );
+    }
+    if ( query.next() )
+    {
+      QgsDebugMsg( QString( "Select contains more than one SSL cert custom config for id: %1" ).arg( id ) );
+      emit messageOut( tr( "Authentication database contains duplicate SSL cert custom configs" ), authManTag(), WARNING );
+      QgsAuthConfigSslServer emptyconfig;
+      return emptyconfig;
+    }
+  }
+  return config;
+}
+
+const QList<QgsAuthConfigSslServer> QgsAuthManager::getSslCertCustomConfigs()
+{
+  QList<QgsAuthConfigSslServer> configs;
+
+  QSqlQuery query( authDbConnection() );
+  query.prepare( QString( "SELECT id, host, cert, config FROM %1" ).arg( authDbServersTable() ) );
+
+  if ( !authDbQuery( &query ) )
+    return configs;
+
+  if ( query.isActive() && query.isSelect() )
+  {
+    while ( query.next() )
+    {
+      QgsAuthConfigSslServer config;
+      config.setSslCertificate( QSslCertificate( query.value( 2 ).toByteArray(), QSsl::Pem ) );
+      config.setSslHost( query.value( 1 ).toString() );
+      config.loadConfigString( query.value( 3 ).toString() );
+
+      configs.append( config );
+    }
+  }
+
+  return configs;
+}
+
+bool QgsAuthManager::existsSslCertCustomConfig( const QString &id )
+{
+  if ( id.isEmpty() )
+    return false;
+
+  QSqlQuery query( authDbConnection() );
+  query.prepare( QString( "SELECT cert FROM %1 "
+                          "WHERE id = :id" ).arg( authDbServersTable() ) );
+
+  query.bindValue( ":id", id );
+
+  if ( !authDbQuery( &query ) )
+    return false;
+
+  bool res = false;
+  if ( query.isActive() && query.isSelect() )
+  {
+    if ( query.first() )
+    {
+      QgsDebugMsg( QString( "SSL cert custom config exists for id: %1" ).arg( id ) );
+      res = true;
+    }
+    if ( query.next() )
+    {
+      QgsDebugMsg( QString( "Select contains more than one SSL cert custom config for id: %1" ).arg( id ) );
+      emit messageOut( tr( "Authentication database contains duplicate SSL cert custom configs" ), authManTag(), WARNING );
+      return false;
+    }
+  }
+  return res;
+}
+
+bool QgsAuthManager::removeSslCertCustomConfig( const QString &id )
+{
+  if ( id.isEmpty() )
+  {
+    QgsDebugMsg( "Passed config ID is empty" );
+    return false;
+  }
+
+  QSqlQuery query( authDbConnection() );
+
+  query.prepare( QString( "DELETE FROM %1 WHERE id = :id" ).arg( authDbServersTable() ) );
+
+  query.bindValue( ":id", id );
+
+  if ( !authDbStartTransaction() )
+    return false;
+
+  if ( !authDbQuery( &query ) )
+    return false;
+
+  if ( !authDbCommit() )
+    return false;
+
+  QgsDebugMsg( QString( "REMOVED SSL cert custom config for id: %1" ).arg( id ) );
+  return true;
+}
+
 
 bool QgsAuthManager::storeCertAuthorities( const QList<QSslCertificate> &certs )
 {

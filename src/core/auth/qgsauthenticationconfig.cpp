@@ -331,3 +331,86 @@ void QgsAuthConfigPkiPkcs12::loadConfigString( const QString &config )
   setCaCertsPath( configlist.at( 2 ) );
   setIgnoreSelfSigned(( bool ) configlist.at( 3 ).toInt() );
 }
+
+
+//////////////////////////////////////////////
+// QgsAuthConfigSslServer
+//////////////////////////////////////////////
+
+#ifndef QT_NO_OPENSSL
+
+const QString QgsAuthConfigSslServer::mConfSep = "|||";
+
+QgsAuthConfigSslServer::QgsAuthConfigSslServer()
+  : mSslHost( QString() )
+  , mSslCert( QSslCertificate() )
+  , mSslIgnoredErrors( QList<QSslError>() )
+  , mSslPeerVerify( qMakePair( QSslSocket::VerifyPeer, 0 ) )
+  , mVersion( 1 )
+{
+#if QT_VERSION >= 0x040800
+  mQtVersion = 480;
+  // Qt 4.8 defaults to SecureProtocols, i.e. TlsV1SslV3
+  // http://qt-project.org/doc/qt-4.8/qssl.html#SslProtocol-enum
+  mSslProtocol = QSsl::SecureProtocols;
+#else
+  mQtVersion = 470;
+  // older Qt 4.7 defaults to now-vulnerable SSLv3
+  // http://qt-project.org/doc/qt-4.7/qssl.html
+  // Default this to TlsV1 instead
+  mSslProtocol = QSsl::TlsV1;
+#endif
+}
+
+const QString QgsAuthConfigSslServer::configString() const
+{
+  QStringList configlist;
+  configlist << QString::number( mVersion ) << QString::number( mQtVersion );
+
+  configlist << QString::number(( int )mSslProtocol );
+
+  QStringList errs;
+  Q_FOREACH( const QSslError& err, mSslIgnoredErrors )
+  {
+    errs << QString::number(( int )err.error() );
+  }
+  configlist << errs.join( "~~" );
+
+  configlist << QString( "%1~~%2" ).arg(( int )mSslPeerVerify.first ).arg( mSslPeerVerify.second );
+
+  return configlist.join( mConfSep );
+}
+
+void QgsAuthConfigSslServer::loadConfigString( const QString &config )
+{
+  if ( config.isEmpty() )
+  {
+    return;
+  }
+  QStringList configlist( config.split( mConfSep ) );
+
+  mVersion = configlist.at( 0 ).toInt();
+  mQtVersion = configlist.at( 1 ).toInt();
+
+  // TODO: Conversion between 4.7 -> 4.8 protocol enum differences (and reverse?).
+  //       This is necessary for users upgrading from 4.7 to 4.8
+  mSslProtocol = ( QSsl::SslProtocol )configlist.at( 2 ).toInt();
+
+  mSslIgnoredErrors.clear();
+  QStringList errs( configlist.at( 3 ).split( "~~" ) );
+  Q_FOREACH( const QString& err, errs )
+  {
+    mSslIgnoredErrors.append( QSslError(( QSslError::SslError )err.toInt() ) );
+  }
+
+  QStringList peerverify( configlist.at( 4 ).split( "~~" ) );
+  mSslPeerVerify = qMakePair(( QSslSocket::PeerVerifyMode )peerverify.at( 0 ).toInt(),
+                             peerverify.at( 1 ).toInt() );
+}
+
+bool QgsAuthConfigSslServer::isNull() const
+{
+  return mSslCert.isNull() && mSslHost.isEmpty();
+}
+
+#endif

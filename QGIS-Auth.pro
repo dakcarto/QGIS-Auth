@@ -61,7 +61,9 @@ SOURCES += \
     src/core/auth/qgsauthenticationcertutils.cpp \
     src/gui/auth/qgsauthenticationcerttrustpolicycombobox.cpp \
     src/gui/auth/qgsauthenticationtrustedcasdialog.cpp \
-    src/gui/auth/qgsauthenticationimportidentitydialog.cpp
+    src/gui/auth/qgsauthenticationimportidentitydialog.cpp \
+    src/gui/auth/qgsauthenticationsslconfigwidget.cpp \
+    src/gui/auth/qgsauthenticationsslimportdialog.cpp
 
 HEADERS += \
     src/app/webpage.h \
@@ -92,7 +94,9 @@ HEADERS += \
     src/core/auth/qgsauthenticationcertutils.h \
     src/gui/auth/qgsauthenticationcerttrustpolicycombobox.h \
     src/gui/auth/qgsauthenticationtrustedcasdialog.h \
-    src/gui/auth/qgsauthenticationimportidentitydialog.h
+    src/gui/auth/qgsauthenticationimportidentitydialog.h \
+    src/gui/auth/qgsauthenticationsslconfigwidget.h \
+    src/gui/auth/qgsauthenticationsslimportdialog.h
 
 FORMS += \
     src/ui/webpage.ui \
@@ -108,6 +112,9 @@ FORMS += \
     src/ui/qgsauthenticationcertificateinfo.ui \
     src/ui/qgsauthenticationimportcertdialog.ui \
     src/ui/qgsauthenticationtrustedcasdialog.ui \
-    src/ui/qgsauthenticationimportidentitydialog.ui
+    src/ui/qgsauthenticationimportidentitydialog.ui \
+    src/ui/qgsauthenticationsslconfigwidget.ui \
+    src/ui/qgsauthenticationsslimportdialog.ui \
+    src/ui/qgsauthenticationsslimporterrors.ui
 
 RESOURCES += images/images.qrc

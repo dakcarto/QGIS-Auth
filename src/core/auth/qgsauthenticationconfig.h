@@ -20,6 +20,11 @@
 #include <QHash>
 #include <QString>
 
+#ifndef QT_NO_OPENSSL
+#include <QSslCertificate>
+#include <QSslError>
+#include <QSslSocket>
+#endif
 
 class CORE_EXPORT QgsAuthType
 {
@@ -207,5 +212,57 @@ class CORE_EXPORT QgsAuthConfigPkiPkcs12: public QgsAuthConfigBase
     QString mCaCertsPath;
     bool mIgnoreSelf;
 };
+
+
+#ifndef QT_NO_OPENSSL
+class CORE_EXPORT QgsAuthConfigSslServer
+{
+  public:
+    QgsAuthConfigSslServer();
+
+    ~QgsAuthConfigSslServer() {}
+
+    const QSslCertificate sslCertificate() const { return mSslCert; }
+    void setSslCertificate( const QSslCertificate& cert ) { mSslCert = cert; }
+
+    const QString sslHost() const  { return mSslHost; }
+    void setSslHost( const QString& host ) { mSslHost = host; }
+
+    QSsl::SslProtocol sslProtocol() const { return mSslProtocol; }
+    void setSslProtocol( QSsl::SslProtocol protocol ) { mSslProtocol = protocol; }
+
+    const QList<QSslError> sslIgnoredErrors() const { return mSslIgnoredErrors; }
+    void setSslIgnoredErrors( const QList<QSslError>& errors ) { mSslIgnoredErrors = errors; }
+
+    const QPair<QSslSocket::PeerVerifyMode, int> sslPeerVerify() const { return mSslPeerVerify; }
+    void setSslPeerVerify( const QPair<QSslSocket::PeerVerifyMode, int>& modedepth ) {
+      mSslPeerVerify = modedepth;
+    }
+
+    int version() const { return mVersion; }
+    void setVersion( int version ) { mVersion = version; }
+
+    int qtVersion() const { return mQtVersion; }
+    void setQtVersion( int version ) { mQtVersion = version; }
+
+    const QString configString() const;
+    void loadConfigString( const QString& config = QString() );
+
+    bool isNull() const;
+
+  private:
+
+    QString mSslHost;
+    QSslCertificate mSslCert;
+
+    QSsl::SslProtocol mSslProtocol;
+    int mQtVersion;
+    QList<QSslError> mSslIgnoredErrors;
+    QPair<QSslSocket::PeerVerifyMode, int> mSslPeerVerify;
+    int mVersion;
+
+    static const QString mConfSep;
+};
+#endif
 
 #endif // QGSAUTHENTICATIONCONFIG_H

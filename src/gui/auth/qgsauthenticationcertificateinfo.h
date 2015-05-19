@@ -48,7 +48,10 @@ class GUI_EXPORT QgsAuthCertInfo : public QWidget, private Ui::QgsAuthCertInfo
       TextEdit = 2,
     };
 
-    explicit QgsAuthCertInfo( QSslCertificate cert, bool manageCertTrust = false, QWidget *parent = 0 );
+    explicit QgsAuthCertInfo( QSslCertificate cert,
+                              bool manageCertTrust = false,
+                              QWidget *parent = 0,
+                              QList<QSslCertificate> connectionCAs = QList<QSslCertificate>() );
     ~QgsAuthCertInfo();
 
     bool trustCacheRebuilt() { return mTrustCacheRebuilt; }
@@ -97,6 +100,7 @@ class GUI_EXPORT QgsAuthCertInfo : public QWidget, private Ui::QgsAuthCertInfo
     void populateInfoPemTextSection();
 
     QCA::Certificate mCert;
+    QList<QSslCertificate> mConnectionCAs;
     QMap<QString, QPair<QgsAuthCertUtils::CaCertSource, QSslCertificate> > mCaCertsCache;
     QCA::CertificateCollection mCaCerts;
     QCA::CertificateChain mACertChain;
@@ -129,7 +133,10 @@ class GUI_EXPORT QgsAuthCertInfoDialog : public QDialog
     Q_OBJECT
 
   public:
-    explicit QgsAuthCertInfoDialog( const QSslCertificate& cert, bool manageCertTrust, QWidget *parent = 0 );
+    explicit QgsAuthCertInfoDialog( const QSslCertificate& cert,
+                                    bool manageCertTrust,
+                                    QWidget *parent = 0,
+                                    QList<QSslCertificate> connectionCAs = QList<QSslCertificate>() );
     ~QgsAuthCertInfoDialog();
 
     QgsAuthCertInfo *certInfoWidget() { return mCertInfoWdgt; }

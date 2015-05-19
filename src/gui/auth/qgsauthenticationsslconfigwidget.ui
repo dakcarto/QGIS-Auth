@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>QgsAuthSslConfigWidget</class>
+ <widget class="QWidget" name="QgsAuthSslConfigWidget">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>322</width>
+    <height>327</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout_2">
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
+   <item>
+    <widget class="QGroupBox" name="grpbxCert">
+     <property name="title">
+      <string>Certificate</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_2">
+      <property name="leftMargin">
+       <number>6</number>
+      </property>
+      <property name="topMargin">
+       <number>6</number>
+      </property>
+      <property name="rightMargin">
+       <number>6</number>
+      </property>
+      <property name="bottomMargin">
+       <number>6</number>
+      </property>
+      <property name="spacing">
+       <number>12</number>
+      </property>
+      <item row="1" column="1">
+       <widget class="QLineEdit" name="leCommonName">
+        <property name="placeholderText">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QLineEdit" name="leServer">
+        <property name="minimumSize">
+         <size>
+          <width>175</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="placeholderText">
+         <string>www.example.com:443</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="lblServer">
+        <property name="text">
+         <string>Server</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="lblCert">
+        <property name="text">
+         <string>Name</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="2">
+       <widget class="QToolButton" name="btnCertInfo">
+        <property name="text">
+         <string>?</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="grpbxSslConfig">
+     <property name="title">
+      <string>Custom SSL configuration</string>
+     </property>
+     <property name="checkable">
+      <bool>true</bool>
+     </property>
+     <property name="checked">
+      <bool>false</bool>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <property name="leftMargin">
+       <number>6</number>
+      </property>
+      <property name="topMargin">
+       <number>6</number>
+      </property>
+      <property name="rightMargin">
+       <number>6</number>
+      </property>
+      <property name="bottomMargin">
+       <number>6</number>
+      </property>
+      <item>
+       <widget class="QTreeWidget" name="treeSslConfig">
+        <property name="editTriggers">
+         <set>QAbstractItemView::NoEditTriggers</set>
+        </property>
+        <property name="columnCount">
+         <number>1</number>
+        </property>
+        <attribute name="headerVisible">
+         <bool>false</bool>
+        </attribute>
+        <column>
+         <property name="text">
+          <string>Setting</string>
+         </property>
+        </column>
+        <item>
+         <property name="text">
+          <string>Protocol</string>
+         </property>
+         <item>
+          <property name="text">
+           <string>combobox</string>
+          </property>
+         </item>
+        </item>
+        <item>
+         <property name="text">
+          <string>Ignore errors</string>
+         </property>
+         <item>
+          <property name="text">
+           <string>children of flags</string>
+          </property>
+         </item>
+        </item>
+        <item>
+         <property name="text">
+          <string>Verify peer</string>
+         </property>
+         <item>
+          <property name="text">
+           <string>combobox</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>depth</string>
+          </property>
+         </item>
+        </item>
+        <item>
+         <property name="text">
+          <string>Ciphers</string>
+         </property>
+         <item>
+          <property name="text">
+           <string>Per-protocol</string>
+          </property>
+          <item>
+           <property name="text">
+            <string>list widget with drag/drop ordering</string>
+           </property>
+          </item>
+         </item>
+        </item>
+        <item>
+         <property name="text">
+          <string>Options</string>
+         </property>
+         <item>
+          <property name="text">
+           <string>children of flags</string>
+          </property>
+         </item>
+        </item>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
