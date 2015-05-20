@@ -321,7 +321,7 @@ const QString QgsAuthConfigSslServer::mConfSep = "|||";
 QgsAuthConfigSslServer::QgsAuthConfigSslServer()
   : mSslHost( QString() )
   , mSslCert( QSslCertificate() )
-  , mSslIgnoredErrors( QList<QSslError>() )
+  , mSslIgnoredErrors( QList<QSslError::SslError>() )
   , mSslPeerVerify( qMakePair( QSslSocket::VerifyPeer, 0 ) )
   , mVersion( 1 )
 {
@@ -339,6 +339,16 @@ QgsAuthConfigSslServer::QgsAuthConfigSslServer()
 #endif
 }
 
+const QList<QSslError> QgsAuthConfigSslServer::sslIgnoredErrors() const
+{
+  QList<QSslError> errors;
+  Q_FOREACH ( QSslError::SslError errenum, sslIgnoredErrorEnums() )
+  {
+    errors << QSslError( errenum );
+  }
+  return errors;
+}
+
 const QString QgsAuthConfigSslServer::configString() const
 {
   QStringList configlist;
@@ -347,9 +357,9 @@ const QString QgsAuthConfigSslServer::configString() const
   configlist << QString::number(( int )mSslProtocol );
 
   QStringList errs;
-  Q_FOREACH( const QSslError& err, mSslIgnoredErrors )
+  Q_FOREACH( const QSslError::SslError& err, mSslIgnoredErrors )
   {
-    errs << QString::number(( int )err.error() );
+    errs << QString::number(( int )err );
   }
   configlist << errs.join( "~~" );
 
@@ -377,7 +387,7 @@ void QgsAuthConfigSslServer::loadConfigString( const QString &config )
   QStringList errs( configlist.at( 3 ).split( "~~" ) );
   Q_FOREACH( const QString& err, errs )
   {
-    mSslIgnoredErrors.append( QSslError(( QSslError::SslError )err.toInt() ) );
+    mSslIgnoredErrors.append(( QSslError::SslError )err.toInt() );
   }
 
   QStringList peerverify( configlist.at( 4 ).split( "~~" ) );

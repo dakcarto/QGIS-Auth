@@ -211,8 +211,9 @@ class CORE_EXPORT QgsAuthConfigSslServer
     QSsl::SslProtocol sslProtocol() const { return mSslProtocol; }
     void setSslProtocol( QSsl::SslProtocol protocol ) { mSslProtocol = protocol; }
 
-    const QList<QSslError> sslIgnoredErrors() const { return mSslIgnoredErrors; }
-    void setSslIgnoredErrors( const QList<QSslError>& errors ) { mSslIgnoredErrors = errors; }
+    const QList<QSslError> sslIgnoredErrors() const;
+    const QList<QSslError::SslError> sslIgnoredErrorEnums() const { return mSslIgnoredErrors; }
+    void setSslIgnoredErrorEnums( const QList<QSslError::SslError>& errors ) { mSslIgnoredErrors = errors; }
 
     const QPair<QSslSocket::PeerVerifyMode, int> sslPeerVerify() const { return mSslPeerVerify; }
     void setSslPeerVerify( const QPair<QSslSocket::PeerVerifyMode, int>& modedepth ) {
@@ -237,7 +238,7 @@ class CORE_EXPORT QgsAuthConfigSslServer
 
     QSsl::SslProtocol mSslProtocol;
     int mQtVersion;
-    QList<QSslError> mSslIgnoredErrors;
+    QList<QSslError::SslError> mSslIgnoredErrors;
     QPair<QSslSocket::PeerVerifyMode, int> mSslPeerVerify;
     int mVersion;
 

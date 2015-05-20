@@ -165,7 +165,7 @@ const QgsAuthConfigSslServer QgsAuthSslConfigWidget::sslCustomConfig()
   config.setSslCertificate( mCert );
   config.setSslHost( leHost->text() );
   config.setSslProtocol( sslProtocol() );
-  config.setSslIgnoredErrors( sslIgnoreErrors() );
+  config.setSslIgnoredErrorEnums( sslIgnoreErrors() );
   config.setSslPeerVerify( sslPeerVerify() );
   return config;
 }
@@ -222,7 +222,7 @@ void QgsAuthSslConfigWidget::loadSslCustomConfig( const QgsAuthConfigSslServer &
   mCert = cert;
   leCommonName->setText( QgsAuthCertUtils::resolvedCertName( cert ) );
   leHost->setText( config.sslHost() );
-  setSslIgnoreErrors( config.sslIgnoredErrors() );
+  setSslIgnoreErrorEnums( config.sslIgnoredErrorEnums() );
   setSslProtocol( config.sslProtocol() );
   setSslPeerVerify( config.sslPeerVerify() );
 
@@ -290,8 +290,23 @@ void QgsAuthSslConfigWidget::appendSslIgnoreErrors( const QList<QSslError> &erro
   }
 }
 
+void QgsAuthSslConfigWidget::setSslIgnoreErrorEnums( const QList<QSslError::SslError> &errorenums )
+{
+  QList<QSslError> errors;
+  Q_FOREACH ( QSslError::SslError errorenum, errorenums )
+  {
+    errors << QSslError( errorenum );
+  }
+  setSslIgnoreErrors( errors );
+}
+
 void QgsAuthSslConfigWidget::setSslIgnoreErrors( const QList<QSslError> &errors )
 {
+  if ( errors.isEmpty() )
+  {
+    return;
+  }
+
   enableSslCustomOptions( true );
 
   QList<QSslError::SslError> errenums;
@@ -316,15 +331,15 @@ void QgsAuthSslConfigWidget::resetSslIgnoreErrors()
   }
 }
 
-const QList<QSslError> QgsAuthSslConfigWidget::sslIgnoreErrors()
+const QList<QSslError::SslError> QgsAuthSslConfigWidget::sslIgnoreErrors()
 {
-  QList<QSslError> errs;
+  QList<QSslError::SslError> errs;
   for ( int i = 0; i < mIgnoreErrorsItem->childCount(); i++ )
   {
     QTreeWidgetItem *item( mIgnoreErrorsItem->child( i ) );
     if ( item->checkState( 0 ) == Qt::Checked )
     {
-      errs.append( QSslError(( QSslError::SslError )item->data( 0, Qt::UserRole ).toInt() ) );
+      errs.append(( QSslError::SslError )item->data( 0, Qt::UserRole ).toInt() );
     }
   }
   return errs;

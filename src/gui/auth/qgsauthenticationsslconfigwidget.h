@@ -53,7 +53,7 @@ class GUI_EXPORT QgsAuthSslConfigWidget : public QWidget, private Ui::QgsAuthSsl
 
     QSsl::SslProtocol sslProtocol();
 
-    const QList<QSslError> sslIgnoreErrors();
+    const QList<QSslError::SslError> sslIgnoreErrors();
 
     const QPair<QSslSocket::PeerVerifyMode, int> sslPeerVerify();
 
@@ -74,6 +74,8 @@ class GUI_EXPORT QgsAuthSslConfigWidget : public QWidget, private Ui::QgsAuthSsl
     void resetSslProtocol();
 
     void appendSslIgnoreErrors( const QList<QSslError>& errors );
+
+    void setSslIgnoreErrorEnums( const QList<QSslError::SslError>& errorenums );
 
     void setSslIgnoreErrors( const QList<QSslError>& errors );
 
