@@ -38,9 +38,12 @@ SOURCES += \
     src/app/main.cpp \
     src/app/webpage.cpp \
     src/app/testwidget.cpp \
+    src/core/qgis.cpp \
     src/core/qgsapplication.cpp \
     src/core/qgscredentials.cpp \
     src/core/qgslogger.cpp \
+    src/core/qgsmessagelog.cpp \
+    src/core/qgsnetworkaccessmanager.cpp \
     src/gui/qgscollapsiblegroupbox.cpp \
     src/gui/qgsfilterlineedit.cpp \
     src/gui/qgsmessagebar.cpp \
@@ -69,10 +72,14 @@ HEADERS += \
     src/app/webpage.h \
     src/app/testwidget.h \
     src/qgsconfig.h \
+    src/qgsversion.h \
+    src/core/qgis.h \
     src/core/qgssingleton.h \
     src/core/qgsapplication.h \
     src/core/qgscredentials.h \
     src/core/qgslogger.h \
+    src/core/qgsmessagelog.h \
+    src/core/qgsnetworkaccessmanager.h \
     src/gui/qgscollapsiblegroupbox.h \
     src/gui/qgsfilterlineedit.h \
     src/gui/qgsmessagebar.h \

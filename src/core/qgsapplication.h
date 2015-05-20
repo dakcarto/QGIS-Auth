@@ -9,6 +9,9 @@ class QgsApplication
   public:
     QgsApplication();
 
+    //! Returns the path to the settings directory in user's home dir
+    static const QString qgisSettingsDirPath();
+
     //! Returns the path to the user authentication database file: qgis-auth.db.
     static const QString qgisAuthDbFilePath();
 

@@ -8,7 +8,7 @@
 // <int>.<int>.<int>-<any text>.
 // or else upgrading old project file will not work
 // reliably.
-#define VERSION "2.8.1-Wien"
+#define VERSION "2.8.2-Wien"
 
 //used in vim src/core/qgis.cpp
 //The way below should work but it resolves to a number like 0110 which the compiler treats as octal I think
