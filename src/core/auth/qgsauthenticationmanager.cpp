@@ -2014,7 +2014,11 @@ const QList<QSslCertificate> QgsAuthManager::getUntrustedCaCerts( QList<QSslCert
 {
   if ( trustedCAs.isEmpty() )
   {
-    trustedCAs = getTrustedCaCerts();
+    if ( mTrustedCaCertsCache.isEmpty() )
+    {
+      rebuildTrustedCaCertsCache();
+    }
+    trustedCAs = getTrustedCaCertsCache();
   }
 
   const QList<QPair<QgsAuthCertUtils::CaCertSource, QSslCertificate> >& certpairs( mCaCertsCache.values() );

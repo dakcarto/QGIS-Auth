@@ -593,7 +593,7 @@ QList<QgsAuthCertUtils::CertUsageType> QgsAuthCertUtils::certificateUsageTypes( 
 
   // ask QCA what it thinks about potential usages
   QCA::CertificateCollection trustedCAs(
-        qtCertsToQcaCollection( QgsAuthManager::instance()->getTrustedCaCerts() ) );
+        qtCertsToQcaCollection( QgsAuthManager::instance()->getTrustedCaCertsCache() ) );
   QCA::CertificateCollection untrustedCAs(
         qtCertsToQcaCollection( QgsAuthManager::instance()->getUntrustedCaCerts() ) );
 
