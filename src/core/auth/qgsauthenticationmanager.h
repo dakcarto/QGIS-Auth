@@ -265,6 +265,9 @@ class CORE_EXPORT QgsAuthManager : public QObject, public QgsSingleton<QgsAuthMa
     /** Get an SSL certificate custom config by id (sha hash) */
     const QgsAuthConfigSslServer getSslCertCustomConfig( const QString& id );
 
+    /** Get an SSL certificate custom config by host:port */
+    const QgsAuthConfigSslServer getSslCertCustomConfigByHost( const QString& hostport );
+
     /** Get SSL certificate custom configs */
     const QList<QgsAuthConfigSslServer> getSslCertCustomConfigs();
 

@@ -1424,7 +1424,7 @@ bool QgsAuthManager::storeSslCertCustomConfig( const QgsAuthConfigSslServer &con
                           "VALUES (:id, :host, :cert, :config)" ).arg( authDbServersTable() ) );
 
   query.bindValue( ":id", id );
-  query.bindValue( ":host", config.sslHost() );
+  query.bindValue( ":host", config.sslHost().trimmed() );
   query.bindValue( ":cert", certpem );
   query.bindValue( ":config", config.configString() );
 
@@ -1462,13 +1462,49 @@ const QgsAuthConfigSslServer QgsAuthManager::getSslCertCustomConfig( const QStri
     if ( query.first() )
     {
       config.setSslCertificate( QSslCertificate( query.value( 2 ).toByteArray(), QSsl::Pem ) );
-      config.setSslHost( query.value( 1 ).toString() );
+      config.setSslHost( query.value( 1 ).toString().trimmed() );
       config.loadConfigString( query.value( 3 ).toString() );
       QgsDebugMsg( QString( "SSL cert custom config retrieved for id: %1" ).arg( id ) );
     }
     if ( query.next() )
     {
       QgsDebugMsg( QString( "Select contains more than one SSL cert custom config for id: %1" ).arg( id ) );
+      emit messageOut( tr( "Authentication database contains duplicate SSL cert custom configs" ), authManTag(), WARNING );
+      QgsAuthConfigSslServer emptyconfig;
+      return emptyconfig;
+    }
+  }
+  return config;
+}
+
+const QgsAuthConfigSslServer QgsAuthManager::getSslCertCustomConfigByHost( const QString &hostport )
+{
+  QgsAuthConfigSslServer config;
+
+  if ( hostport.isEmpty() )
+    return config;
+
+  QSqlQuery query( authDbConnection() );
+  query.prepare( QString( "SELECT id, host, cert, config FROM %1 "
+                          "WHERE host = :host" ).arg( authDbServersTable() ) );
+
+  query.bindValue( ":host", hostport.trimmed() );
+
+  if ( !authDbQuery( &query ) )
+    return config;
+
+  if ( query.isActive() && query.isSelect() )
+  {
+    if ( query.first() )
+    {
+      config.setSslCertificate( QSslCertificate( query.value( 2 ).toByteArray(), QSsl::Pem ) );
+      config.setSslHost( query.value( 1 ).toString().trimmed() );
+      config.loadConfigString( query.value( 3 ).toString() );
+      QgsDebugMsg( QString( "SSL cert custom config retrieved for host:port: %1" ).arg( hostport ) );
+    }
+    if ( query.next() )
+    {
+      QgsDebugMsg( QString( "Select contains more than one SSL cert custom config for host:port: %1" ).arg( hostport ) );
       emit messageOut( tr( "Authentication database contains duplicate SSL cert custom configs" ), authManTag(), WARNING );
       QgsAuthConfigSslServer emptyconfig;
       return emptyconfig;
@@ -1493,7 +1529,7 @@ const QList<QgsAuthConfigSslServer> QgsAuthManager::getSslCertCustomConfigs()
     {
       QgsAuthConfigSslServer config;
       config.setSslCertificate( QSslCertificate( query.value( 2 ).toByteArray(), QSsl::Pem ) );
-      config.setSslHost( query.value( 1 ).toString() );
+      config.setSslHost( query.value( 1 ).toString().trimmed() );
       config.loadConfigString( query.value( 3 ).toString() );
 
       configs.append( config );
