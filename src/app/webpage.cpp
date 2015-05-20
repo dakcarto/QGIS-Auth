@@ -40,6 +40,9 @@
 #include "qgsauthenticationconfigselect.h"
 #include "qgsauthenticationconfigwidget.h"
 
+#include "qgsnetworkaccessmanager.h"
+#include "qgslogger.h"
+
 
 WebPage::WebPage( QWidget *parent )
     : QDialog( parent )
@@ -121,7 +124,7 @@ void WebPage::showEvent( QShowEvent * e )
   QDialog::showEvent( e );
 
   // temporarily do this for testing
-  QTimer::singleShot( 250, this, SLOT( on_btnAuthSettings_clicked() ) );
+//  QTimer::singleShot( 250, this, SLOT( on_btnAuthSettings_clicked() ) );
 }
 
 void WebPage::loadUrl( const QString& url )
@@ -177,9 +180,13 @@ void WebPage::setWebPage()
 {
   mNaMan->deleteLater();
   mPage = new QWebPage( this );
-  webView->setPage( mPage );
 
-  mNaMan = mPage->networkAccessManager();
+//  mNaMan = mPage->networkAccessManager();
+
+  mNaMan = new QgsNetworkAccessManager( this );
+  mPage->setNetworkAccessManager( mNaMan );
+
+  webView->setPage( mPage );
 
   connect( mNaMan, SIGNAL( finished( QNetworkReply* ) ), this, SLOT( requestReply( QNetworkReply* ) ) );
   connect(
