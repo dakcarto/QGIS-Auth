@@ -589,6 +589,11 @@ QList<QgsAuthCertUtils::CertUsageType> QgsAuthCertUtils::certificateUsageTypes( 
       QgsDebugMsg( "Certificate has 'Certificate Sign' key usage" );
       usages << QgsAuthCertUtils::CertIssuerUsage;
     }
+    else if ( certconst.known() == QCA::ServerAuth )
+    {
+      QgsDebugMsg( "Certificate has 'server authentication' extended key usage" );
+      usages << QgsAuthCertUtils::TlsServerUsage;
+    }
   }
 
   // ask QCA what it thinks about potential usages
@@ -608,7 +613,10 @@ QList<QgsAuthCertUtils::CertUsageType> QgsAuthCertUtils::certificateUsageTypes( 
   v_tlsserver = qcacert.validate( trustedCAs, untrustedCAs, QCA::UsageTLSServer, QCA::ValidateAll );
   if ( v_tlsserver == QCA::ValidityGood )
   {
-    usages << QgsAuthCertUtils::TlsServerUsage;
+    if ( !usages.contains( QgsAuthCertUtils::TlsServerUsage ) )
+    {
+      usages << QgsAuthCertUtils::TlsServerUsage;
+    }
   }
 
   // TODO: why doesn't this tag client certs?
