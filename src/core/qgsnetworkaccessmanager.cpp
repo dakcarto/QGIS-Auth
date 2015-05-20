@@ -160,6 +160,31 @@ QNetworkReply *QgsNetworkAccessManager::createRequest( QNetworkAccessManager::Op
   userAgent += QString( "QGIS/%1" ).arg( QGis::QGIS_VERSION );
   pReq->setRawHeader( "User-Agent", userAgent.toUtf8() );
 
+#ifndef QT_NO_OPENSSL
+  bool ishttps = pReq->url().scheme().toLower() == "https";
+  QgsAuthConfigSslServer servconfig;
+  if ( ishttps )
+  {
+    // check for SSL cert custom config
+    QString hostport( QString( "%1:%2" )
+                      .arg( pReq->url().host() )
+                      .arg( pReq->url().port() ) );
+    QgsDebugMsg( hostport );
+    servconfig = QgsAuthManager::instance()->getSslCertCustomConfigByHost( hostport );
+
+    QgsDebugMsg( "Adding trusted CA certs to request" );
+    QSslConfiguration sslconfig( pReq->sslConfiguration() );
+    sslconfig.setCaCertificates( QgsAuthManager::instance()->getTrustedCaCertsCache() );
+    if ( !servconfig.isNull() )
+    {
+      sslconfig.setProtocol( servconfig.sslProtocol() );
+      sslconfig.setPeerVerifyMode( servconfig.sslPeerVerify().first );
+      sslconfig.setPeerVerifyDepth( servconfig.sslPeerVerify().second );
+    }
+    pReq->setSslConfiguration( sslconfig );
+  }
+#endif
+
   emit requestAboutToBeCreated( op, req, outgoingData );
   QNetworkReply *reply = QNetworkAccessManager::createRequest( op, req, outgoingData );
 

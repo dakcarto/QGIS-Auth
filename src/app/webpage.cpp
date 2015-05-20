@@ -223,6 +223,25 @@ void WebPage::onSslErrors( QNetworkReply* reply, const QList<QSslError>& errors 
   }
 
   appendLog( msg );
+
+  // check for SSL cert custom config
+  QString sha( QgsAuthCertUtils::shaHexForCert( reply->sslConfiguration().peerCertificate() ) );
+  QgsAuthConfigSslServer config( QgsAuthManager::instance()->getSslCertCustomConfig( sha ) );
+  if ( !config.isNull() )
+  {
+    appendLog( "SSL cert custom config found, ignoring errors if they match" );
+    const QList<QSslError::SslError>& configerrenums( config.sslIgnoredErrorEnums() );
+    bool ignore = true;
+    Q_FOREACH ( const QSslError& error, errors )
+    {
+      ignore = ignore && configerrenums.contains( error.error() );
+    }
+    if ( ignore )
+    {
+      appendLog( "Errors matched custom config's, ignoring all" );
+      reply->ignoreSslErrors();
+    }
+  }
 }
 
 void WebPage::on_btnResetWebView_clicked()
