@@ -83,8 +83,6 @@ class GUI_EXPORT QgsAuthConfigWidget : public QDialog, private Ui::QgsAuthConfig
     void clearPkiPathsCertId();
     void clearPkiPathsKeyId();
     void clearPkiPathsKeyPassphrase();
-    void clearPkiPathsCaCertsId();
-    void clearPkiPathsIgnoreSelfSigned();
 
     void on_chkPkiPathsPassShow_stateChanged( int state );
 
@@ -92,22 +90,17 @@ class GUI_EXPORT QgsAuthConfigWidget : public QDialog, private Ui::QgsAuthConfig
 
     void on_btnPkiPathsKey_clicked();
 
-    void on_btnPkiPathsCaCerts_clicked();
-
     // Auth PkiPkcs#12
     void clearPkiPkcs12Bundle();
 
     void clearPkiPkcs12BundlePath();
     void clearPkiPkcs12KeyPassphrase();
-    void clearPkiPkcs12CaCertsPath();
-    void clearPkiPkcs12IgnoreSelfSigned();
 
     void on_lePkiPkcs12KeyPass_textChanged( const QString &pass );
     void on_chkPkiPkcs12PassShow_stateChanged( int state );
 
     void on_btnPkiPkcs12Bundle_clicked();
 
-    void on_btnPkiPkcs12CaCerts_clicked();
 #endif
 
   private:

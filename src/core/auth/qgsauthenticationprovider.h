@@ -98,9 +98,7 @@ class CORE_EXPORT QgsPkiBundle
   public:
     QgsPkiBundle( const QgsAuthConfigPkiPaths& config,
                   const QSslCertificate& cert,
-                  const QSslKey& certkey,
-                  const QList<QSslCertificate>& cacerts = QList<QSslCertificate>(),
-                  bool ignoreSeflSigned = false );
+                  const QSslKey& certkey );
     ~QgsPkiBundle();
 
     bool isValid();
@@ -114,18 +112,10 @@ class CORE_EXPORT QgsPkiBundle
     const QSslKey clientCertKey() const { return mCertKey; }
     void setClientCertKey( const QSslKey& certkey ) { mCertKey = certkey; }
 
-    const QList<QSslCertificate> caCerts() const { return mCaCerts; }
-    void setCaCerts( const QList<QSslCertificate>& cacerts ) { mCaCerts = cacerts; }
-
-    bool ignoreSelfSigned() const { return mIgnoreSelf; }
-    void setIgnoreSelfSigned( bool selfsigned ) { mIgnoreSelf = selfsigned; }
-
   private:
     QgsAuthConfigBase mConfig;
     QSslCertificate mCert;
     QSslKey mCertKey;
-    QList<QSslCertificate> mCaCerts;
-    bool mIgnoreSelf;
 };
 
 /** \ingroup core
@@ -150,10 +140,6 @@ class CORE_EXPORT QgsAuthProviderPkiPaths : public QgsAuthProvider
                                       const QString &keypass = QString(),
                                       QString *algtype = 0,
                                       bool reencrypt = true );
-
-    static const QList<QSslCertificate> caCerts( const QString &cacertspath );
-
-    static const QByteArray caCertsAsPem( const QString &cacertspath );
 
   protected:
 
@@ -183,8 +169,6 @@ class CORE_EXPORT QgsAuthProviderPkiPkcs12 : public QgsAuthProviderPkiPaths
     static const QString certAsPem( const QString &bundlepath, const QString &bundlepass );
 
     static const QString keyAsPem( const QString &bundlepath, const QString &bundlepass, bool reencrypt = true );
-
-    static const QString caCertsAsPem( const QString &bundlepath, const QString &bundlepass, const QString &cacertspath );
 
   protected:
 

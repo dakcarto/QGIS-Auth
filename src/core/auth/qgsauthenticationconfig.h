@@ -148,17 +148,9 @@ class CORE_EXPORT QgsAuthConfigPkiPaths: public QgsAuthConfigBase
     const QString keyPassphrase() const { return mKeyPass; }
     void setKeyPassphrase( const QString& passphrase ) { mKeyPass = passphrase; }
 
-    const QString caCertsId() const { return mCaCertsId; }
-    void setCaCertsId( const QString& id ) { mCaCertsId = id; }
-
-    bool ignoreSelfSigned() const { return mIgnoreSelf; }
-    void setIgnoreSelfSigned( bool selfsigned ) { mIgnoreSelf = selfsigned; }
-
     const QString certAsPem() const;
 
     const QStringList keyAsPem( bool reencrypt = true ) const;
-
-    const QString caCertsAsPem() const;
 
     bool isValid( bool validateid = false ) const;
 
@@ -169,8 +161,6 @@ class CORE_EXPORT QgsAuthConfigPkiPaths: public QgsAuthConfigBase
     QString mCertId;
     QString mKeyId;
     QString mKeyPass;
-    QString mCaCertsId;
-    bool mIgnoreSelf;
 };
 
 class CORE_EXPORT QgsAuthConfigPkiPkcs12: public QgsAuthConfigBase
@@ -189,17 +179,9 @@ class CORE_EXPORT QgsAuthConfigPkiPkcs12: public QgsAuthConfigBase
     const QString bundlePassphrase() const { return mBundlePass; }
     void setBundlePassphrase( const QString& passphrase ) { mBundlePass = passphrase; }
 
-    const QString caCertsPath() const { return mCaCertsPath; }
-    void setCaCertsPath( const QString& id ) { mCaCertsPath = id; }
-
-    bool ignoreSelfSigned() const { return mIgnoreSelf; }
-    void setIgnoreSelfSigned( bool selfsigned ) { mIgnoreSelf = selfsigned; }
-
     const QString certAsPem() const;
 
     const QStringList keyAsPem( bool reencrypt = true ) const;
-
-    const QString caCertsAsPem() const;
 
     bool isValid( bool validateid = false ) const;
 
@@ -209,8 +191,6 @@ class CORE_EXPORT QgsAuthConfigPkiPkcs12: public QgsAuthConfigBase
   private:
     QString mBundlePath;
     QString mBundlePass;
-    QString mCaCertsPath;
-    bool mIgnoreSelf;
 };
 
 

@@ -196,12 +196,10 @@ void QgsAuthConfigBasic::loadConfigString( const QString& config )
 //////////////////////////////////////////////
 
 QgsAuthConfigPkiPaths::QgsAuthConfigPkiPaths()
-    : QgsAuthConfigBase( QgsAuthType::PkiPaths, 1 )
+    : QgsAuthConfigBase( QgsAuthType::PkiPaths, 2 )
     , mCertId( QString() )
     , mKeyId( QString() )
     , mKeyPass( QString() )
-    , mCaCertsId( QString() )
-    , mIgnoreSelf( false )
 {
 }
 
@@ -223,14 +221,6 @@ const QStringList QgsAuthConfigPkiPaths::keyAsPem( bool reencrypt ) const
   return QStringList() << QString( keydata ) << algtype;
 }
 
-const QString QgsAuthConfigPkiPaths::caCertsAsPem() const
-{
-  if ( !isValid() )
-    return QString();
-
-  return QString( QgsAuthProviderPkiPaths::caCertsAsPem( caCertsId() ) );
-}
-
 bool QgsAuthConfigPkiPaths::isValid( bool validateid ) const
 {
   return (
@@ -244,7 +234,7 @@ bool QgsAuthConfigPkiPaths::isValid( bool validateid ) const
 const QString QgsAuthConfigPkiPaths::configString() const
 {
   QStringList configlist = QStringList();
-  configlist << mCertId << mKeyId << mKeyPass << mCaCertsId << QString::number( mIgnoreSelf );
+  configlist << mCertId << mKeyId << mKeyPass;
   return configlist.join( mConfSep );
 }
 
@@ -258,8 +248,6 @@ void QgsAuthConfigPkiPaths::loadConfigString( const QString& config )
   mCertId = configlist.at( 0 );
   mKeyId = configlist.at( 1 );
   mKeyPass = configlist.at( 2 );
-  mCaCertsId = configlist.at( 3 );
-  mIgnoreSelf = ( bool ) configlist.at( 4 ).toInt();
 }
 
 //////////////////////////////////////////////
@@ -267,11 +255,9 @@ void QgsAuthConfigPkiPaths::loadConfigString( const QString& config )
 //////////////////////////////////////////////
 
 QgsAuthConfigPkiPkcs12::QgsAuthConfigPkiPkcs12()
-    : QgsAuthConfigBase( QgsAuthType::PkiPkcs12, 1 )
+    : QgsAuthConfigBase( QgsAuthType::PkiPkcs12, 2 )
     , mBundlePath( QString() )
     , mBundlePass( QString() )
-    , mCaCertsPath( QString() )
-    , mIgnoreSelf( false )
 {
 }
 
@@ -294,13 +280,6 @@ const QStringList QgsAuthConfigPkiPkcs12::keyAsPem( bool reencrypt ) const
   return keylist;
 }
 
-const QString QgsAuthConfigPkiPkcs12::caCertsAsPem() const
-{
-  if ( !isValid() )
-    return QString();
-
-  return QgsAuthProviderPkiPkcs12::caCertsAsPem( bundlePath(), bundlePassphrase(), caCertsPath() );
-}
 
 bool QgsAuthConfigPkiPkcs12::isValid( bool validateid ) const
 {
@@ -316,7 +295,7 @@ bool QgsAuthConfigPkiPkcs12::isValid( bool validateid ) const
 const QString QgsAuthConfigPkiPkcs12::configString() const
 {
   QStringList configlist = QStringList();
-  configlist << bundlePath() << bundlePassphrase() << caCertsPath() << QString::number( ignoreSelfSigned() );
+  configlist << bundlePath() << bundlePassphrase();
   return configlist.join( mConfSep );
 }
 
@@ -328,8 +307,6 @@ void QgsAuthConfigPkiPkcs12::loadConfigString( const QString &config )
   QStringList configlist = config.split( mConfSep );
   setBundlePath( configlist.at( 0 ) );
   setBundlePassphrase( configlist.at( 1 ) );
-  setCaCertsPath( configlist.at( 2 ) );
-  setIgnoreSelfSigned(( bool ) configlist.at( 3 ).toInt() );
 }
 
 

@@ -148,14 +148,10 @@ void QgsAuthProviderBasic::clearCachedConfig( const QString& authcfg )
 
 QgsPkiBundle::QgsPkiBundle( const QgsAuthConfigPkiPaths& config,
                             const QSslCertificate& cert,
-                            const QSslKey& certkey,
-                            const QList<QSslCertificate>& cacerts,
-                            bool ignoreSeflSigned )
+                            const QSslKey& certkey)
     : mConfig( config )
     , mCert( cert )
     , mCertKey( certkey )
-    , mCaCerts( cacerts )
-    , mIgnoreSelf( ignoreSeflSigned )
 {
 }
 
@@ -238,18 +234,6 @@ bool QgsAuthProviderPkiPaths::updateNetworkRequest( QNetworkRequest &request, co
   QSslConfiguration sslConfig = request.sslConfiguration();
   //QSslConfiguration sslConfig( QSslConfiguration::defaultConfiguration() );
 
-  // TODO: test for supported protocols for OpenSSL version built against
-  // IMPORTANT: Qt 4.7 and 4.8 have different protocol enums and default protocols
-  //sslConfig.setProtocol( QSsl::TlsV1SslV3 );
-
-  QList<QSslCertificate> cacerts = pkibundle->caCerts();
-  if ( !cacerts.isEmpty() )
-  {
-    QList<QSslCertificate> sslCAs( sslConfig.caCertificates() );
-    sslCAs.append( cacerts );
-    sslConfig.setCaCertificates( sslCAs );
-  }
-
   sslConfig.setLocalCertificate( pkibundle->clientCert() );
   sslConfig.setPrivateKey( pkibundle->clientCertKey() );
 
@@ -260,53 +244,8 @@ bool QgsAuthProviderPkiPaths::updateNetworkRequest( QNetworkRequest &request, co
 
 bool QgsAuthProviderPkiPaths::updateNetworkReply( QNetworkReply *reply, const QString &authcfg )
 {
-  if ( reply->request().url().scheme().toLower() != QString( "https" ) )
-  {
-    QgsDebugMsg( QString( "Update reply SSL errors SKIPPED for authcfg %1: not HTTPS" ).arg( authcfg ) );
-    return true;
-  }
-
-  QgsDebugMsg( QString( "Update reply SSL errors: HTTPS connection for authcfg: %1" ).arg( authcfg ) );
-
-  QgsPkiBundle * pkibundle = getPkiBundle( authcfg );
-  if ( !pkibundle || !pkibundle->isValid() )
-  {
-    QgsDebugMsg( QString( "Update reply SSL errors FAILED: PKI bundle invalid for authcfg: %1" ).arg( authcfg ) );
-    return false;
-  }
-
-  QgsDebugMsg( QString( "Update reply SSL errors: PKI bundle is valid for authcfg: %1" ).arg( authcfg ) );
-
-  if ( !pkibundle->ignoreSelfSigned() )
-  {
-    // TODO: maybe sniff cert to see if it is self-signed, regardless of what user defines
-    QgsDebugMsg( QString( "Update reply SSL errors SKIPPED for authcfg %1: CA cert(s) not self-signed" ).arg( authcfg ) );
-    return true;
-  }
-
-  QList<QSslError> errors;
-  QString cacert = "";
-  QList<QSslCertificate> cacerts = pkibundle->caCerts();
-
-  if ( !cacerts.isEmpty() )
-  {
-    cacert = "defined CA cert(s)";
-    Q_FOREACH ( const QSslCertificate& cert, cacerts )
-    {
-      errors.append( QSslError( QSslError::SelfSignedCertificate, cert ) );
-    }
-  }
-  else
-  {
-    // CA cert(s) not defined, but may already be in available CAs
-    cacert = "ALL in chain";
-    errors.append( QSslError( QSslError::SelfSignedCertificate ) );
-  }
-  if ( !errors.isEmpty() )
-  {
-    QgsDebugMsg( QString( "Adding self-signed cert expected ssl error for %1 for authcfg: %2" ).arg( cacert ).arg( authcfg ) );
-    reply->ignoreSslErrors( errors );
-  }
+  Q_UNUSED( reply );
+  Q_UNUSED( authcfg );
   return true;
 }
 
@@ -374,37 +313,6 @@ const QByteArray QgsAuthProviderPkiPaths::keyAsPem( const QString &keypath,
   return ( clientkey.toPem( reencrypt && !keypass.isEmpty() ? keypass.toUtf8() : QByteArray() ) );
 }
 
-// static
-const QList<QSslCertificate> QgsAuthProviderPkiPaths::caCerts( const QString& cacertspath )
-{
-  QList<QSslCertificate> cacerts;
-  bool pem = cacertspath.endsWith( ".pem", Qt::CaseInsensitive );
-  cacerts = QSslCertificate::fromData( fileData_( cacertspath, pem ), pem ? QSsl::Pem : QSsl::Der );
-  if ( cacerts.isEmpty() )
-  {
-    QgsDebugMsg( QString( "Parsed CA cert(s) EMPTY for: %1" ).arg( cacertspath ) );
-  }
-  return cacerts;
-}
-
-// static
-const QByteArray QgsAuthProviderPkiPaths::caCertsAsPem( const QString& cacertspath )
-{
-  QByteArray capem;
-  QList<QSslCertificate> cacerts( QgsAuthProviderPkiPaths::caCerts( cacertspath ) );
-  if ( !cacerts.isEmpty() )
-  {
-    QStringList cacertslist;
-    Q_FOREACH ( const QSslCertificate& cert, cacerts )
-    {
-      cacertslist << cert.toPem();
-    }
-    capem = cacertslist.join( "\n" ).toAscii() + "\n";
-  }
-  return capem;
-}
-
-
 QgsPkiBundle *QgsAuthProviderPkiPaths::getPkiBundle( const QString& authcfg )
 {
   QgsPkiBundle * bundle = 0;
@@ -460,22 +368,7 @@ QgsPkiBundle *QgsAuthProviderPkiPaths::getPkiBundle( const QString& authcfg )
     return bundle;
   }
 
-  // init CA cert(s)
-  QList<QSslCertificate> cacerts;
-  if ( !config.caCertsId().isEmpty() )
-  {
-    cacerts = QgsAuthProviderPkiPaths::caCerts( config.caCertsId() );
-    Q_FOREACH ( const QSslCertificate& cert, cacerts )
-    {
-      if ( !cert.isValid() )
-      {
-        QgsDebugMsg( QString( "PKI bundle for authcfg %1: insert FAILED, a CA cert is not valid" ).arg( authcfg ) );
-        return bundle;
-      }
-    }
-  }
-
-  bundle = new QgsPkiBundle( config, clientcert, clientkey, cacerts, config.ignoreSelfSigned() );
+  bundle = new QgsPkiBundle( config, clientcert, clientkey );
 
   // cache bundle
   putPkiBundle( authcfg, bundle );
@@ -558,78 +451,6 @@ const QString QgsAuthProviderPkiPkcs12::keyAsPem( const QString &bundlepath, con
   return bundle.privateKey().toPEM( passarray );
 }
 
-// static
-const QString QgsAuthProviderPkiPkcs12::caCertsAsPem( const QString &bundlepath,
-    const QString &bundlepass,
-    const QString &cacertspath )
-{
-  // interim fix until block below is corrected
-  // same as QgsAuthProviderPkiPaths::caCertsAsPem, but returns QString
-  Q_UNUSED( bundlepath );
-  Q_UNUSED( bundlepass );
-
-  return QString( QgsAuthProviderPkiPaths::certAsPem( cacertspath ) );
-
-  //FIXME: can return empty result if resolution of chain has issues;
-  //       needs updated
-#if 0
-  QString cacertspem;
-  if ( !QCA::isSupported( "pkcs12" ) )
-    return cacertspem;
-
-  QCA::KeyBundle bundle( keyBundle_( bundlepath, bundlepass ) );
-  if ( bundle.isNull() )
-    return cacertspem;
-
-  QList<QCA::Certificate> calist;
-  if ( !cacertspath.isEmpty() && QFile::exists( cacertspath ) )
-  {
-    bool pem = cacertspath.endsWith( ".pem", Qt::CaseInsensitive );
-    QCA::ConvertResult res;
-    QCA::Certificate cacert;
-    if ( pem )
-    {
-      cacert = QCA::Certificate::fromPEM( QString( fileData_( cacertspath, pem ) ), &res, QString( "qca-ossl" ) );
-    }
-    else
-    {
-      cacert = QCA::Certificate::fromDER( fileData_( cacertspath, pem ), &res, QString( "qca-ossl" ) );
-    }
-    // TODO: is testing against primary() necessary, or can we just always add it to calist?
-    //       should this just be part of GUI validation?
-    if ( res == QCA::ConvertGood
-         && !cacert.isNull()
-         && cacert.isIssuerOf( bundle.certificateChain().primary() ) )
-    {
-      calist << cacert;
-    }
-  }
-
-  if ( QCA::haveSystemStore() )
-    calist += QCA::systemStore().certificates();
-
-  QCA::Validity valid;
-  QCA::CertificateChain fullchain( bundle.certificateChain().complete( calist, &valid ) );
-
-  if ( valid != QCA::ValidityGood || fullchain.isEmpty() )
-  {
-    // TODO: add debug output
-    return cacertspem;
-  }
-
-  QStringList chainlist;
-  foreach ( QCA::Certificate cert, fullchain )
-  {
-    if ( cert == bundle.certificateChain().primary() )
-      continue; // skip non-issuer-chain cert
-
-    chainlist << cert.toPEM();
-  }
-
-  return chainlist.join( "\n" );
-#endif
-}
-
 QgsPkiBundle *QgsAuthProviderPkiPkcs12::getPkiBundle( const QString &authcfg )
 {
   QgsPkiBundle * bundle = 0;
@@ -678,22 +499,7 @@ QgsPkiBundle *QgsAuthProviderPkiPkcs12::getPkiBundle( const QString &authcfg )
                      QSsl::PrivateKey,
                      !config.bundlePassphrase().isNull() ? config.bundlePassphrase().toUtf8() : QByteArray() );
 
-  // init CA cert(s)
-  QList<QSslCertificate> cacerts;
-  if ( !config.caCertsPath().isEmpty() )
-  {
-    cacerts = QgsAuthProviderPkiPaths::caCerts( config.caCertsPath() );
-    Q_FOREACH ( const QSslCertificate& cert, cacerts )
-    {
-      if ( !cert.isValid() )
-      {
-        QgsDebugMsg( QString( "PKI bundle for authcfg %1: insert FAILED, a CA cert is not valid" ).arg( authcfg ) );
-        return bundle;
-      }
-    }
-  }
-
-  bundle = new QgsPkiBundle( config, clientcert, clientkey, cacerts, config.ignoreSelfSigned() );
+  bundle = new QgsPkiBundle( config, clientcert, clientkey );
 
   // cache bundle
   putPkiBundle( authcfg, bundle );

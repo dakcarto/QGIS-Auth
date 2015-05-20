@@ -149,13 +149,10 @@ void QgsAuthConfigWidget::loadConfig()
         lePkiPathsCert->setText( configpki.certId() );
         lePkiPathsKey->setText( configpki.keyId() );
         lePkiPathsKeyPass->setText( configpki.keyPassphrase() );
-        lePkiPathsCaCerts->setText( configpki.caCertsId() );
-        chkPkiPathsIgnoreSelf->setChecked( configpki.ignoreSelfSigned() );
       }
       //qDebug( configpki.certAsPem().toAscii().constData() );
       //qDebug( configpki.keyAsPem( false ).first().toAscii().constData() );
       //qDebug( configpki.keyAsPem( true ).first().toAscii().constData() );
-      //qDebug( configpki.caCertsAsPem().toAscii().constData() );
     }
   }
   else if ( authtype == QgsAuthType::PkiPkcs12 )
@@ -172,13 +169,10 @@ void QgsAuthConfigWidget::loadConfig()
 
         lePkiPkcs12Bundle->setText( configpkcs.bundlePath() );
         lePkiPkcs12KeyPass->setText( configpkcs.bundlePassphrase() );
-        lePkiPkcs12CaCerts->setText( configpkcs.caCertsPath() );
-        chkPkiPkcs12IgnoreSelf->setChecked( configpkcs.ignoreSelfSigned() );
       }
       //qDebug( configpkcs.certAsPem().toAscii().constData() );
       //qDebug( configpkcs.keyAsPem( false ).first().toAscii().constData() );
       //qDebug( configpkcs.keyAsPem( true ).first().toAscii().constData() );
-      //qDebug( configpkcs.caCertsAsPem().toAscii().constData() );
     }
   }
 #endif
@@ -234,8 +228,6 @@ void QgsAuthConfigWidget::saveConfig()
     configpki.setCertId( lePkiPathsCert->text() );
     configpki.setKeyId( lePkiPathsKey->text() );
     configpki.setKeyPassphrase( lePkiPathsKeyPass->text() );
-    configpki.setCaCertsId( lePkiPathsCaCerts->text() );
-    configpki.setIgnoreSelfSigned( chkPkiPathsIgnoreSelf->isChecked() );
 
     if ( !mAuthCfg.isEmpty() ) // update
     {
@@ -262,8 +254,6 @@ void QgsAuthConfigWidget::saveConfig()
 
     configpkcs.setBundlePath( lePkiPkcs12Bundle->text() );
     configpkcs.setBundlePassphrase( lePkiPkcs12KeyPass->text() );
-    configpkcs.setCaCertsPath( lePkiPkcs12CaCerts->text() );
-    configpkcs.setIgnoreSelfSigned( chkPkiPkcs12IgnoreSelf->isChecked() );
 
     if ( !mAuthCfg.isEmpty() ) // update
     {
@@ -460,8 +450,6 @@ void QgsAuthConfigWidget::clearPkiPathsCert()
   clearPkiPathsCertId();
   clearPkiPathsKeyId();
   clearPkiPathsKeyPassphrase();
-  clearPkiPathsCaCertsId();
-  clearPkiPathsIgnoreSelfSigned();
 
   clearPkiMessage( lePkiPathsMsg );
   validateAuth();
@@ -485,17 +473,6 @@ void QgsAuthConfigWidget::clearPkiPathsKeyPassphrase()
   lePkiPathsKeyPass->setStyleSheet( "" );
 }
 
-void QgsAuthConfigWidget::clearPkiPathsCaCertsId()
-{
-  lePkiPathsCaCerts->clear();
-  lePkiPathsCaCerts->setStyleSheet( "" );
-}
-
-void QgsAuthConfigWidget::clearPkiPathsIgnoreSelfSigned()
-{
-  chkPkiPathsIgnoreSelf->setChecked( false );
-}
-
 bool QgsAuthConfigWidget::validatePkiPaths()
 {
   bool certvalid = false;
@@ -507,17 +484,10 @@ bool QgsAuthConfigWidget::validatePkiPaths()
   bool certfound = QFile::exists( certpath );
   bool keyfound = QFile::exists( keypath );
 
-  // optional, but if set and missing, flag it
-  QString cacertspath( lePkiPathsCaCerts->text() );
-  bool cacertsfound = true;
-  if ( !cacertspath.isEmpty() )
-    cacertsfound = QFile::exists( cacertspath );
-
   fileFound( certpath.isEmpty() || certfound, lePkiPathsCert );
   fileFound( keypath.isEmpty() || keyfound, lePkiPathsKey );
-  fileFound( cacertspath.isEmpty() || cacertsfound, lePkiPathsCaCerts );
 
-  if ( !certfound || !keyfound || !cacertsfound )
+  if ( !certfound || !keyfound )
   {
     writePkiMessage( lePkiPathsMsg, tr( "Missing components" ), Invalid );
     return false;
@@ -595,16 +565,6 @@ void QgsAuthConfigWidget::on_btnPkiPathsKey_clicked()
   }
 }
 
-void QgsAuthConfigWidget::on_btnPkiPathsCaCerts_clicked()
-{
-  const QString& fn = getOpenFileName( tr( "Open CA Certificate(s) File" ),  tr( "PEM (*.pem);;DER (*.der)" ) );
-  if ( !fn.isEmpty() )
-  {
-    lePkiPathsCaCerts->setText( fn );
-    validateAuth();
-  }
-}
-
 //////////////////////////////////////////////////////
 // Auth PkiPkcs#12
 //////////////////////////////////////////////////////
@@ -613,8 +573,6 @@ void QgsAuthConfigWidget::clearPkiPkcs12Bundle()
 {
   clearPkiPkcs12BundlePath();
   clearPkiPkcs12KeyPassphrase();
-  clearPkiPkcs12CaCertsPath();
-  clearPkiPkcs12IgnoreSelfSigned();
 
   clearPkiMessage( lePkiPkcs12Msg );
   validateAuth();
@@ -633,17 +591,6 @@ void QgsAuthConfigWidget::clearPkiPkcs12KeyPassphrase()
   lePkiPkcs12KeyPass->setPlaceholderText( QString( "Optional passphrase" ) );
 }
 
-void QgsAuthConfigWidget::clearPkiPkcs12CaCertsPath()
-{
-  lePkiPkcs12CaCerts->clear();
-  lePkiPkcs12CaCerts->setStyleSheet( "" );
-}
-
-void QgsAuthConfigWidget::clearPkiPkcs12IgnoreSelfSigned()
-{
-  chkPkiPkcs12IgnoreSelf->setChecked( false );
-}
-
 bool QgsAuthConfigWidget::validatePkiPkcs12()
 {
   // required components
@@ -651,16 +598,9 @@ bool QgsAuthConfigWidget::validatePkiPkcs12()
 
   bool bundlefound = QFile::exists( bundlepath );
 
-  // optional, but if set and missing, flag it
-  QString cacertspath( lePkiPkcs12CaCerts->text() );
-  bool cacertsfound = true;
-  if ( !cacertspath.isEmpty() )
-    cacertsfound = QFile::exists( cacertspath );
-
   fileFound( bundlepath.isEmpty() || bundlefound, lePkiPkcs12Bundle );
-  fileFound( cacertspath.isEmpty() || cacertsfound, lePkiPkcs12CaCerts );
 
-  if ( !bundlefound || !cacertsfound )
+  if ( !bundlefound )
   {
     writePkiMessage( lePkiPkcs12Msg, tr( "Missing components" ), Invalid );
     return false;
@@ -744,16 +684,5 @@ void QgsAuthConfigWidget::on_btnPkiPkcs12Bundle_clicked()
     validateAuth();
   }
 }
-
-void QgsAuthConfigWidget::on_btnPkiPkcs12CaCerts_clicked()
-{
-  const QString& fn = getOpenFileName( tr( "Open CA Certificate(s) File" ),  tr( "PEM (*.pem);;DER (*.der)" ) );
-  if ( !fn.isEmpty() )
-  {
-    lePkiPkcs12CaCerts->setText( fn );
-    validateAuth();
-  }
-}
-
 
 #endif
