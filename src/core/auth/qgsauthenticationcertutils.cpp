@@ -125,7 +125,7 @@ const QMap<QString, QList<QgsAuthConfigSslServer> > QgsAuthCertUtils::sslConfigs
   {
     QString org( config.sslCertificate().subjectInfo( QSslCertificate::Organization ) );
     if ( org.isEmpty() )
-      org = "(Organization not defined)";
+      org = QObject::tr( "(Organization not defined)" );
     QList<QgsAuthConfigSslServer> valist = orgconfigs.contains( org ) ? orgconfigs.value( org ) : QList<QgsAuthConfigSslServer>();
     orgconfigs.insert( org, valist << config );
   }

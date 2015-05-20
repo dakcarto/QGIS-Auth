@@ -508,4 +508,167 @@ QgsPkiBundle *QgsAuthProviderPkiPkcs12::getPkiBundle( const QString &authcfg )
 
 }
 
+
+//////////////////////////////////////////////////////
+// QgsAuthProviderIdentityCert
+//////////////////////////////////////////////////////
+
+QMap<QString, QgsPkiBundle *> QgsAuthProviderIdentityCert::mPkiBundleCache = QMap<QString, QgsPkiBundle *>();
+
+QgsAuthProviderIdentityCert::QgsAuthProviderIdentityCert()
+    : QgsAuthProvider( QgsAuthType::IdentityCert )
+{
+}
+
+QgsAuthProviderIdentityCert::~QgsAuthProviderIdentityCert()
+{
+  qDeleteAll( mPkiBundleCache.values() );
+  mPkiBundleCache.clear();
+}
+
+bool QgsAuthProviderIdentityCert::updateNetworkRequest( QNetworkRequest &request, const QString &authcfg )
+{
+  // TODO: is this too restrictive, to intercept only HTTPS connections?
+  if ( request.url().scheme().toLower() != QString( "https" ) )
+  {
+    QgsDebugMsg( QString( "Update request SSL config SKIPPED for authcfg %1: not HTTPS" ).arg( authcfg ) );
+    return true;
+  }
+
+  QgsDebugMsg( QString( "Update request SSL config: HTTPS connection for authcfg: %1" ).arg( authcfg ) );
+
+  QgsPkiBundle * pkibundle = getPkiBundle( authcfg );
+  if ( !pkibundle || !pkibundle->isValid() )
+  {
+    QgsDebugMsg( QString( "Update request SSL config FAILED for authcfg: %1: PKI bundle invalid" ).arg( authcfg ) );
+    return false;
+  }
+
+  QgsDebugMsg( QString( "Update request SSL config: PKI bundle valid for authcfg: %1" ).arg( authcfg ) );
+
+  QSslConfiguration sslConfig = request.sslConfiguration();
+  //QSslConfiguration sslConfig( QSslConfiguration::defaultConfiguration() );
+
+  sslConfig.setLocalCertificate( pkibundle->clientCert() );
+  sslConfig.setPrivateKey( pkibundle->clientCertKey() );
+
+  request.setSslConfiguration( sslConfig );
+
+  return true;
+}
+
+bool QgsAuthProviderIdentityCert::updateNetworkReply( QNetworkReply *reply, const QString &authcfg )
+{
+  Q_UNUSED( reply );
+  Q_UNUSED( authcfg );
+  return true;
+}
+
+void QgsAuthProviderIdentityCert::clearCachedConfig( const QString& authcfg )
+{
+  QgsPkiBundle * pkibundle = 0;
+  // check if it is cached
+  if ( mPkiBundleCache.contains( authcfg ) )
+  {
+    pkibundle = mPkiBundleCache.take( authcfg );
+    delete pkibundle;
+    pkibundle = 0;
+  }
+}
+
+// static
+const QByteArray QgsAuthProviderIdentityCert::certAsPem( const QString &certid )
+{
+  // get identity from database
+  QPair<QSslCertificate, QSslKey> cibundle( QgsAuthManager::instance()->getCertIdentityBundle( certid ) );
+
+  return ( !cibundle.first.isNull() ? cibundle.first.toPem() : QByteArray() );
+}
+
+// static
+const QByteArray QgsAuthProviderIdentityCert::keyAsPem( const QString &certid,
+    const QString &keypass,
+    bool reencrypt )
+{
+  // get identity from database
+  QPair<QSslCertificate, QSslKey> cibundle( QgsAuthManager::instance()->getCertIdentityBundle( certid ) );
+  if ( cibundle.second.isNull() )
+  {
+    return QByteArray();
+  }
+
+  // reapply passphrase if protection is requested and passphrase exists
+  return ( cibundle.second.toPem( reencrypt && !keypass.isEmpty() ? keypass.toUtf8() : QByteArray() ) );
+}
+
+QgsPkiBundle *QgsAuthProviderIdentityCert::getPkiBundle( const QString& authcfg )
+{
+  QgsPkiBundle * bundle = 0;
+
+  // check if it is cached
+  if ( mPkiBundleCache.contains( authcfg ) )
+  {
+    bundle = mPkiBundleCache.value( authcfg );
+    if ( bundle )
+    {
+      QgsDebugMsg( QString( "Retrieved PKI bundle for authcfg %1" ).arg( authcfg ) );
+      return bundle;
+    }
+  }
+
+  // else build PKI bundle
+  QgsAuthConfigIdentityCert config;
+
+  if ( !QgsAuthManager::instance()->loadAuthenticationConfig( authcfg, config, true ) )
+  {
+    QgsDebugMsg( QString( "PKI bundle for authcfg %1: FAILED to retrieve config" ).arg( authcfg ) );
+    return bundle;
+  }
+
+  // get identity from database
+  QPair<QSslCertificate, QSslKey> cibundle( QgsAuthManager::instance()->getCertIdentityBundle( config.certId() ) );
+
+  // init client cert
+  // Note: if this is not valid, no sense continuing
+  QSslCertificate clientcert( cibundle.first );
+  if ( !clientcert.isValid() )
+  {
+    QgsDebugMsg( QString( "PKI bundle for authcfg %1: insert FAILED, client cert is not valid" ).arg( authcfg ) );
+    return bundle;
+  }
+
+  // init key
+  QSslKey clientkey( cibundle.second );
+  if ( clientkey.isNull() )
+  {
+    QgsDebugMsg( QString( "PKI bundle for authcfg %1: insert FAILED, PEM cert key could not be created" ).arg( authcfg ) );
+    return bundle;
+  }
+
+  bundle = new QgsPkiBundle( config, clientcert, clientkey );
+
+  // cache bundle
+  putPkiBundle( authcfg, bundle );
+
+  return bundle;
+}
+
+void QgsAuthProviderIdentityCert::putPkiBundle( const QString &authcfg, QgsPkiBundle *pkibundle )
+{
+  QgsDebugMsg( QString( "Putting PKI bundle for authcfg %1" ).arg( authcfg ) );
+  mPkiBundleCache.insert( authcfg, pkibundle );
+}
+
+void QgsAuthProviderIdentityCert::removePkiBundle( const QString& authcfg )
+{
+  if ( mPkiBundleCache.contains( authcfg ) )
+  {
+    QgsPkiBundle * pkibundle = mPkiBundleCache.take( authcfg );
+    delete pkibundle;
+    pkibundle = 0;
+    QgsDebugMsg( QString( "Removed PKI bundle for authcfg: %1" ).arg( authcfg ) );
+  }
+}
+
+
 #endif

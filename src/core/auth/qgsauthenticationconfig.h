@@ -36,6 +36,7 @@ class CORE_EXPORT QgsAuthType
 #ifndef QT_NO_OPENSSL
       PkiPaths = 2,
       PkiPkcs12 = 3,
+      IdentityCert = 4,
 #endif
       Unknown = 20 // padding for more standard auth types
     };
@@ -193,6 +194,31 @@ class CORE_EXPORT QgsAuthConfigPkiPkcs12: public QgsAuthConfigBase
     QString mBundlePass;
 };
 
+class CORE_EXPORT QgsAuthConfigIdentityCert: public QgsAuthConfigBase
+{
+  public:
+    QgsAuthConfigIdentityCert();
+
+    QgsAuthConfigIdentityCert( const QgsAuthConfigBase& config )
+        : QgsAuthConfigBase( config ) {}
+
+    ~QgsAuthConfigIdentityCert() {}
+
+    const QString certId() const { return mCertId; }
+    void setCertId( const QString& id ) { mCertId = id; }
+
+    const QString certAsPem() const;
+
+    const QStringList keyAsPem( bool reencrypt = true ) const;
+
+    bool isValid( bool validateid = false ) const;
+
+    const QString configString() const;
+    void loadConfigString( const QString& config = QString() );
+
+  private:
+    QString mCertId;
+};
 
 #ifndef QT_NO_OPENSSL
 class CORE_EXPORT QgsAuthConfigSslServer

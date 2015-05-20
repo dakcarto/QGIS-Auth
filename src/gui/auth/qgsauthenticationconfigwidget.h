@@ -101,7 +101,14 @@ class GUI_EXPORT QgsAuthConfigWidget : public QDialog, private Ui::QgsAuthConfig
 
     void on_btnPkiPkcs12Bundle_clicked();
 
+    // Auth IdentityCert
+    void clearIdentityCert();
+
+    void on_cmbIdentityCert_currentIndexChanged( int indx );
+
 #endif
+
+
 
   private:
     bool validateBasic();
@@ -110,6 +117,10 @@ class GUI_EXPORT QgsAuthConfigWidget : public QDialog, private Ui::QgsAuthConfig
     bool validatePkiPaths();
 
     bool validatePkiPkcs12();
+
+    bool validateIdentityCert();
+
+    void populateIdentityComboBox();
 #endif
 
     int providerIndexByType( QgsAuthType::ProviderType ptype );

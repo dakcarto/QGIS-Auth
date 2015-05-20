@@ -28,9 +28,11 @@
 #include <QtCrypto>
 #endif
 
+#include "qgsapplication.h"
 #include "qgsauthenticationcertutils.h"
 #include "qgsauthenticationconfig.h"
 #include "qgsauthenticationmanager.h"
+#include "qgslogger.h"
 
 
 QgsAuthConfigWidget::QgsAuthConfigWidget( QWidget *parent , const QString& authcfg )
@@ -64,9 +66,13 @@ QgsAuthConfigWidget::QgsAuthConfigWidget( QWidget *parent , const QString& authc
 
 #ifdef QT_NO_OPENSSL
     stkwProviderType->removeWidget( pagePkiPaths );
+    stkwProviderType->removeWidget( pagePkiPkcs12 );
+    stkwProviderType->removeWidget( pageIdentityCert );
 #else
     cmbAuthProviderType->addItem( tr( "PKI PEM/DER Certificate Paths" ), QVariant( QgsAuthType::PkiPaths ) );
     cmbAuthProviderType->addItem( tr( "PKI PKCS#12 Certificate Bundle" ), QVariant( QgsAuthType::PkiPkcs12 ) );
+    cmbAuthProviderType->addItem( tr( "Stored Identity Certificate" ), QVariant( QgsAuthType::IdentityCert ) );
+    populateIdentityComboBox();
 #endif
 
     connect( cmbAuthProviderType, SIGNAL( currentIndexChanged( int ) ),
@@ -96,12 +102,14 @@ QgsAuthConfigWidget::~QgsAuthConfigWidget()
 void QgsAuthConfigWidget::loadConfig()
 {
   if ( mAuthCfg.isEmpty() )
+  {
     return;
+  }
 
   QgsAuthType::ProviderType authtype = QgsAuthManager::instance()->configProviderType( mAuthCfg );
 
-  qDebug( "Loading auth id: %s", mAuthCfg.toAscii().constData() );
-  qDebug( "Loading auth type: %s", QgsAuthType::typeToString( authtype ).toAscii().constData() );
+  QgsDebugMsg( QString( "Loading auth id: %1" ).arg( mAuthCfg ) );
+  QgsDebugMsg( QString( "Loading auth type: %1" ).arg( QgsAuthType::typeToString( authtype ) ) );
 
   if ( authtype == QgsAuthType::None || authtype == QgsAuthType::Unknown )
     return;
@@ -150,9 +158,9 @@ void QgsAuthConfigWidget::loadConfig()
         lePkiPathsKey->setText( configpki.keyId() );
         lePkiPathsKeyPass->setText( configpki.keyPassphrase() );
       }
-      //qDebug( configpki.certAsPem().toAscii().constData() );
-      //qDebug( configpki.keyAsPem( false ).first().toAscii().constData() );
-      //qDebug( configpki.keyAsPem( true ).first().toAscii().constData() );
+      //QgsDebugMsg( configpki.certAsPem() );
+      //QgsDebugMsg( configpki.keyAsPem( false ).first() );
+      //QgsDebugMsg( configpki.keyAsPem( true ).first() );
     }
   }
   else if ( authtype == QgsAuthType::PkiPkcs12 )
@@ -170,9 +178,28 @@ void QgsAuthConfigWidget::loadConfig()
         lePkiPkcs12Bundle->setText( configpkcs.bundlePath() );
         lePkiPkcs12KeyPass->setText( configpkcs.bundlePassphrase() );
       }
-      //qDebug( configpkcs.certAsPem().toAscii().constData() );
-      //qDebug( configpkcs.keyAsPem( false ).first().toAscii().constData() );
-      //qDebug( configpkcs.keyAsPem( true ).first().toAscii().constData() );
+      //QgsDebugMsg( configpkcs.certAsPem() );
+      //QgsDebugMsg( configpkcs.keyAsPem( false ).first()  );
+      //QgsDebugMsg( configpkcs.keyAsPem( true ).first() );
+    }
+  }
+  else if ( authtype == QgsAuthType::IdentityCert )
+  {
+    stkwProviderType->setCurrentIndex( stkwProviderType->indexOf( pageIdentityCert ) );
+    QgsAuthConfigIdentityCert configident;
+    if ( QgsAuthManager::instance()->loadAuthenticationConfig( mAuthCfg, configident, true ) )
+    {
+      if ( configident.isValid() && configident.type() != QgsAuthType::Unknown )
+      {
+        leName->setText( configident.name() );
+        leResource->setText( configident.uri() );
+        leAuthCfg->setText( configident.id() );
+
+        int indx = cmbIdentityCert->findData( configident.certId() );
+        cmbIdentityCert->setCurrentIndex( indx == -1 ? 0 : indx );
+      }
+      //QgsDebugMsg( configident.certAsPem() );
+      //QgsDebugMsg( configident.keyAsPem( false ).first() );
     }
   }
 #endif
@@ -272,6 +299,31 @@ void QgsAuthConfigWidget::saveConfig()
       }
     }
   }
+  else if ( curpage == pageIdentityCert ) // identity certificate
+  {
+    QgsAuthConfigIdentityCert configident;
+    configident.setName( leName->text() );
+    configident.setUri( leResource->text() );
+
+    configident.setCertId( cmbIdentityCert->itemData( cmbIdentityCert->currentIndex() ).toString() );
+
+    if ( !mAuthCfg.isEmpty() ) // update
+    {
+      configident.setId( mAuthCfg );
+      if ( QgsAuthManager::instance()->updateAuthenticationConfig( configident ) )
+      {
+        emit authenticationConfigUpdated( mAuthCfg );
+      }
+    }
+    else // create new
+    {
+      if ( QgsAuthManager::instance()->storeAuthenticationConfig( configident ) )
+      {
+        mAuthCfg = configident.id();
+        emit authenticationConfigStored( mAuthCfg );
+      }
+    }
+  }
 #endif
 
   this->accept();
@@ -293,6 +345,10 @@ void QgsAuthConfigWidget::on_btnClear_clicked()
   {
     clearPkiPkcs12Bundle();
   }
+  else if ( curpage == pageIdentityCert )
+  {
+    clearIdentityCert();
+  }
 #endif
   validateAuth();
 }
@@ -311,6 +367,8 @@ void QgsAuthConfigWidget::clearAll()
   clearPkiPathsCert();
   // pki pkcs#12
   clearPkiPkcs12Bundle();
+  // identity cert
+  clearIdentityCert();
 #endif
 
   validateAuth();
@@ -333,6 +391,10 @@ void QgsAuthConfigWidget::validateAuth()
   else if ( curpage == pagePkiPkcs12 )
   {
     authok = authok && validatePkiPkcs12();
+  }
+  else if ( curpage == pageIdentityCert )
+  {
+    authok = authok && validateIdentityCert();
   }
 #endif
   buttonBox->button( QDialogButtonBox::Save )->setEnabled( authok );
@@ -404,7 +466,7 @@ bool QgsAuthConfigWidget::validateBasic()
 }
 
 
-//////// PKI below that requires Qt to be built against OpenSSL ////////////////
+//////// PKI below that requires Qt to be built with runtime OpenSSL support ////////////////
 
 #ifndef QT_NO_OPENSSL
 
@@ -683,6 +745,52 @@ void QgsAuthConfigWidget::on_btnPkiPkcs12Bundle_clicked()
     lePkiPkcs12Bundle->setText( fn );
     validateAuth();
   }
+}
+
+//////////////////////////////////////////////////////
+// Auth Identity Cert
+//////////////////////////////////////////////////////
+
+bool QgsAuthConfigWidget::validateIdentityCert()
+{
+  return cmbIdentityCert->currentIndex() != 0;
+}
+
+void QgsAuthConfigWidget::populateIdentityComboBox()
+{
+  cmbIdentityCert->addItem( tr( "Select identity..." ) );
+
+  QList<QSslCertificate> certs( QgsAuthManager::instance()->getCertIdentities() );
+  if ( !certs.isEmpty() )
+  {
+    cmbIdentityCert->setIconSize( QSize( 26, 22 ) );
+    QMap<QString, QString> idents;
+    Q_FOREACH( const QSslCertificate& cert, certs )
+    {
+      QString org( cert.subjectInfo( QSslCertificate::Organization ) );
+      if ( org.isEmpty() )
+        org = tr( "Organization not defined" );
+      idents.insert( QString( "%1 (%2)" ).arg( QgsAuthCertUtils::resolvedCertName( cert ) ).arg( org ),
+                     QgsAuthCertUtils::shaHexForCert( cert ) );
+    }
+    QMap<QString, QString>::const_iterator it = idents.constBegin();
+    for ( ; it != idents.constEnd(); ++it )
+    {
+      cmbIdentityCert->addItem( QgsApplication::getThemeIcon( "/mIconCertificate.svg"),
+                                it.key(), it.value() );
+    }
+  }
+}
+
+void QgsAuthConfigWidget::clearIdentityCert()
+{
+  cmbIdentityCert->setCurrentIndex( 0 );
+}
+
+void QgsAuthConfigWidget::on_cmbIdentityCert_currentIndexChanged( int indx )
+{
+  Q_UNUSED( indx );
+  validateAuth();
 }
 
 #endif

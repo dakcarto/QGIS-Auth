@@ -178,6 +178,42 @@ class CORE_EXPORT QgsAuthProviderPkiPkcs12 : public QgsAuthProviderPkiPaths
 
     static QMap<QString, QgsPkiBundle *> mPkiBundleCache;
 };
+
+/** \ingroup core
+ * \brief Identity certificate authentication provider class
+ * \since 2.8
+ */
+class CORE_EXPORT QgsAuthProviderIdentityCert : public QgsAuthProvider
+{
+  public:
+    QgsAuthProviderIdentityCert();
+
+    virtual ~QgsAuthProviderIdentityCert();
+
+    // QgsAuthProvider interface
+    bool updateNetworkRequest( QNetworkRequest &request, const QString &authcfg );
+    bool updateNetworkReply( QNetworkReply *reply, const QString &authcfg );
+    void clearCachedConfig( const QString& authcfg );
+
+    static const QByteArray certAsPem( const QString &certid );
+
+    static const QByteArray keyAsPem( const QString &certid,
+                                      const QString &keypass = QString(),
+                                      bool reencrypt = true );
+
+  protected:
+
+    virtual QgsPkiBundle * getPkiBundle( const QString &authcfg );
+
+    virtual void putPkiBundle( const QString &authcfg, QgsPkiBundle * pkibundle );
+
+    virtual void removePkiBundle( const QString &authcfg );
+
+  private:
+
+    static QMap<QString, QgsPkiBundle *> mPkiBundleCache;
+};
+
 #endif
 
 #endif // QGSAUTHENTICATIONPROVIDER_H

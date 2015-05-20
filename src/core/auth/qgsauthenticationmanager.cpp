@@ -614,6 +614,7 @@ void QgsAuthManager::registerProviders()
 #ifndef QT_NO_OPENSSL
     mProviders.insert( QgsAuthType::PkiPaths, new QgsAuthProviderPkiPaths() );
     mProviders.insert( QgsAuthType::PkiPkcs12, new QgsAuthProviderPkiPkcs12() );
+    mProviders.insert( QgsAuthType::IdentityCert, new QgsAuthProviderIdentityCert() );
 #endif
   }
   mProvidersRegistered = true;

@@ -31,6 +31,7 @@ const QHash<QgsAuthType::ProviderType, QString> QgsAuthType::typeNameHash()
 #ifndef QT_NO_OPENSSL
   typeNames.insert( QgsAuthType::PkiPaths, QObject::tr( "PKI-Paths" ) );
   typeNames.insert( QgsAuthType::PkiPkcs12, QObject::tr( "PKI-PKCS#12" ) );
+  typeNames.insert( QgsAuthType::IdentityCert, QObject::tr( "Identity-Cert" ) );
 #endif
   typeNames.insert( QgsAuthType::Unknown, QObject::tr( "Unknown" ) );
   return typeNames;
@@ -53,6 +54,9 @@ QgsAuthType::ProviderType QgsAuthType::providerTypeFromInt( int itype )
       break;
     case 3:
       ptype = PkiPkcs12;
+      break;
+    case 4:
+      ptype = IdentityCert;
       break;
 #endif
     case 20:
@@ -92,6 +96,9 @@ const QString QgsAuthType::typeDescription( QgsAuthType::ProviderType providerty
       break;
     case PkiPkcs12:
       s = QObject::tr( "PKI PKCS#12 authentication" );
+      break;
+    case IdentityCert:
+      s = QObject::tr( "Stored identity certificate" );
       break;
 #endif
     case Unknown:
@@ -272,7 +279,7 @@ const QString QgsAuthConfigPkiPkcs12::certAsPem() const
 const QStringList QgsAuthConfigPkiPkcs12::keyAsPem( bool reencrypt ) const
 {
   if ( !isValid() )
-    return QStringList();
+    return QStringList() << QString() << QString();
 
   QStringList keylist;
   keylist << QgsAuthProviderPkiPkcs12::keyAsPem( bundlePath(), bundlePassphrase(), reencrypt );
@@ -307,6 +314,59 @@ void QgsAuthConfigPkiPkcs12::loadConfigString( const QString &config )
   QStringList configlist = config.split( mConfSep );
   setBundlePath( configlist.at( 0 ) );
   setBundlePassphrase( configlist.at( 1 ) );
+}
+
+
+//////////////////////////////////////////////
+// QgsAuthConfigIdentityCert
+//////////////////////////////////////////////
+
+QgsAuthConfigIdentityCert::QgsAuthConfigIdentityCert()
+  : QgsAuthConfigBase( QgsAuthType::IdentityCert, 1 )
+  , mCertId( QString() )
+{
+}
+
+const QString QgsAuthConfigIdentityCert::certAsPem() const
+{
+  if ( !isValid() )
+    return QString();
+
+  return QgsAuthProviderIdentityCert::certAsPem( certId() );
+}
+
+const QStringList QgsAuthConfigIdentityCert::keyAsPem( bool reencrypt ) const
+{
+  if ( !isValid() )
+    return QStringList() << QString() << QString();
+
+  QStringList keylist;
+  keylist << QgsAuthProviderIdentityCert::keyAsPem( certId(), QString(), reencrypt );
+  keylist << QString( "rsa" );
+  return keylist;
+}
+
+bool QgsAuthConfigIdentityCert::isValid( bool validateid ) const
+{
+  return (
+           QgsAuthConfigBase::isValid( validateid )
+           && mVersion != 0
+           && !mCertId.isEmpty()
+         );
+}
+
+const QString QgsAuthConfigIdentityCert::configString() const
+{
+  return mCertId;
+}
+
+void QgsAuthConfigIdentityCert::loadConfigString( const QString &config )
+{
+  if ( config.isEmpty() )
+  {
+    return;
+  }
+  mCertId = config;
 }
 
 
